@@ -243,7 +243,7 @@ forward void EntWatch_OnHLPlayerReady();
 public SharedPlugin __pl_EntWatch =
 {
 	name = "EntWatch",
-	file = "entwatch_csgo_dz.smx",
+	file = "EntWatch.smx",
 #if defined REQUIRE_PLUGIN
 	required = 1
 #else
@@ -252,7 +252,7 @@ public SharedPlugin __pl_EntWatch =
 };
 
 #if !defined REQUIRE_PLUGIN
-public __pl_EntWatch_SetNTVOptional()
+public void __pl_EntWatch_SetNTVOptional()
 {
 	MarkNativeAsOptional("EntWatch_IsClientBanned");
 	MarkNativeAsOptional("EntWatch_BanClient");

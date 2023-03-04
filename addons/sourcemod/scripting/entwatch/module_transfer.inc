@@ -5,6 +5,11 @@ stock void EWM_Transfer_OnPluginStart()
 	RegAdminCmd("sm_etransfer", EWM_Transfer_Command_Transfer, ADMFLAG_BAN);
 }
 
+stock void EWM_Transfer_OnConfigsExecuted()
+{
+	
+}
+
 public void EWM_Transfer_Client(int iClient, int iTarget, int iReceiver)
 {
 	if (GetClientTeam(iTarget) != GetClientTeam(iReceiver))
@@ -112,7 +117,7 @@ public int EWM_Transfer_EdictMenu_Handler(Menu hEdictMenu, MenuAction hAction, i
 
 public void EWM_Transfer_Function(int iClient, int iItemIndex, int iReceiver, bool bMessageTransfer)
 {
-	if(iItemIndex >= 0)
+	if(iItemIndex >= 0 && g_ItemList.Length > iItemIndex)
 	{
 		#if defined EW_MODULE_EBAN
 		if(g_EbanClients[iReceiver].Banned)

@@ -5,6 +5,11 @@ stock void EWM_Spawn_OnPluginStart()
 	RegAdminCmd("sm_espawnitem", EWM_Spawn_Command_Spawn, ADMFLAG_BAN);
 }
 
+stock void EWM_Spawn_OnConfigsExecuted()
+{
+	
+}
+
 public void EWM_Spawn_Spawn(int iAdmin, int iUserID, int iIndexConfig, bool bStrip)
 {
 	bool bAdminFound = false;
