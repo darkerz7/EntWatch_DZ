@@ -12,6 +12,11 @@ stock void EWM_Clantag_OnPluginStart()
 	HookEventEx("player_connect_full", Event_PlayerConnectFull);
 }
 
+stock void EWM_Clantag_OnConfigsExecuted()
+{
+	
+}
+
 //Get Client ClanTag on Connect
 public void Event_PlayerConnectFull(Event hEvent, const char[] sName, bool bDontBroadcast)
 {

@@ -2,8 +2,6 @@
 
 #tryinclude <EntWatch>
 
-bool g_bLateLoad = false;
-
 public APLRes AskPluginLoad2(Handle hThis, bool bLate, char[] sError, int iErr_max)
 {
 	#if defined EW_MODULE_EBAN
@@ -33,6 +31,7 @@ public APLRes AskPluginLoad2(Handle hThis, bool bLate, char[] sError, int iErr_m
 	RegPluginLibrary("EntWatch");
 
 	g_bLateLoad = bLate;
+	g_evGameEngine = GetEngineVersion();
 
 	return APLRes_Success;
 }
