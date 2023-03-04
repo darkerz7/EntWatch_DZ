@@ -7,6 +7,7 @@
 #include <cstrike>
 #include <clientprefs>
 #include <multicolors>
+#include <discordWebhookAPI>
 
 #include "entwatch/smlib_entities.inc"
 #include "entwatch/function.inc"
