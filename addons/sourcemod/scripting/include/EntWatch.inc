@@ -243,7 +243,7 @@ forward void EntWatch_OnHLPlayerReady();
 public SharedPlugin __pl_EntWatch =
 {
 	name = "EntWatch",
-	file = "entwatch_csgo_dz.smx",
+	file = "EntWatch.smx",
 #if defined REQUIRE_PLUGIN
 	required = 1
 #else
