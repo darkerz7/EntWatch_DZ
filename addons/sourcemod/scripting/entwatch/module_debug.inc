@@ -7,6 +7,11 @@ stock void EWM_Debug_OnPluginStart()
 	RegAdminCmd("sm_ewdebugscheme", Command_DebugScheme, ADMFLAG_CONFIG);
 }
 
+stock void EWM_Debug_OnConfigsExecuted()
+{
+	
+}
+
 public Action Command_DebugConfig(int iClient, int iArgs)
 {
 	if(IsClientConnected(iClient) && IsClientInGame(iClient))

@@ -6,9 +6,9 @@
 #include <sdkhooks>
 #include <cstrike>
 #include <clientprefs>
-#include <csgocolors_fix>
+#include <multicolors>
 
-#include "entwatch/smlib.inc"
+#include "entwatch/smlib_entities.inc"
 #include "entwatch/function.inc"
 
 ArrayList g_ItemConfig;
@@ -38,11 +38,14 @@ float	g_fDelayUse = 3.0;
 bool g_bConfigLoaded = false;
 bool g_bIsAdmin[MAXPLAYERS+1] = {false,...};
 
-//uncomment the next line if you using DynamicChannels: https://github.com/Vauff/DynamicChannels
-//#define DYNAMIC_CHANNELS
-#if defined DYNAMIC_CHANNELS
-#include <DynamicChannels>
-#endif
+//-------------------------------------------------------
+// Purpose: Game Engine
+//-------------------------------------------------------
+EngineVersion g_evGameEngine;
+
+bool g_bLateLoad = false;
+
+#tryinclude <DynamicChannels>
 
 //Modules can be included as you wish. To do this, comment out or uncomment the corresponding module
 #include "entwatch/module_chat.inc"
@@ -55,7 +58,7 @@ bool g_bIsAdmin[MAXPLAYERS+1] = {false,...};
 #include "entwatch/module_transfer.inc"
 #include "entwatch/module_spawn_item.inc"
 #include "entwatch/module_menu.inc"
-//#include "entwatch/module_glow.inc" //change to HighLight
+#include "entwatch/module_glow.inc" //change to HighLight
 #include "entwatch/module_use_priority.inc"
 #include "entwatch/module_extended_logs.inc"
 //#include "entwatch/module_clantag.inc"
@@ -69,76 +72,76 @@ ArrayList g_TriggerArray;
 public Plugin myinfo = 
 {
 	name = "EntWatch",
-	author = "DarkerZ[RUS]",
-	description = "Notify players about entity interactions.",
-	version = "3.1.0",
-	url = "dark-skill.ru"
+	author = "DarkerZ[RUS], Cmer, maxime1907, .Rushaway",
+	description = "Entity watcher that helps with item management.",
+	version = "3.2.0",
+	url = "https://github.com/darkerz7/EntWatch_DZ"
 };
 
 public void OnPluginStart()
 {
 	if(g_ItemConfig == INVALID_HANDLE) g_ItemConfig = new ArrayList(512);
 	if(g_ItemList == INVALID_HANDLE) g_ItemList = new ArrayList(512);
-	
+
 	if(g_TriggerArray == INVALID_HANDLE) g_TriggerArray = new ArrayList(512);
-	
+
 	#if defined EW_MODULE_PHYSBOX
 	EWM_Physbox_OnPluginStart();
 	#endif
-	
+
 	//CVARs
 	g_hCvar_TeamOnly		= CreateConVar("entwatch_mode_teamonly", "1", "Enable/Disable team only mode.", _, true, 0.0, true, 1.0);
 	g_hCvar_Delay_Use		= CreateConVar("entwatch_delay_use", "3.0", "Change delay before use", _, true, 0.0, true, 60.0);
 	g_hCvar_Scheme			= CreateConVar("entwatch_scheme", "classic", "The name of the scheme config.", _);
 	g_hCvar_BlockEPick		= CreateConVar("entwatch_blockepick", "1", "Block players from using E key to grab items.", _, true, 0.0, true, 1.0);
 	g_hCvar_GlobalBlock		= CreateConVar("entwatch_globalblock", "0", "Blocks the pickup of any items by players.", _, true, 0.0, true, 1.0);
-	
+
 	//Commands
 	RegAdminCmd("sm_ew_reloadconfig", EW_Command_ReloadConfig, ADMFLAG_CONFIG);
 	RegAdminCmd("sm_setcooldown", EW_Command_Cooldown, ADMFLAG_BAN);
 	RegAdminCmd("sm_setmaxuses", EW_Command_Setmaxuses, ADMFLAG_BAN);
 	RegAdminCmd("sm_addmaxuses", EW_Command_Addmaxuses, ADMFLAG_BAN);
 	RegAdminCmd("sm_ewsetmode", EW_Command_Setmode, ADMFLAG_BAN);
-	
+
 	RegAdminCmd("sm_setcooldown2", EW_Command_Cooldown2, ADMFLAG_BAN);
 	RegAdminCmd("sm_setmaxuses2", EW_Command_Setmaxuses2, ADMFLAG_BAN);
 	RegAdminCmd("sm_addmaxuses2", EW_Command_Addmaxuses2, ADMFLAG_BAN);
 	RegAdminCmd("sm_ewsetmode2", EW_Command_Setmode2, ADMFLAG_BAN);
-	
+
 	RegAdminCmd("sm_ewsetname", EW_Command_Setname, ADMFLAG_BAN);
 	RegAdminCmd("sm_ewsetshortname", EW_Command_Setshortname, ADMFLAG_BAN);
-	
+
 	RegAdminCmd("sm_ewblock", EW_Command_BlockItem, ADMFLAG_BAN);
 	RegAdminCmd("sm_ewlockbutton", EW_Command_LockButton, ADMFLAG_BAN);
 	RegAdminCmd("sm_ewlockbutton2", EW_Command_LockButton2, ADMFLAG_BAN);
-	
+
 	//Hook CVARs
 	HookConVarChange(g_hCvar_TeamOnly, Cvar_Main_Changed);
 	HookConVarChange(g_hCvar_Delay_Use, Cvar_Main_Changed);
 	HookConVarChange(g_hCvar_BlockEPick, Cvar_Main_Changed);
 	HookConVarChange(g_hCvar_GlobalBlock, Cvar_Main_Changed);
-	
+
 	//Fix for plugin reload (?)
 	g_bTeamOnly = GetConVarBool(g_hCvar_TeamOnly);
 	g_fDelayUse = GetConVarFloat(g_hCvar_Delay_Use);
 	g_bBlockEPick = GetConVarBool(g_hCvar_BlockEPick);
 	g_bGlobalBlock = GetConVarBool(g_hCvar_GlobalBlock);
-	
+
 	//Hook Events
 	HookEvent("round_start", Event_RoundStart, EventHookMode_Pre);
 	HookEvent("round_end", Event_RoundEnd, EventHookMode_Pre);
 	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Pre);
 	HookEvent("player_team", Event_PlayerTeam, EventHookMode_Pre);
-	
+
 	//Hook Output Right-Click
 	HookEntityOutput("game_ui", "PressedAttack2", Event_GameUI_RightClick);
-	
+
 	//Hook Output OutValue
 	HookEntityOutput("math_counter", "OutValue", Event_OutValue);
-	
+
 	//Load Scheme
 	LoadScheme();
-	
+
 	#if defined EW_MODULE_EBAN
 	EWM_Eban_OnPluginStart();
 	#endif
@@ -172,20 +175,22 @@ public void OnPluginStart()
 	#if defined EW_MODULE_USE_PRIORITY
 	EWM_Use_Priority_OnPluginStart();
 	#endif
-	
+	#if defined EW_MODULE_ELOGS
+	EWM_ELogs_OnPluginStart();
+	#endif
 	#if defined EW_MODULE_CLANTAG
 	EWM_Clantag_OnPluginStart();
 	#endif
-	
+
 	LoadTranslations("entwatch.phrases");
 	LoadTranslations("common.phrases");
-	
+
 	AutoExecConfig(true);
-	
+
 	#if defined EW_MODULE_FORWARDS
 	EWM_Forwards_OnPluginStart();
 	#endif
-	
+
 	#if defined EW_MODULE_NATIVES
 	EWM_Natives_OnPluginStart();
 	#endif
@@ -195,6 +200,44 @@ public void OnPluginEnd()
 {
 	#if defined EW_MODULE_CLANTAG
 	EWM_Clantag_Mass_Reset();
+	#endif
+}
+
+public void OnConfigsExecuted()
+{
+	#if defined EW_MODULE_EBAN
+	EWM_Eban_OnConfigsExecuted();
+	#endif
+	#if defined EW_MODULE_OFFLINE_EBAN
+	EWM_OfflineEban_OnConfigsExecuted();
+	#endif
+	#if defined EW_MODULE_TRANSFER
+	EWM_Transfer_OnConfigsExecuted();
+	#endif
+	#if defined EW_MODULE_SPAWN
+	EWM_Spawn_OnConfigsExecuted();
+	#endif
+	#if defined EW_MODULE_MENU
+	EWM_Menu_OnConfigsExecuted();
+	#endif
+	#if defined EW_MODULE_HUD
+	EWM_Hud_OnConfigsExecuted();
+	#endif
+	#if defined EW_MODULE_GLOW
+	EWM_Glow_OnConfigsExecuted();
+	#endif
+	#if defined EW_MODULE_DEBUG
+	EWM_Debug_OnConfigsExecuted();
+	#endif
+	#if defined EW_MODULE_USE_PRIORITY
+	EWM_Use_Priority_OnConfigsExecuted();
+	#endif
+	#if defined EW_MODULE_ELOGS
+	EWM_ELogs_OnConfigsExecuted();
+	#endif
+
+	#if defined EW_MODULE_CLANTAG
+	EWM_Clantag_OnConfigsExecuted();
 	#endif
 }
 
@@ -596,7 +639,13 @@ stock void LoadConfig()
 			
 			KvGetString(hKeyValues, "filtername", sBuffer_temp, sizeof(sBuffer_temp), "");
 			FormatEx(NewItem.FilterName, sizeof(NewItem.FilterName), "%s", sBuffer_temp);
-			
+
+			KvGetString(hKeyValues, "hasfiltername", sBuffer_temp, sizeof(sBuffer_temp), "notfound");
+			if (StrEqual(sBuffer_temp, "notfound", true))
+				NewItem.HasFilterName = true;
+			else
+				NewItem.HasFilterName = StrEqual(sBuffer_temp, "true", true);
+
 			KvGetString(hKeyValues, "blockpickup", sBuffer_temp, sizeof(sBuffer_temp), "false");
 			NewItem.BlockPickup = StrEqual(sBuffer_temp, "true", false);
 			
@@ -779,6 +828,7 @@ public bool RegisterItem(class_ItemConfig ItemConfig, int iEntity, int iHammerID
 		FormatEx(NewItem.Color,			sizeof(NewItem.Color),			"%s",	ItemConfig.Color);
 		FormatEx(NewItem.ButtonClass,	sizeof(NewItem.ButtonClass),	"%s",	ItemConfig.ButtonClass);
 		FormatEx(NewItem.FilterName,	sizeof(NewItem.FilterName),		"%s",	ItemConfig.FilterName);
+		NewItem.HasFilterName = ItemConfig.HasFilterName;
 		NewItem.BlockPickup = ItemConfig.BlockPickup;
 		NewItem.AllowTransfer = ItemConfig.AllowTransfer;
 		NewItem.ForceDrop = ItemConfig.ForceDrop;
@@ -951,7 +1001,7 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 	if(IsValidEntity(iEntity))
 	{
 		if(StrContains(sClassname, "weapon_", false) != -1) SDKHook(iEntity, SDKHook_SpawnPost, OnItemSpawned);
-		else if(StrEqual(sClassname,"func_button")||StrEqual(sClassname,"func_rot_button")||
+		else if(StrEqual(sClassname,"func_button")||StrEqual(sClassname,"func_rot_button")||StrEqual(sClassname,"func_physbox_multiplayer")||
 			StrEqual(sClassname,"func_door")||StrEqual(sClassname,"func_door_rotating")) SDKHook(iEntity, SDKHook_SpawnPost, OnButtonSpawned);
 		else if (StrEqual(sClassname,"math_counter")) SDKHook(iEntity, SDKHook_SpawnPost, OnMathSpawned);
 		else if(StrContains(sClassname, "trigger_", false) != -1) SDKHook(iEntity, SDKHook_SpawnPost, OnTriggerSpawned);
@@ -1139,9 +1189,11 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 						//PrintToConsoleAll("[EntWatch] DEBUG: HammerID of iButton - %i", Entity_GetHammerID(iButton));
 						
 						
-						if(ItemTest.OwnerID != iActivator && ItemTest.OwnerID != iCaller) return Plugin_Handled;
-							else if(!(StrEqual(ItemTest.FilterName,""))) DispatchKeyValue(iActivator, "targetname", ItemTest.FilterName);
-						
+						if(ItemTest.OwnerID != iActivator && ItemTest.OwnerID != iCaller)
+							return Plugin_Handled;
+						else if(ItemTest.HasFilterName && !(StrEqual(ItemTest.FilterName,"")))
+							DispatchKeyValue(iActivator, "targetname", ItemTest.FilterName);
+
 						UpdateTime();
 						if(ItemTest.CheckDelay() > 0.0) return Plugin_Handled;
 						
@@ -1164,7 +1216,9 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 						if(ItemTest.ButtonID2 == INVALID_ENT_REFERENCE) iAbility = 0;
 						
 						//Base delay on the wait time of the button (button is locked for this duration)
-						int waitTime = RoundToFloor(GetEntPropFloat(iButton, Prop_Data, "m_flWait"));
+						int waitTime = 0;
+						if (HasEntProp(iButton, Prop_Data, "m_flWait"))
+							waitTime = RoundToFloor(GetEntPropFloat(iButton, Prop_Data, "m_flWait"));
 						if(waitTime < 0) waitTime = 0;
 						
 						if(iAbility!=2)
@@ -1421,9 +1475,12 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 				if(iAbility == 1 && ItemTest.ButtonID2 == INVALID_ENT_REFERENCE) iAbility = 0;
 				if(iAbility > -1)
 				{
-					if(!(StrEqual(ItemTest.FilterName,""))) DispatchKeyValue(iActivator, "targetname", ItemTest.FilterName);
+					if (ItemTest.HasFilterName && !(StrEqual(ItemTest.FilterName,"")))
+						DispatchKeyValue(iActivator, "targetname", ItemTest.FilterName);
+
 					UpdateTime();
-					if(ItemTest.CheckDelay() > 0.0) continue;
+					if(ItemTest.CheckDelay() > 0.0)
+						return Plugin_Handled;
 					if(iAbility != 2)
 					{
 						switch (ItemTest.Mode)
@@ -1734,6 +1791,8 @@ public Action EW_Command_ReloadConfig(int iClient, int iArgs)
 	CleanData();
 	LoadConfig();
 	LoadScheme();
+
+	CReplyToCommand(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Reload Configs");
 
 	return Plugin_Handled;
 }

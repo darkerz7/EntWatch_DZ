@@ -11,6 +11,11 @@ stock void EWM_Menu_OnPluginStart()
 	if (LibraryExists("adminmenu") && ((hTopMenu = GetAdminTopMenu()) != INVALID_HANDLE)) OnAdminMenuReady(hTopMenu);
 }
 
+stock void EWM_Menu_OnConfigsExecuted()
+{
+	
+}
+
 //-------------------------------------------------------
 // Purpose: Safeguard against adminmenu unloading
 //-------------------------------------------------------
@@ -390,7 +395,7 @@ void EWM_Menu_PM_ItemTransfer(int iClient, int iItemIndex)
 	bool bNotFound = true;
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if(!IsClientInGame(i) || i == ItemTest.OwnerID) continue;
+		if(!IsClientInGame(i) || IsFakeClient(i) || !IsPlayerAlive(i) || i == ItemTest.OwnerID) continue;
 		#if defined EW_MODULE_EBAN
 		if(g_EbanClients[i].Banned) continue;
 		#endif

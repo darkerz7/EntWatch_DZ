@@ -11,6 +11,7 @@ enum struct class_ItemConfig
 	char		Color[16];
 	char		ButtonClass[32];
 	char		FilterName[32];
+	bool		HasFilterName;
 	bool		BlockPickup;
 	bool		AllowTransfer;
 	bool		ForceDrop;
@@ -44,6 +45,7 @@ enum struct class_ItemList
 	char		Color[16];
 	char		ButtonClass[32];
 	char		FilterName[32];
+	bool		HasFilterName;
 	bool		BlockPickup;
 	bool		AllowTransfer;
 	bool		ForceDrop;
@@ -191,6 +193,7 @@ enum struct class_Scheme
 enum struct class_ClientSettings_Hud
 {
 	bool		Display;
+	int			Type;
 	int			Color[4];
 	float		Pos_X;
 	float		Pos_Y;
