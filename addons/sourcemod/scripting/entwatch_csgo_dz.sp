@@ -373,6 +373,12 @@ stock void EWM_Drop_Forward(Handle hEvent)
 					}
 				}
 			}
+			
+			// Fire weapon drop forward
+			Call_StartForward(g_hOnItemDrop);
+			Call_PushCell(iClient);
+			Call_PushCell(ItemTest.WeaponID);
+			Call_Finish();
 		}
 	}
 }
@@ -1089,12 +1095,12 @@ public Action Timer_OnTriggerSpawned(Handle timer, int iEntity)
 public Action OnTrigger(int iEntity, int iClient)
 {
 	#if defined EW_MODULE_EBAN
-    if (IsValidClient(iClient) && IsClientConnected(iClient)) if (g_bGlobalBlock || g_EbanClients[iClient].Banned) return Plugin_Handled;
+	if (IsValidClient(iClient) && IsClientConnected(iClient)) if (g_bGlobalBlock || g_EbanClients[iClient].Banned) return Plugin_Handled;
 	#else
 	if (IsValidClient(iClient) && IsClientConnected(iClient) && g_bGlobalBlock) return Plugin_Handled;
 	#endif
 	
-    return Plugin_Continue;
+	return Plugin_Continue;
 }
 
 //-------------------------------------------------------
@@ -1645,6 +1651,12 @@ public void OnWeaponDrop(int iClient, int iWeapon)
 				break;
 			}
 		}
+
+		// Fire item drop forward
+		Call_StartForward(g_hOnItemDrop);
+		Call_PushCell(iClient);
+		Call_PushCell(iWeapon);
+		Call_Finish();
 	}
 }
 
@@ -1721,6 +1733,12 @@ public void OnWeaponEquip(int iClient, int iWeapon)
 		#if defined EW_MODULE_PHYSBOX
 		EWM_Physbox_Pickedup(iClient, iWeapon);
 		#endif
+
+		// Fire item pickup forward
+		Call_StartForward(g_hOnItemPickup);
+		Call_PushCell(iClient);
+		Call_PushCell(iWeapon);
+		Call_Finish();
 	}
 }
 

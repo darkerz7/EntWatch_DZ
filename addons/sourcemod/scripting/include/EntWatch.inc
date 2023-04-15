@@ -240,6 +240,24 @@ forward void EntWatch_OnHLWeaponReady();
  */
 forward void EntWatch_OnHLPlayerReady();
 
+/**
+ * Called when a client picks up an item
+ * 
+ * @param client		Client index that picked up an item
+ * @param weapon		Entity index of the picked up item
+ * @return None
+ */
+forward void EntWatch_OnItemPickup(int client, int weapon);
+
+/**
+ * Called when a client drops an item
+ * 
+ * @param client		Client index that dropped the item
+ * @param weapon		Entity index of the dropped item
+ * @return None
+ */
+forward void EntWatch_OnItemDrop(int client, int weapon);
+
 public SharedPlugin __pl_EntWatch =
 {
 	name = "EntWatch",
