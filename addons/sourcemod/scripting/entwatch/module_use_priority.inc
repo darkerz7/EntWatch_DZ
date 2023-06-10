@@ -1,5 +1,7 @@
 #define EW_MODULE_USE_PRIORITY
 
+// Purpose: Needed when the player cannot press the button while in the crowd. Forcefully press the button
+
 ConVar	g_hCvar_UsePriority;
 
 bool	g_bUsePriority = true;
@@ -39,6 +41,7 @@ stock void EWM_Use_Priority_LoadDefaultClientSettings(int iClient)
 	g_bUsePriorityClient[iClient] = true;
 }
 
+// Catching button click use
 public Action OnPlayerRunCmd(int iClient, int& iButtons, int& iImpulse, float aVel[3], float aAngles[3], int& iWeapon)
 {
 	if(iButtons & IN_USE)
@@ -54,11 +57,12 @@ public Action OnPlayerRunCmd(int iClient, int& iButtons, int& iImpulse, float aV
 				g_ItemList.GetArray(i, ItemTest, sizeof(ItemTest));
 				if(ItemTest.OwnerID == iClient)
 				{
-					if(!ItemTest.UsePriority || ItemTest.CheckDelay() > 0)
+					if(!ItemTest.UsePriority || ItemTest.CheckDelay() > 0) // Forcibly disabled in the config or the timer has not passed after selection
 					{
 						bHasNotDelay = false;
 						break;
 					}
+					// Counting the total number of buttons a player has
 					iCurCountButton = ItemTest.ButtonsArray.Length;
 					iCountButtons+=iCurCountButton;
 					if(iCountButtons > 1) break;
@@ -73,12 +77,14 @@ public Action OnPlayerRunCmd(int iClient, int& iButtons, int& iImpulse, float aV
 					}
 				}
 			}
+			// Checking for the number of buttons on the item or if the player has several items or ignore mod 1,6,7
 			if(bHasNotDelay && iCountButtons == 1 && iMode!=1 && iMode!=6 && iMode!=7 && IsValidEdict(iButton)) AcceptEntityInput(iButton, "Use", iClient, iClient); 
 		}
 	}
 	return Plugin_Continue;
 }
 
+// Client command to disable forced button press
 public Action EWM_Use_Priority_Command(int iClient, int iArgs)
 {
 	if((IsClientConnected(iClient) && IsClientInGame(iClient)))

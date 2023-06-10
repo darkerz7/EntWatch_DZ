@@ -1,16 +1,14 @@
 #define EW_MODULE_GLOW
 
-//-------------------------------------------------------
-// Purpose: Plugin settings
-//-------------------------------------------------------
+// Purpose: Glows items on the map using a prop (Old method)
+
+// Module settings
 ConVar	g_hCvar_Glow,
 		g_hCvar_Glow_Spawn,
 		g_hCvar_Glow_Spawn_Type,
 		g_hCvar_Glow_Drop_Type;
 
-//-------------------------------------------------------
-// Purpose: Plugin Local settings
-//-------------------------------------------------------
+// Module Local settings
 bool	g_bGlow = true,
 		g_bGlow_Spawn = true;
 
@@ -67,25 +65,20 @@ public void Cvar_GLOW_Changed(ConVar convar, const char[] oldValue, const char[]
 		}
 }
 
-//----------------------------------------------------------------------------------------------------
-// Purpose: init Glow weapon on Drop weapons
-//----------------------------------------------------------------------------------------------------
+// Init Glow weapon on Drop weapons
 stock void EWM_Glow_GlowWeapon(class_ItemList ItemTest, int index, bool bSpawn)
 {
 	if(g_bGlow && g_bMapRunning)
 	{
 		//WESKER EDIT -- Set drop type negative to disable glow on dropped items
-		if (!bSpawn && g_iGlow_Drop_Type < 0) {
-			if (ItemTest.GlowEnt != INVALID_ENT_REFERENCE && IsValidEdict(ItemTest.GlowEnt))
-			{
-				AcceptEntityInput(ItemTest.GlowEnt, "Kill");
-			}
+		if (!bSpawn && g_iGlow_Drop_Type < 0)
+		{
+			if (ItemTest.GlowEnt != INVALID_ENT_REFERENCE && IsValidEdict(ItemTest.GlowEnt)) AcceptEntityInput(ItemTest.GlowEnt, "Kill");
 			return;
-		} else if (bSpawn && g_iGlow_Spawn_Type < 0) {
-			//WESKER EDIT -- Set spawn type negative to disable glow on new items
+		} else if (bSpawn && g_iGlow_Spawn_Type < 0) //WESKER EDIT -- Set spawn type negative to disable glow on new items
 			return;
-		}
 		
+		// Create a new entity or glow an existing one
 		if(ItemTest.GlowEnt == INVALID_ENT_REFERENCE || !IsValidEdict(ItemTest.GlowEnt))
 		{
 			char sModelPath[PLATFORM_MAX_PATH];
@@ -146,9 +139,8 @@ stock void EWM_Glow_GlowWeapon(class_ItemList ItemTest, int index, bool bSpawn)
 		}
 	}
 }
-//----------------------------------------------------------------------------------------------------
-// Purpose: Disable glow
-//----------------------------------------------------------------------------------------------------
+
+// Disable glow
 stock void EWM_Glow_DisableGlow(class_ItemList ItemTest)
 {
 	if(g_bGlow)

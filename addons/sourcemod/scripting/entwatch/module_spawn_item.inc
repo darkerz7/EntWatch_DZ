@@ -1,10 +1,13 @@
 #define EW_MODULE_SPAWN
 
+// Purpose: Allows the administrator to spawn the item
+
 stock void EWM_Spawn_OnPluginStart()
 {
 	RegAdminCmd("sm_espawnitem", EWM_Spawn_Command_Spawn, ADMFLAG_BAN);
 }
 
+// Main spawn function
 public void EWM_Spawn_Spawn(int iAdmin, int iUserID, int iIndexConfig, bool bStrip)
 {
 	bool bAdminFound = false;
@@ -17,7 +20,8 @@ public void EWM_Spawn_Spawn(int iAdmin, int iUserID, int iIndexConfig, bool bStr
 			class_ItemConfig ItemTest;
 			g_ItemConfig.GetArray(iIndexConfig, ItemTest, sizeof(ItemTest));
 			
-			if(!StrEqual(ItemTest.Spawner, ""))
+			// Check for point_template existence
+			if(strcmp(ItemTest.Spawner, "")!=0)
 			{
 				int iEntity = -1;
 				bool bPTFound = false;
@@ -33,6 +37,7 @@ public void EWM_Spawn_Spawn(int iAdmin, int iUserID, int iIndexConfig, bool bStr
 				}
 				if(bPTFound)
 				{
+					// Take the weapon from the player
 					if(bStrip)
 						for(int j = 0; j < 5; j++)
 						{
@@ -46,7 +51,7 @@ public void EWM_Spawn_Spawn(int iAdmin, int iUserID, int iIndexConfig, bool bStr
 								}
 							}
 						}
-					
+					// Spawn the maker, and then use the maker to spawn the item
 					float fWOrigin[3];
 					
 					GetClientAbsOrigin(iTarget, fWOrigin);
@@ -64,7 +69,13 @@ public void EWM_Spawn_Spawn(int iAdmin, int iUserID, int iIndexConfig, bool bStr
 					AcceptEntityInput(iMaker, "ForceSpawn");
 					AcceptEntityInput(iMaker, "Kill");
 					
-					LogAction(iAdmin, iTarget, "\"%L\" spawn item %s on player \"%L\"", iAdmin, ItemTest.Name, iTarget);
+					#if defined EW_MODULE_FORWARDS
+					Call_StartForward(g_hOnAdminSpawnItem);
+					Call_PushCell(iAdmin);
+					Call_PushString(ItemTest.Name);
+					Call_PushCell(iTarget);
+					Call_Finish();
+					#endif
 					CPrintToChatAll("%s%t %s%t %s%N %s%t %s%s %s%t %s%N", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Admin", g_SchemeConfig.Color_Name, iAdmin, g_SchemeConfig.Color_Warning, "Spawn Item", ItemTest.Color, ItemTest.Name, g_SchemeConfig.Color_Warning, "On Player", g_SchemeConfig.Color_Name, iTarget);
 				}
 				else if(bAdminFound) CPrintToChat(iAdmin, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "PT configuration Error");
@@ -120,8 +131,6 @@ public Action EWM_Spawn_Command_Spawn(int iClient, int iArgs)
 		}
 		#endif
 		
-		int iUserID = GetClientUserId(iTarget);
-		
 		int iWeaponCount = 0,
 		iItemIndex = -1;
 		for(int i = 0; i<g_ItemConfig.Length; i++)
@@ -141,7 +150,7 @@ public Action EWM_Spawn_Command_Spawn(int iClient, int iArgs)
 		} else if(iWeaponCount == 1)
 		{
 			//Only 1 weapon
-			EWM_Spawn_Spawn(iClient, iUserID, iItemIndex, bStrip);
+			EWM_Spawn_Spawn(iClient, g_iUserIDs[iTarget], iItemIndex, bStrip);
 		} else
 		{
 			//More 1 weapon
@@ -157,7 +166,7 @@ public Action EWM_Spawn_Command_Spawn(int iClient, int iArgs)
 				{
 					int iStrip = 0;
 					if(bStrip) iStrip = 1;
-					FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%i", iUserID, i, iStrip);
+					FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%i", g_iUserIDs[iTarget], i, iStrip);
 					hEdictMenu.AddItem(sIndexTemp, ItemTest.Name, ITEMDRAW_DEFAULT);
 				}
 			}

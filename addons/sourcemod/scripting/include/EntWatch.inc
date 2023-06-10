@@ -240,10 +240,233 @@ forward void EntWatch_OnHLWeaponReady();
  */
 forward void EntWatch_OnHLPlayerReady();
 
+/**
+ * Сalled when a client is use item
+ *
+ * @param sItemName		The name of the item that was used
+ * @param iClient		Client index that was used item
+ * @param iAbility		The ability of the item that was used (0-Standart, 1 - First Ability, Other - Second Ability)
+ * @return				None
+ */
+forward void EntWatch_OnUseItem(const char[] sItemName, int iClient, int iAbility);
+
+/**
+ * Сalled when a client is pickup item
+ *
+ * @param sItemName		The name of the item that was picked
+ * @param iClient		Client index that was picked item
+ * @return				None
+ */
+forward void EntWatch_OnPickUpItem(const char[] sItemName, int iClient);
+
+/**
+ * Сalled when a client is drop item
+ *
+ * @param sItemName		The name of the item that was dropped
+ * @param iClient		Client index that was dropped item
+ * @return				None
+ */
+forward void EntWatch_OnDropItem(const char[] sItemName, int iClient);
+
+/**
+ * Сalled when a client is disconnect with item
+ *
+ * @param sItemName		The name of the item that the disconnected player had
+ * @param iClient		Client index that was disconnected with item
+ * @return				None
+ */
+forward void EntWatch_OnPlayerDisconnectWithItem(const char[] sItemName, int iClient);
+
+/**
+ * Сalled when a client is death with item
+ *
+ * @param sItemName		The name of the item that player had when death
+ * @param iClient		Client index that was death with item
+ * @return				None
+ */
+forward void EntWatch_OnPlayerDeathWithItem(const char[] sItemName, int iClient);
+
+/**
+ * Called when the EntWatch tries to find a configuration file
+ *
+ * @param sFileName		The name of the configuration file the EntWatch is trying to load
+ * @return				None
+ */
+forward void EntWatch_OnCfgLoading(const char[] sFileName);
+
+/**
+ * Called when the EntWatch cannot find the configuration file
+ *
+ * @param sFileName		The name of the configuration file the EntWatch was trying to load
+ * @return				None
+ */
+forward void EntWatch_OnCfgNotFound(const char[] sFileName);
+
+/**
+ * Called when the EntWatch has loaded the Server Name from the scheme
+ *
+ * @param sServerName	Server name loaded from scheme
+ * @return				None
+ */
+forward void EntWatch_OnSchemeServerName(const char[] sServerName);
+
+/**
+ * Called when the EntWatch cannot find the scheme
+ *
+ * @param sFileName		The name of the scheme file the EntWatch was trying to load
+ * @return				None
+ */
+forward void EntWatch_OnSchemeNotFound(const char[] sFileName);
+
+/**
+ * Called when the EntWatch cannot connect to the database
+ *
+ * @param sError		Error text
+ * @return				None
+ */
+forward void EntWatch_OnDatabaseFailure(const char[] sError);
+
+/**
+ * Called when the EntWatch has connected to the database
+ *
+ * @return				None
+ */
+forward void EntWatch_OnDatabaseSuccess();
+
+/**
+ * Called when the EntWatch does not recognize the database driver
+ *
+ * @param sDriverDB		Name of driver
+ * @return				None
+ */
+forward void EntWatch_OnDatabaseUnknownDriver(const char[] sDriverDB);
+
+/**
+ * Called when the EntWatch is ready
+ *
+ * @return				None
+ */
+forward void EntWatch_OnDatabaseReady();
+
+/**
+ * Called when EntWatch is unable to create tables in the database
+ *
+ * @param sError		Error text
+ * @return				None
+ */
+forward void EntWatch_OnDatabaseCreateTablesError(const char[] sError);
+
+/**
+ * Called when the EntWatch cannot ban a client from the database
+ *
+ * @param sError		Error text
+ * @return				None
+ */
+forward void EntWatch_OnDatabaseBanError(const char[] sError);
+
+/**
+ * Called when EntWatch has successfully e-banned a client.
+ *
+ * @return				None
+ */
+forward void EntWatch_OnDatabaseBanSuccess();
+
+/**
+ * Called when the EntWatch cannot e-unban a client from the database
+ *
+ * @param sError		Error text
+ * @return				None
+ */
+forward void EntWatch_OnDatabaseUnBanError(const char[] sError);
+
+/**
+ * Called when EntWatch has successfully e-unbanned a client.
+ *
+ * @return				None
+ */
+forward void EntWatch_OnDatabaseUnBanSuccess();
+
+/**
+ * Called when the EntWatch cannot e-update a client from the database
+ *
+ * @param sError		Error text
+ * @return				None
+ */
+forward void EntWatch_OnDatabaseBanUpdateError(const char[] sError);
+
+/**
+ * Called when EntWatch fails to e-unban offline players
+ *
+ * @param sError		Error text
+ * @return				None
+ */
+forward void EntWatch_OnDatabaseOfflineUnBanError(const char[] sError);
+
+/**
+ * Called when a client is offline e-banned by any means
+ *
+ * @param iAdmin			Admin index that issued the ban
+ * @param iDuration			Duration of the ban
+ * @param sClientName		Client name that was banned
+ * @param sClientSteamID	Client SteamID that was banned
+ * @param sReason			The reason why the player was banned
+ *
+ * @return				None
+ */
+forward void EntWatch_OnClientOfflineBanned(int iAdmin, int iDuration, const char[] sClientName, const char[] sClientSteamID, const char[] sReason);
+
+/**
+ * Called when the EntWatch cannot offline e-banned a client in the database
+ *
+ * @param sError		Error text
+ * @return				None
+ */
+forward void EntWatch_OnOfflineBanError(const char[] sError);
+
+/**
+ * Called when EntWatch has successfully offline e-banned a client.
+ *
+ * @return				None
+ */
+forward void EntWatch_OnOfflineBanSuccess();
+
+/**
+ * Called when a admin was spawned item
+ *
+ * @param iAdmin		Admin index that was spawned item
+ * @param sItemName		The name of the item that was spawned
+ * @param iTarget		Target index that received the item
+ *
+ * @return				None
+ */
+forward void EntWatch_OnAdminSpawnItem(int iAdmin, const char[] sItemName, int iTarget);
+
+/**
+ * Called when a admin was transfered all items from target to receiver
+ *
+ * @param iAdmin		Admin index that was transfered all items
+ * @param iTarget		Target index from whom all items was taken
+ * @param iReceiver		Receiver index that received all items
+ *
+ * @return				None
+ */
+forward void EntWatch_OnAdminTransferedAllItems(int iAdmin, int iTarget, int iReceiver);
+
+/**
+ * Called when a admin was transfered item to receiver
+ *
+ * @param iAdmin		Admin index that was transfered item
+ * @param sItemName		The name of the item transfered to the receiver
+ * @param iReceiver		Receiver index that received the item
+ *
+ * @return				None
+ */
+forward void EntWatch_OnAdminTransferedItem(int iAdmin, const char[] sItemName, int iReceiver);
+
 public SharedPlugin __pl_EntWatch =
 {
 	name = "EntWatch",
-	file = "entwatch_csgo_dz.smx",
+	file = "entwatch_dz.smx",
 #if defined REQUIRE_PLUGIN
 	required = 1
 #else
@@ -252,7 +475,7 @@ public SharedPlugin __pl_EntWatch =
 };
 
 #if !defined REQUIRE_PLUGIN
-public __pl_EntWatch_SetNTVOptional()
+public void __pl_EntWatch_SetNTVOptional()
 {
 	MarkNativeAsOptional("EntWatch_IsClientBanned");
 	MarkNativeAsOptional("EntWatch_BanClient");

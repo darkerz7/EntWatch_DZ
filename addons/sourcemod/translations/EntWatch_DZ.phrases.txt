@@ -461,4 +461,12 @@
 	{
 		"en" 	"Force use function"
 	}
+	"Not available in this game"
+	{
+		"en" 	"Not available in this game"
+	}
+	"Database not ready"
+	{
+		"en" 	"Database not ready"
+	}
 }

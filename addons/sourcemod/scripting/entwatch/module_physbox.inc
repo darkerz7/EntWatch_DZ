@@ -1,5 +1,7 @@
 #define EW_MODULE_PHYSBOX
 
+// Purpose: Sometimes when using items with physbox it is impossible to shoot/throw a grenade them for your teammates. It module fix it
+
 #include <collisionhook>
 
 ArrayList g_PhysboxArray;
@@ -14,6 +16,7 @@ stock void EWM_Physbox_Event_RoundEnd()
 	g_PhysboxArray.Clear();
 }
 
+// Function to properly clean up the physbox array
 stock void EWM_Physbox_CleanData()
 {
 	if(g_PhysboxArray != null)
@@ -24,6 +27,7 @@ stock void EWM_Physbox_CleanData()
 	g_PhysboxArray = new ArrayList(512);
 }
 
+// Function clears the list of physboxes when they are destroyed
 stock void EWM_Physbox_OnEntityDestroyed(int iEntity)
 {
 	for(int i = 0; i < g_PhysboxArray.Length; i++)
@@ -38,6 +42,7 @@ stock void EWM_Physbox_OnEntityDestroyed(int iEntity)
 	}
 }
 
+// Function of updating the parameters in the array when pickup items with a physbox
 stock void EWM_Physbox_Pickedup(int iClient, int iWeapon)
 {
 	for(int i = 0; i < g_PhysboxArray.Length; i++)
@@ -52,6 +57,7 @@ stock void EWM_Physbox_Pickedup(int iClient, int iWeapon)
 	}
 }
 
+// Registering a new physbox when it spawns
 public bool RegisterPhysbox(class_ItemList ItemInstance, int iEntity)
 {
 	if(IsValidEntity(ItemInstance.WeaponID) && ItemInstance.PhysBox)
@@ -72,6 +78,7 @@ public bool RegisterPhysbox(class_ItemList ItemInstance, int iEntity)
 	return false;
 }
 
+// Checking if the physbox belongs to an item
 public void OnPhysboxSpawned(int iEntity)
 {
 	if(!IsValidEntity(iEntity) || !g_bConfigLoaded) return;
@@ -84,6 +91,7 @@ public void OnPhysboxSpawned(int iEntity)
 	}
 }
 
+// Filter on the attacker and grenades
 public Action CH_PassFilter(int iEntBP, int iAttacker, bool &bResult)
 {
 	char sClassName[64];

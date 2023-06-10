@@ -1,5 +1,7 @@
 #define EW_MODULE_CLANTAG
 
+// Purpose: Displaying information about items in a clantag
+
 #define MAXSIZECLANTAG 16
 
 char g_sClanTag[MAXPLAYERS+1][MAXSIZECLANTAG];

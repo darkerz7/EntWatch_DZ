@@ -8,12 +8,13 @@
 #include <clientprefs>
 #include <csgocolors_fix>
 
-#include "entwatch/smlib.inc"
 #include "entwatch/function.inc"
 
 ArrayList g_ItemConfig;
 ArrayList g_ItemList;
 class_Scheme g_SchemeConfig;
+
+EngineVersion g_evGameEngine;
 
 //-------------------------------------------------------
 // Purpose: Plugin settings
@@ -37,17 +38,17 @@ float	g_fDelayUse = 3.0;
 //-------------------------------------------------------
 bool g_bConfigLoaded = false;
 bool g_bIsAdmin[MAXPLAYERS+1] = {false,...};
+char g_sSteamIDs[MAXPLAYERS+1][32];
+char g_sSteamIDs_short[MAXPLAYERS+1][32];
+int  g_iUserIDs[MAXPLAYERS+1];
 
-//uncomment the next line if you using DynamicChannels: https://github.com/Vauff/DynamicChannels
-//#define DYNAMIC_CHANNELS
-#if defined DYNAMIC_CHANNELS
-#include <DynamicChannels>
-#endif
+//Using DynamicChannels: https://github.com/Vauff/DynamicChannels
+#tryinclude <DynamicChannels>
 
 //Modules can be included as you wish. To do this, comment out or uncomment the corresponding module
+#include "entwatch/module_forwards.inc" //For the include EntWatch.inc to work correctly, use with module_eban and module_database
 #include "entwatch/module_chat.inc"
 #include "entwatch/module_hud.inc"
-#include "entwatch/module_forwards.inc" //For the include EntWatch.inc to work correctly, use with module_eban
 #include "entwatch/module_eban.inc"
 #include "entwatch/module_offline_eban.inc" // Need module_eban. Experimental
 #include "entwatch/module_highlight.inc"
@@ -55,9 +56,9 @@ bool g_bIsAdmin[MAXPLAYERS+1] = {false,...};
 #include "entwatch/module_transfer.inc"
 #include "entwatch/module_spawn_item.inc"
 #include "entwatch/module_menu.inc"
+#include "entwatch/module_blink.inc" //glow for CS:S
 //#include "entwatch/module_glow.inc" //change to HighLight
 #include "entwatch/module_use_priority.inc"
-#include "entwatch/module_extended_logs.inc"
 //#include "entwatch/module_clantag.inc"
 
 //#include "entwatch/module_physbox.inc" //Heavy module for the server. Not recommended. Need Collision Hook Ext https://forums.alliedmods.net/showthread.php?t=197815
@@ -69,9 +70,9 @@ ArrayList g_TriggerArray;
 public Plugin myinfo = 
 {
 	name = "EntWatch",
-	author = "DarkerZ[RUS]",
+	author = "DarkerZ[RUS], AgentWesker, notkoen, sTc2201, maxime1907",
 	description = "Notify players about entity interactions.",
-	version = "3.DZ.43",
+	version = "3.DZ.44",
 	url = "dark-skill.ru"
 };
  
@@ -81,6 +82,8 @@ public void OnPluginStart()
 	if(g_ItemList == INVALID_HANDLE) g_ItemList = new ArrayList(512);
 	
 	if(g_TriggerArray == INVALID_HANDLE) g_TriggerArray = new ArrayList(512);
+	
+	g_evGameEngine = GetEngineVersion();
 	
 	#if defined EW_MODULE_PHYSBOX
 	EWM_Physbox_OnPluginStart();
@@ -136,6 +139,10 @@ public void OnPluginStart()
 	//Hook Output OutValue
 	HookEntityOutput("math_counter", "OutValue", Event_OutValue);
 	
+	#if defined EW_MODULE_FORWARDS
+	EWM_Forwards_OnPluginStart();
+	#endif
+	
 	//Load Scheme
 	LoadScheme();
 	
@@ -160,6 +167,9 @@ public void OnPluginStart()
 	#if defined EW_MODULE_HUD
 	EWM_Hud_OnPluginStart();
 	#endif
+	#if defined EW_MODULE_BLINK
+	EWM_Blink_OnPluginStart();
+	#endif
 	#if defined EW_MODULE_GLOW
 	EWM_Glow_OnPluginStart();
 	#endif
@@ -181,10 +191,6 @@ public void OnPluginStart()
 	LoadTranslations("common.phrases");
 	
 	AutoExecConfig(true, "EntWatch_DZ");
-	
-	#if defined EW_MODULE_FORWARDS
-	EWM_Forwards_OnPluginStart();
-	#endif
 	
 	#if defined EW_MODULE_NATIVES
 	EWM_Natives_OnPluginStart();
@@ -218,6 +224,9 @@ public void OnMapStart()
 	#if defined EW_MODULE_EBAN
 	EWM_Eban_OnMapStart();
 	#endif
+	#if defined EW_MODULE_BLINK
+	EWM_Blink_OnMapStart();
+	#endif
 	#if defined EW_MODULE_GLOW
 	EWM_Glow_OnMapStart();
 	#endif
@@ -231,6 +240,9 @@ public void OnMapStart()
 
 public void OnMapEnd()
 {
+	#if defined EW_MODULE_BLINK
+	EWM_Blink_OnMapEnd();
+	#endif
 	#if defined EW_MODULE_GLOW
 	EWM_Glow_OnMapEnd();
 	#endif
@@ -320,17 +332,27 @@ stock void EWM_Drop_Forward(Handle hEvent)
 				ItemTest.OwnerID = INVALID_ENT_REFERENCE;
 				g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
 				
+				#if defined EW_MODULE_BLINK
+				EWM_Blink_BlinkWeapon(ItemTest);
+				#endif
+				
 				#if defined EW_MODULE_GLOW
 				EWM_Glow_GlowWeapon(ItemTest, i, false);
 				#endif
 				
 				#if defined EW_MODULE_HIGHLIGHT
-				EWM_HLight_PRemove(iClient);
-				EWM_HLight_Set(ItemTest);
+				if(g_evGameEngine == Engine_CSGO) 
+				{
+					EWM_HLight_PRemove(iClient);
+					EWM_HLight_Set(ItemTest);
+				}
 				#endif
 				
-				#if defined EW_MODULE_ELOGS
-				EWM_ELogs_PlayerDeath(ItemTest, iClient);
+				#if defined EW_MODULE_FORWARDS
+				Call_StartForward(g_hOnPlayerDeathWithItem);
+				Call_PushString(ItemTest.Name);
+				Call_PushCell(iClient);
+				Call_Finish();
 				#endif
 				
 				if(IsValidEdict(ItemTest.WeaponID) && GetSlotCSGO(ItemTest.WeaponID) != -1)
@@ -384,6 +406,13 @@ public void OnClientPutInServer(int iClient)
 	SDKHook(iClient, SDKHook_WeaponCanUse, OnWeaponCanUse);
 	
 	g_bIsAdmin[iClient] = false;
+	char sSteamID[32];
+	GetClientAuthId(iClient, AuthId_Steam2, sSteamID, sizeof(sSteamID));
+	FormatEx(g_sSteamIDs[iClient], sizeof(g_sSteamIDs[]), "%s", sSteamID);
+	FormatEx(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "%s", sSteamID);
+	ReplaceString(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "STEAM_", "", true);
+	g_iUserIDs[iClient] = GetClientUserId(iClient);
+	
 	#if defined EW_MODULE_EBAN
 	EWM_Eban_OnClientPutInServer(iClient);
 	#endif
@@ -428,8 +457,11 @@ public void OnClientDisconnect(int iClient)
 				ItemTest.OwnerID = INVALID_ENT_REFERENCE;
 				g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
 				
-				#if defined EW_MODULE_ELOGS
-				EWM_ELogs_Disconnect(ItemTest, iClient);
+				#if defined EW_MODULE_FORWARDS
+				Call_StartForward(g_hOnPlayerDisconnectWithItem);
+				Call_PushString(ItemTest.Name);
+				Call_PushCell(iClient);
+				Call_Finish();
 				#endif
 				if(IsValidEdict(ItemTest.WeaponID) && GetSlotCSGO(ItemTest.WeaponID) != -1)
 				{
@@ -459,18 +491,23 @@ public void OnClientDisconnect(int iClient)
 						}
 					}
 				}
+				#if defined EW_MODULE_BLINK
+				EWM_Blink_BlinkWeapon(ItemTest);
+				#endif
+				
 				#if defined EW_MODULE_GLOW
 				EWM_Glow_GlowWeapon(ItemTest, i, false);
 				#endif
 				
 				#if defined EW_MODULE_HIGHLIGHT
-				EWM_HLight_Set(ItemTest);
+				if(g_evGameEngine == Engine_CSGO) EWM_HLight_Set(ItemTest);
 				#endif
 			}
 		}
 	}
 	
 	g_bIsAdmin[iClient] = false;
+	
 	#if defined EW_MODULE_EBAN
 	EWM_Eban_OnClientDisconnect(iClient);
 	#endif
@@ -486,10 +523,21 @@ public void OnClientDisconnect(int iClient)
 	#if defined EW_MODULE_HIGHLIGHT
 	EWM_HLight_OnClientPrivilegeReset(iClient);
 	#endif
+	
+	FormatEx(g_sSteamIDs[iClient], sizeof(g_sSteamIDs[]), "");
+	FormatEx(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "");
+	g_iUserIDs[iClient] = -1;
 	//SDKHooks automatically handles unhooking on disconnect
 	/*SDKUnhook(iClient, SDKHook_WeaponDropPost, OnWeaponDrop);
 	SDKUnhook(iClient, SDKHook_WeaponEquipPost, OnWeaponEquip);
 	SDKUnhook(iClient, SDKHook_WeaponCanUse, OnWeaponCanUse);*/
+}
+
+public void EntWatch_OnDBConnected()
+{
+	#if defined EW_MODULE_EBAN
+	EWM_Eban_CleanData_All();
+	#endif
 }
 
 void CleanData()
@@ -534,14 +582,23 @@ stock void LoadConfig()
 	GetCurrentMap(sBuffer_map, sizeof(sBuffer_map));
 	FormatEx(sBuffer_path, sizeof(sBuffer_path), "cfg/sourcemod/entwatch/maps/%s.cfg", sBuffer_map);
 	FormatEx(sBuffer_path_override, sizeof(sBuffer_path_override), "cfg/sourcemod/entwatch/maps/%s_override.cfg", sBuffer_map);
+	// If there is an override config then load it
 	if(FileExists(sBuffer_path_override))
 	{
 		FileToKeyValues(hKeyValues, sBuffer_path_override);
-		LogMessage("Loading %s", sBuffer_path_override);
+		#if defined EW_MODULE_FORWARDS
+		Call_StartForward(g_hOnCfgLoading);
+		Call_PushString(sBuffer_path_override);
+		Call_Finish();
+		#endif
 	}else
 	{
 		FileToKeyValues(hKeyValues, sBuffer_path);
-		LogMessage("Loading %s", sBuffer_path);
+		#if defined EW_MODULE_FORWARDS
+		Call_StartForward(g_hOnCfgLoading);
+		Call_PushString(sBuffer_path);
+		Call_Finish();
+		#endif
 	}
 	
 	KvRewind(hKeyValues);
@@ -564,31 +621,31 @@ stock void LoadConfig()
 			NewItem.GlowColor[2]=255;
 			NewItem.GlowColor[3]=200;
 			
-			#if defined EW_MODULE_GLOW || defined EW_MODULE_HIGHLIGHT
-			if(StrEqual(sBuffer_temp,"{green}",false)){NewItem.GlowColor[0]=0;NewItem.GlowColor[1]=255;NewItem.GlowColor[2]=0;}
-			else if(StrEqual(sBuffer_temp,"{default}",false)){NewItem.GlowColor[0]=255;NewItem.GlowColor[1]=255;NewItem.GlowColor[2]=255;}
-			else if(StrEqual(sBuffer_temp,"{darkred}",false)){NewItem.GlowColor[0]=175;NewItem.GlowColor[1]=0;NewItem.GlowColor[2]=0;}
-			else if(StrEqual(sBuffer_temp,"{purple}",false)){NewItem.GlowColor[0]=128;NewItem.GlowColor[1]=0;NewItem.GlowColor[2]=128;}
-			else if(StrEqual(sBuffer_temp,"{lightgreen}",false)){NewItem.GlowColor[0]=104;NewItem.GlowColor[1]=238;NewItem.GlowColor[2]=104;}
-			else if(StrEqual(sBuffer_temp,"{lime}",false)){NewItem.GlowColor[0]=119;NewItem.GlowColor[1]=234;NewItem.GlowColor[2]=7;}
-			else if(StrEqual(sBuffer_temp,"{red}",false)){NewItem.GlowColor[0]=255;NewItem.GlowColor[1]=30;NewItem.GlowColor[2]=30;}
-			else if(StrEqual(sBuffer_temp,"{grey}",false)){NewItem.GlowColor[0]=128;NewItem.GlowColor[1]=128;NewItem.GlowColor[2]=128;}
-			else if(StrEqual(sBuffer_temp,"{olive}",false)){NewItem.GlowColor[0]=112;NewItem.GlowColor[1]=130;NewItem.GlowColor[2]=56;}
-			else if(StrEqual(sBuffer_temp,"{a}",false)){NewItem.GlowColor[0]=192;NewItem.GlowColor[1]=192;NewItem.GlowColor[2]=192;}
-			else if(StrEqual(sBuffer_temp,"{lightblue}",false)){NewItem.GlowColor[0]=93;NewItem.GlowColor[1]=130;NewItem.GlowColor[2]=255;}
-			else if(StrEqual(sBuffer_temp,"{blue}",false)){NewItem.GlowColor[0]=0;NewItem.GlowColor[1]=0;NewItem.GlowColor[2]=255;}
-			else if(StrEqual(sBuffer_temp,"{d}",false)){NewItem.GlowColor[0]=102;NewItem.GlowColor[1]=153;NewItem.GlowColor[2]=204;}
-			else if(StrEqual(sBuffer_temp,"{pink}",false)){NewItem.GlowColor[0]=255;NewItem.GlowColor[1]=105;NewItem.GlowColor[2]=180;}
-			else if(StrEqual(sBuffer_temp,"{darkorange}",false)){NewItem.GlowColor[0]=240;NewItem.GlowColor[1]=94;NewItem.GlowColor[2]=35;}
-			else if(StrEqual(sBuffer_temp,"{orange}",false)){NewItem.GlowColor[0]=255;NewItem.GlowColor[1]=140;NewItem.GlowColor[2]=0;}
-			else if(StrEqual(sBuffer_temp,"{white}",false)){NewItem.GlowColor[0]=255;NewItem.GlowColor[1]=255;NewItem.GlowColor[2]=255;}
-			else if(StrEqual(sBuffer_temp,"{yellow}",false)){NewItem.GlowColor[0]=199;NewItem.GlowColor[1]=234;NewItem.GlowColor[2]=7;}
-			else if(StrEqual(sBuffer_temp,"{magenta}",false)){NewItem.GlowColor[0]=255;NewItem.GlowColor[1]=105;NewItem.GlowColor[2]=180;}
-			else if(StrEqual(sBuffer_temp,"{silver}",false)){NewItem.GlowColor[0]=192;NewItem.GlowColor[1]=192;NewItem.GlowColor[2]=192;}
-			else if(StrEqual(sBuffer_temp,"{bluegrey}",false)){NewItem.GlowColor[0]=102;NewItem.GlowColor[1]=153;NewItem.GlowColor[2]=204;}
-			else if(StrEqual(sBuffer_temp,"{lightred}",false)){NewItem.GlowColor[0]=255;NewItem.GlowColor[1]=90;NewItem.GlowColor[2]=90;}
-			else if(StrEqual(sBuffer_temp,"{cyan}",false)){NewItem.GlowColor[0]=0;NewItem.GlowColor[1]=150;NewItem.GlowColor[2]=220;}
-			else if(StrEqual(sBuffer_temp,"{gray}",false)){NewItem.GlowColor[0]=128;NewItem.GlowColor[1]=128;NewItem.GlowColor[2]=128;}
+			#if defined EW_MODULE_GLOW || defined EW_MODULE_HIGHLIGHT || defined EW_MODULE_BLINK
+			if(strcmp(sBuffer_temp,"{green}",false)==0){NewItem.GlowColor[0]=0;NewItem.GlowColor[1]=255;NewItem.GlowColor[2]=0;}
+			else if(strcmp(sBuffer_temp,"{default}",false)==0){NewItem.GlowColor[0]=255;NewItem.GlowColor[1]=255;NewItem.GlowColor[2]=255;}
+			else if(strcmp(sBuffer_temp,"{darkred}",false)==0){NewItem.GlowColor[0]=175;NewItem.GlowColor[1]=0;NewItem.GlowColor[2]=0;}
+			else if(strcmp(sBuffer_temp,"{purple}",false)==0){NewItem.GlowColor[0]=128;NewItem.GlowColor[1]=0;NewItem.GlowColor[2]=128;}
+			else if(strcmp(sBuffer_temp,"{lightgreen}",false)==0){NewItem.GlowColor[0]=104;NewItem.GlowColor[1]=238;NewItem.GlowColor[2]=104;}
+			else if(strcmp(sBuffer_temp,"{lime}",false)==0){NewItem.GlowColor[0]=119;NewItem.GlowColor[1]=234;NewItem.GlowColor[2]=7;}
+			else if(strcmp(sBuffer_temp,"{red}",false)==0){NewItem.GlowColor[0]=255;NewItem.GlowColor[1]=30;NewItem.GlowColor[2]=30;}
+			else if(strcmp(sBuffer_temp,"{grey}",false)==0){NewItem.GlowColor[0]=128;NewItem.GlowColor[1]=128;NewItem.GlowColor[2]=128;}
+			else if(strcmp(sBuffer_temp,"{olive}",false)==0){NewItem.GlowColor[0]=112;NewItem.GlowColor[1]=130;NewItem.GlowColor[2]=56;}
+			else if(strcmp(sBuffer_temp,"{a}",false)==0){NewItem.GlowColor[0]=192;NewItem.GlowColor[1]=192;NewItem.GlowColor[2]=192;}
+			else if(strcmp(sBuffer_temp,"{lightblue}",false)==0){NewItem.GlowColor[0]=93;NewItem.GlowColor[1]=130;NewItem.GlowColor[2]=255;}
+			else if(strcmp(sBuffer_temp,"{blue}",false)==0){NewItem.GlowColor[0]=0;NewItem.GlowColor[1]=0;NewItem.GlowColor[2]=255;}
+			else if(strcmp(sBuffer_temp,"{d}",false)==0){NewItem.GlowColor[0]=102;NewItem.GlowColor[1]=153;NewItem.GlowColor[2]=204;}
+			else if(strcmp(sBuffer_temp,"{pink}",false)==0){NewItem.GlowColor[0]=255;NewItem.GlowColor[1]=105;NewItem.GlowColor[2]=180;}
+			else if(strcmp(sBuffer_temp,"{darkorange}",false)==0){NewItem.GlowColor[0]=240;NewItem.GlowColor[1]=94;NewItem.GlowColor[2]=35;}
+			else if(strcmp(sBuffer_temp,"{orange}",false)==0){NewItem.GlowColor[0]=255;NewItem.GlowColor[1]=140;NewItem.GlowColor[2]=0;}
+			else if(strcmp(sBuffer_temp,"{white}",false)==0){NewItem.GlowColor[0]=255;NewItem.GlowColor[1]=255;NewItem.GlowColor[2]=255;}
+			else if(strcmp(sBuffer_temp,"{yellow}",false)==0){NewItem.GlowColor[0]=199;NewItem.GlowColor[1]=234;NewItem.GlowColor[2]=7;}
+			else if(strcmp(sBuffer_temp,"{magenta}",false)==0){NewItem.GlowColor[0]=255;NewItem.GlowColor[1]=105;NewItem.GlowColor[2]=180;}
+			else if(strcmp(sBuffer_temp,"{silver}",false)==0){NewItem.GlowColor[0]=192;NewItem.GlowColor[1]=192;NewItem.GlowColor[2]=192;}
+			else if(strcmp(sBuffer_temp,"{bluegrey}",false)==0){NewItem.GlowColor[0]=102;NewItem.GlowColor[1]=153;NewItem.GlowColor[2]=204;}
+			else if(strcmp(sBuffer_temp,"{lightred}",false)==0){NewItem.GlowColor[0]=255;NewItem.GlowColor[1]=90;NewItem.GlowColor[2]=90;}
+			else if(strcmp(sBuffer_temp,"{cyan}",false)==0){NewItem.GlowColor[0]=0;NewItem.GlowColor[1]=150;NewItem.GlowColor[2]=220;}
+			else if(strcmp(sBuffer_temp,"{gray}",false)==0){NewItem.GlowColor[0]=128;NewItem.GlowColor[1]=128;NewItem.GlowColor[2]=128;}
 			#endif
 			
 			KvGetString(hKeyValues, "buttonclass", sBuffer_temp, sizeof(sBuffer_temp), "");
@@ -681,7 +738,11 @@ stock void LoadConfig()
 		g_bConfigLoaded = true;
 	} else {
 		g_bConfigLoaded = false;
-		LogMessage("Could not load %s", sBuffer_path);
+		#if defined EW_MODULE_FORWARDS
+		Call_StartForward(g_hOnCfgNotFound);
+		Call_PushString(sBuffer_path);
+		Call_Finish();
+		#endif
 	}
 }
 
@@ -714,7 +775,11 @@ stock void LoadScheme()
 	if(!FileToKeyValues(KvConfig, ConfigFullPath))
 	{
 		CloseHandle(KvConfig);
-		LogError("[ERROR] Don't open file to keyvalues: %s", ConfigFullPath);
+		#if defined EW_MODULE_FORWARDS
+		Call_StartForward(g_hOnSchemeNotFound);
+		Call_PushString(ConfigFullPath);
+		Call_Finish();
+		#endif
 		return;
 	}
 	
@@ -754,7 +819,7 @@ stock void LoadScheme()
 	KvConfig.GetString("color_disabled", szBuffer, sizeof(szBuffer));
 	if(!StrEqual(szBuffer,"")) FormatEx(g_SchemeConfig.Color_Disabled, sizeof(g_SchemeConfig.Color_Disabled), "%s", szBuffer);
 	
-	#if defined EW_MODULE_EBAN
+	#if defined EW_MODULE_EBAN || defined EW_MODULE_FORWARDS
 	KvConfig.GetString("server_name", szBuffer, sizeof(szBuffer));
 	if(!StrEqual(szBuffer,"")) FormatEx(g_SchemeConfig.Server_Name, sizeof(g_SchemeConfig.Server_Name), "%s", szBuffer);
 		else FormatEx(g_SchemeConfig.Server_Name, sizeof(g_SchemeConfig.Server_Name), "Server");
@@ -766,6 +831,11 @@ stock void LoadScheme()
 	#endif
 	
 	CloseHandle(KvConfig);
+	#if defined EW_MODULE_FORWARDS
+	Call_StartForward(g_hOnSchemeServerName);
+	Call_PushString(g_SchemeConfig.Server_Name);
+	Call_Finish();
+	#endif
 }
 
 public bool RegisterItem(class_ItemConfig ItemConfig, int iEntity, int iHammerID)
@@ -836,6 +906,10 @@ public bool RegisterItem(class_ItemConfig ItemConfig, int iEntity, int iHammerID
 		//PrintToServer("[EW]Item Spawned: %s |%i", NewItem.ShortName, iEntity);
 		
 		g_ItemList.PushArray(NewItem, sizeof(NewItem));
+		
+		#if defined EW_MODULE_BLINK
+		EWM_Blink_BlinkWeapon(NewItem);
+		#endif
 		
 		#if defined EW_MODULE_GLOW
 		if(g_bGlow_Spawn)
@@ -1174,8 +1248,12 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 								case 2: 
 									if(ItemTest.CheckCoolDown() <= 0)
 									{
-										#if defined EW_MODULE_ELOGS
-										EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+										#if defined EW_MODULE_FORWARDS
+										Call_StartForward(g_hOnUseItem);
+										Call_PushString(ItemTest.Name);
+										Call_PushCell(iActivator);
+										Call_PushCell(iAbility);
+										Call_Finish();
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1189,8 +1267,12 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 								case 3:
 									if(ItemTest.Uses < ItemTest.MaxUses)
 									{
-										#if defined EW_MODULE_ELOGS
-										EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+										#if defined EW_MODULE_FORWARDS
+										Call_StartForward(g_hOnUseItem);
+										Call_PushString(ItemTest.Name);
+										Call_PushCell(iActivator);
+										Call_PushCell(iAbility);
+										Call_Finish();
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1204,8 +1286,12 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 								case 4:
 									if(ItemTest.Uses < ItemTest.MaxUses && ItemTest.CheckCoolDown() <= 0)
 									{
-										#if defined EW_MODULE_ELOGS
-										EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+										#if defined EW_MODULE_FORWARDS
+										Call_StartForward(g_hOnUseItem);
+										Call_PushString(ItemTest.Name);
+										Call_PushCell(iActivator);
+										Call_PushCell(iAbility);
+										Call_Finish();
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1220,8 +1306,12 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 								case 5:
 									if(ItemTest.CheckCoolDown() <= 0)
 									{
-										#if defined EW_MODULE_ELOGS
-										EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+										#if defined EW_MODULE_FORWARDS
+										Call_StartForward(g_hOnUseItem);
+										Call_PushString(ItemTest.Name);
+										Call_PushCell(iActivator);
+										Call_PushCell(iAbility);
+										Call_Finish();
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1243,8 +1333,12 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 									{
 										if(ItemTest.CheckCoolDown() <= 0)
 										{
-											#if defined EW_MODULE_ELOGS
-											EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+											#if defined EW_MODULE_FORWARDS
+											Call_StartForward(g_hOnUseItem);
+											Call_PushString(ItemTest.Name);
+											Call_PushCell(iActivator);
+											Call_PushCell(iAbility);
+											Call_Finish();
 											#endif
 											#if defined EW_MODULE_CHAT
 											if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1266,8 +1360,12 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 								case 2: 
 									if(ItemTest.CheckCoolDown2() <= 0)
 									{
-										#if defined EW_MODULE_ELOGS
-										EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+										#if defined EW_MODULE_FORWARDS
+										Call_StartForward(g_hOnUseItem);
+										Call_PushString(ItemTest.Name);
+										Call_PushCell(iActivator);
+										Call_PushCell(iAbility);
+										Call_Finish();
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1281,8 +1379,12 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 								case 3:
 									if(ItemTest.Uses2 < ItemTest.MaxUses2)
 									{
-										#if defined EW_MODULE_ELOGS
-										EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+										#if defined EW_MODULE_FORWARDS
+										Call_StartForward(g_hOnUseItem);
+										Call_PushString(ItemTest.Name);
+										Call_PushCell(iActivator);
+										Call_PushCell(iAbility);
+										Call_Finish();
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1296,8 +1398,12 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 								case 4:
 									if(ItemTest.Uses2 < ItemTest.MaxUses2 && ItemTest.CheckCoolDown2() <= 0)
 									{
-										#if defined EW_MODULE_ELOGS
-										EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+										#if defined EW_MODULE_FORWARDS
+										Call_StartForward(g_hOnUseItem);
+										Call_PushString(ItemTest.Name);
+										Call_PushCell(iActivator);
+										Call_PushCell(iAbility);
+										Call_Finish();
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1312,8 +1418,12 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 								case 5:
 									if(ItemTest.CheckCoolDown2() <= 0)
 									{
-										#if defined EW_MODULE_ELOGS
-										EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+										#if defined EW_MODULE_FORWARDS
+										Call_StartForward(g_hOnUseItem);
+										Call_PushString(ItemTest.Name);
+										Call_PushCell(iActivator);
+										Call_PushCell(iAbility);
+										Call_Finish();
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1335,8 +1445,12 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 									{
 										if(ItemTest.CheckCoolDown2() <= 0)
 										{
-											#if defined EW_MODULE_ELOGS
-											EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+											#if defined EW_MODULE_FORWARDS
+											Call_StartForward(g_hOnUseItem);
+											Call_PushString(ItemTest.Name);
+											Call_PushCell(iActivator);
+											Call_PushCell(iAbility);
+											Call_Finish();
 											#endif
 											#if defined EW_MODULE_CHAT
 											if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1431,11 +1545,15 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 							case 2: 
 								if(ItemTest.CheckCoolDown() <= 0)
 								{
-									#if defined EW_MODULE_ELOGS
-									EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+									#if defined EW_MODULE_FORWARDS
+									Call_StartForward(g_hOnUseItem);
+									Call_PushString(ItemTest.Name);
+									Call_PushCell(iActivator);
+									Call_PushCell(iAbility);
+									Call_Finish();
 									#endif
 									#if defined EW_MODULE_CHAT
-									if(ItemTest.Chat) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
 									#endif
 									
 									ItemTest.SetCoolDown(ItemTest.CoolDown);
@@ -1445,11 +1563,15 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 							case 3:
 								if(ItemTest.Uses < ItemTest.MaxUses)
 								{
-									#if defined EW_MODULE_ELOGS
-									EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+									#if defined EW_MODULE_FORWARDS
+									Call_StartForward(g_hOnUseItem);
+									Call_PushString(ItemTest.Name);
+									Call_PushCell(iActivator);
+									Call_PushCell(iAbility);
+									Call_Finish();
 									#endif
 									#if defined EW_MODULE_CHAT
-									if(ItemTest.Chat) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
 									#endif
 									
 									ItemTest.Uses++;
@@ -1459,11 +1581,15 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 							case 4:
 								if(ItemTest.Uses < ItemTest.MaxUses && ItemTest.CheckCoolDown() <= 0)
 								{
-									#if defined EW_MODULE_ELOGS
-									EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+									#if defined EW_MODULE_FORWARDS
+									Call_StartForward(g_hOnUseItem);
+									Call_PushString(ItemTest.Name);
+									Call_PushCell(iActivator);
+									Call_PushCell(iAbility);
+									Call_Finish();
 									#endif
 									#if defined EW_MODULE_CHAT
-									if(ItemTest.Chat) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
 									#endif
 									
 									ItemTest.SetCoolDown(ItemTest.CoolDown);
@@ -1474,11 +1600,15 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 							case 5:
 								if(ItemTest.CheckCoolDown() <= 0)
 								{
-									#if defined EW_MODULE_ELOGS
-									EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+									#if defined EW_MODULE_FORWARDS
+									Call_StartForward(g_hOnUseItem);
+									Call_PushString(ItemTest.Name);
+									Call_PushCell(iActivator);
+									Call_PushCell(iAbility);
+									Call_Finish();
 									#endif
 									#if defined EW_MODULE_CHAT
-									if(ItemTest.Chat) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
 									#endif
 									
 									ItemTest.Uses++;
@@ -1496,8 +1626,12 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 								{
 									if(ItemTest.CheckCoolDown() <= 0)
 									{
-										#if defined EW_MODULE_ELOGS
-										EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+										#if defined EW_MODULE_FORWARDS
+										Call_StartForward(g_hOnUseItem);
+										Call_PushString(ItemTest.Name);
+										Call_PushCell(iActivator);
+										Call_PushCell(iAbility);
+										Call_Finish();
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1518,11 +1652,15 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 							case 2: 
 								if(ItemTest.CheckCoolDown2() <= 0)
 								{
-									#if defined EW_MODULE_ELOGS
-									EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+									#if defined EW_MODULE_FORWARDS
+									Call_StartForward(g_hOnUseItem);
+									Call_PushString(ItemTest.Name);
+									Call_PushCell(iActivator);
+									Call_PushCell(iAbility);
+									Call_Finish();
 									#endif
 									#if defined EW_MODULE_CHAT
-									if(ItemTest.Chat) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
 									#endif
 									
 									ItemTest.SetCoolDown2(ItemTest.CoolDown2);
@@ -1532,11 +1670,15 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 							case 3:
 								if(ItemTest.Uses2 < ItemTest.MaxUses2)
 								{
-									#if defined EW_MODULE_ELOGS
-									EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+									#if defined EW_MODULE_FORWARDS
+									Call_StartForward(g_hOnUseItem);
+									Call_PushString(ItemTest.Name);
+									Call_PushCell(iActivator);
+									Call_PushCell(iAbility);
+									Call_Finish();
 									#endif
 									#if defined EW_MODULE_CHAT
-									if(ItemTest.Chat) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
 									#endif
 									
 									ItemTest.Uses2++;
@@ -1546,11 +1688,15 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 							case 4:
 								if(ItemTest.Uses2 < ItemTest.MaxUses2 && ItemTest.CheckCoolDown2() <= 0)
 								{
-									#if defined EW_MODULE_ELOGS
-									EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+									#if defined EW_MODULE_FORWARDS
+									Call_StartForward(g_hOnUseItem);
+									Call_PushString(ItemTest.Name);
+									Call_PushCell(iActivator);
+									Call_PushCell(iAbility);
+									Call_Finish();
 									#endif
 									#if defined EW_MODULE_CHAT
-									if(ItemTest.Chat) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
 									#endif
 									
 									ItemTest.SetCoolDown2(ItemTest.CoolDown2);
@@ -1561,11 +1707,15 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 							case 5:
 								if(ItemTest.CheckCoolDown2() <= 0)
 								{
-									#if defined EW_MODULE_ELOGS
-									EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+									#if defined EW_MODULE_FORWARDS
+									Call_StartForward(g_hOnUseItem);
+									Call_PushString(ItemTest.Name);
+									Call_PushCell(iActivator);
+									Call_PushCell(iAbility);
+									Call_Finish();
 									#endif
 									#if defined EW_MODULE_CHAT
-									if(ItemTest.Chat) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
 									#endif
 									
 									ItemTest.Uses2++;
@@ -1583,8 +1733,12 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 								{
 									if(ItemTest.CheckCoolDown2() <= 0)
 									{
-										#if defined EW_MODULE_ELOGS
-										EWM_ELogs_Use(ItemTest, iActivator, iAbility);
+										#if defined EW_MODULE_FORWARDS
+										Call_StartForward(g_hOnUseItem);
+										Call_PushString(ItemTest.Name);
+										Call_PushCell(iActivator);
+										Call_PushCell(iAbility);
+										Call_Finish();
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1622,17 +1776,27 @@ public void OnWeaponDrop(int iClient, int iWeapon)
 				ItemTest.OwnerID = INVALID_ENT_REFERENCE;
 				g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
 				
+				#if defined EW_MODULE_BLINK
+				EWM_Blink_BlinkWeapon(ItemTest);
+				#endif
+				
 				#if defined EW_MODULE_GLOW
 				EWM_Glow_GlowWeapon(ItemTest, i, false);
 				#endif
 				
 				#if defined EW_MODULE_HIGHLIGHT
-				EWM_HLight_PRemove(iClient);
-				EWM_HLight_Set(ItemTest);
+				if(g_evGameEngine == Engine_CSGO)
+				{
+					EWM_HLight_PRemove(iClient);
+					EWM_HLight_Set(ItemTest);
+				}
 				#endif
 				
-				#if defined EW_MODULE_ELOGS
-				EWM_ELogs_Drop(ItemTest, iClient);
+				#if defined EW_MODULE_FORWARDS
+				Call_StartForward(g_hOnDropItem);
+				Call_PushString(ItemTest.Name);
+				Call_PushCell(iClient);
+				Call_Finish();
 				#endif
 				#if defined EW_MODULE_CHAT
 				if(ItemTest.Chat) EWM_Chat_Drop(ItemTest, iClient);
@@ -1693,19 +1857,29 @@ public void OnWeaponEquip(int iClient, int iWeapon)
 				ItemTest.SetDelay(g_fDelayUse);
 				ItemTest.Team = GetClientTeam(iClient);
 				
+				#if defined EW_MODULE_BLINK
+				EWM_Blink_DisableBlink(ItemTest);
+				#endif
+				
 				#if defined EW_MODULE_GLOW
 				EWM_Glow_DisableGlow(ItemTest);
 				#endif
 				
 				#if defined EW_MODULE_HIGHLIGHT
-				EWM_HLight_WRemove(ItemTest.WeaponID);
-				EWM_HLight_Set(ItemTest);
+				if(g_evGameEngine == Engine_CSGO)
+				{
+					EWM_HLight_WRemove(ItemTest.WeaponID);
+					EWM_HLight_Set(ItemTest);
+				}
 				#endif
 				
 				g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
 				
-				#if defined EW_MODULE_ELOGS
-				EWM_ELogs_PickUp(ItemTest, iClient);
+				#if defined EW_MODULE_FORWARDS
+				Call_StartForward(g_hOnPickUpItem);
+				Call_PushString(ItemTest.Name);
+				Call_PushCell(iClient);
+				Call_Finish();
 				#endif
 				#if defined EW_MODULE_CHAT
 				if(ItemTest.Chat) EWM_Chat_PickUp(ItemTest, iClient);

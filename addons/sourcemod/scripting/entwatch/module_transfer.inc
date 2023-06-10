@@ -1,24 +1,28 @@
 #define EW_MODULE_TRANSFER
 
+// Purpose: Allows the administrator to transfer an item from the player or dropped to the ground
+
 stock void EWM_Transfer_OnPluginStart()
 {
 	RegAdminCmd("sm_etransfer", EWM_Transfer_Command_Transfer, ADMFLAG_BAN);
 }
 
+// Interface transfer between clients
 public void EWM_Transfer_Client(int iClient, int iTarget, int iReceiver)
 {
-	if (GetClientTeam(iTarget) != GetClientTeam(iReceiver))
+	if (GetClientTeam(iTarget) != GetClientTeam(iReceiver)) // The team that owns the item is different from the team that gets the item
 	{
 		CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Differs team");
 		return;
 	}
 	
-	if (iTarget == iReceiver)
+	if (iTarget == iReceiver) // Sending and receiving same client
 	{
 		CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Already owns");
 		return;
 	}
 	
+	// Transfer of all items
 	int iWeaponCount = 0;
 	for(int i = 0; i<g_ItemList.Length; i++)
 	{
@@ -36,11 +40,18 @@ public void EWM_Transfer_Client(int iClient, int iTarget, int iReceiver)
 		CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Target has no items");
 	} else
 	{
-		LogAction(iClient, iTarget, "\"%L\" transfered all items from \"%L\" to \"%L\"", iClient, iTarget, iReceiver);
+		#if defined EW_MODULE_FORWARDS
+		Call_StartForward(g_hOnAdminTransferedAllItems);
+		Call_PushCell(iClient);
+		Call_PushCell(iTarget);
+		Call_PushCell(iReceiver);
+		Call_Finish();
+		#endif
 		CPrintToChatAll("%s%t %s%N %s%t %s%N %s%t %s%N", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, iClient, g_SchemeConfig.Color_Warning, "Transfered all items", g_SchemeConfig.Color_Name, iTarget, g_SchemeConfig.Color_Warning, "EW to", g_SchemeConfig.Color_Name, iReceiver);
 	}
 }
 
+// Interface transfer by item name
 void EWM_Transfer_ItemName(int iClient, char[] sItemName, int iReceiver)
 {
 	int iWeaponCount = 0,
@@ -76,9 +87,9 @@ void EWM_Transfer_ItemName(int iClient, char[] sItemName, int iReceiver)
 			g_ItemList.GetArray(i, ItemTest, sizeof(ItemTest));
 			if((StrContains(ItemTest.Name, sItemName, false) != -1 || StrContains(ItemTest.ShortName, sItemName, false) != -1) && ItemTest.AllowTransfer && IsValidEdict(ItemTest.WeaponID))
 			{
-				FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i", i, GetClientUserId(iReceiver));
+				FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i", i, g_iUserIDs[iReceiver]);
 				if(ItemTest.OwnerID != INVALID_ENT_REFERENCE)
-					FormatEx(sMenuTemp, sizeof(sMenuTemp), "%s (%N|#%i)", ItemTest.Name, ItemTest.OwnerID, GetClientUserId(ItemTest.OwnerID));
+					FormatEx(sMenuTemp, sizeof(sMenuTemp), "%s (%N|#%i)", ItemTest.Name, ItemTest.OwnerID, g_iUserIDs[ItemTest.OwnerID]);
 				else FormatEx(sMenuTemp, sizeof(sMenuTemp), "%s (%T)", ItemTest.Name, "No owner", iClient);
 				hEdictMenu.AddItem(sIndexTemp, sMenuTemp, ITEMDRAW_DEFAULT);
 			}
@@ -110,6 +121,7 @@ public int EWM_Transfer_EdictMenu_Handler(Menu hEdictMenu, MenuAction hAction, i
 	return 0;
 }
 
+// Main transfer function
 public void EWM_Transfer_Function(int iClient, int iItemIndex, int iReceiver, bool bMessageTransfer)
 {
 	if(iItemIndex >= 0)
@@ -147,7 +159,13 @@ public void EWM_Transfer_Function(int iClient, int iItemIndex, int iReceiver, bo
 						FixedEquipPlayerWeapon(iReceiver, ItemTest.WeaponID);
 						if(bMessageTransfer)
 						{
-							LogAction(iClient, iCurOwner, "\"%L\" transfered all items from \"%L\" to \"%L\"", iClient, iCurOwner, iReceiver);
+							#if defined EW_MODULE_FORWARDS
+							Call_StartForward(g_hOnAdminTransferedAllItems);
+							Call_PushCell(iClient);
+							Call_PushCell(iCurOwner);
+							Call_PushCell(iReceiver);
+							Call_Finish();
+							#endif
 							CPrintToChatAll("%s%t %s%N %s%t %s%N %s%t %s%N", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, iClient, g_SchemeConfig.Color_Warning, "Transfered all items", g_SchemeConfig.Color_Name, iCurOwner, g_SchemeConfig.Color_Warning, "EW to", g_SchemeConfig.Color_Name, iReceiver);
 						}
 					}else if(bMessageTransfer) CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Differs team");
@@ -165,7 +183,13 @@ public void EWM_Transfer_Function(int iClient, int iItemIndex, int iReceiver, bo
 				FixedEquipPlayerWeapon(iReceiver, ItemTest.WeaponID);
 				if(bMessageTransfer)
 				{
-					LogAction(iClient, -1, "\"%L\" transfered \"%s\" to \"%L\"", iClient, ItemTest.Name, iReceiver);
+					#if defined EW_MODULE_FORWARDS
+					Call_StartForward(g_hOnAdminTransferedItem);
+					Call_PushCell(iClient);
+					Call_PushString(ItemTest.Name);
+					Call_PushCell(iReceiver);
+					Call_Finish();
+					#endif
 					CPrintToChatAll("%s%t %s%N %s%t %s%s %s%t %s%N", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, iClient, g_SchemeConfig.Color_Warning, "Transfered", ItemTest.Color, ItemTest.Name, g_SchemeConfig.Color_Warning, "EW to", g_SchemeConfig.Color_Name, iReceiver);
 				}
 			}

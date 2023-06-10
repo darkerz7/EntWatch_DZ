@@ -1,18 +1,21 @@
 #define EW_MODULE_HIGHLIGHT
 
+// Amount of step change rgb
 #define RBG_STEP 10
 //To change distance use CVAR: sv_highlight_distance. Default 500
 
+// Include for convenient work with highlight
 #include <highlight>
 
+// Module settings
 ConVar	g_hCvar_HighLight_Weapon_Type, 	//0 - Disable, 1 - All, 2 - Team, 3 - Privilege All, 4 - Privilege Team, 5 - Admin and Privilege All, 6 - Admin and Privilege Team
 		g_hCvar_HighLight_Weapon_Color, //false - item's color, true - RGB
 		g_hCvar_HighLight_Player_Type,	//0 - Disable, 1 - All, 2 - Team, 3 - Privilege All, 4 - Privilege Team, 5 - Admin and Privilege All, 6 - Admin and Privilege Team
 		g_hCvar_HighLight_Player_Color;	//false - item's color, true - RGB
 
+// Module Local settings
 int		g_iHL_wtype = 1,
 		g_iHL_ptype = 0;
-
 bool	g_iHL_wcolor = false,
 		g_iHL_pcolor = false;
 
@@ -25,63 +28,76 @@ bool	g_bHL_Privilege_Player[MAXPLAYERS+1] = {false,...};
 
 stock void EWM_HLight_OnPluginStart()
 {
-	g_hCvar_HighLight_Weapon_Type   = CreateConVar("entwatch_hl_wtype", "1", "Type of HighLighting of items.", _, true, 0.0, true, 6.0);
-	g_hCvar_HighLight_Weapon_Color   = CreateConVar("entwatch_hl_wcolor", "0", "Color of HighLighting of items.", _, true, 0.0, true, 1.0);
-	g_hCvar_HighLight_Player_Type   = CreateConVar("entwatch_hl_ptype", "0", "Type of HighLighting of players that own the item.", _, true, 0.0, true, 6.0);
-	g_hCvar_HighLight_Player_Color   = CreateConVar("entwatch_hl_pcolor", "0", "Color of HighLighting of players that own the item.", _, true, 0.0, true, 1.0);
+	if(g_evGameEngine == Engine_CSGO)
+	{
+		g_hCvar_HighLight_Weapon_Type   = CreateConVar("entwatch_hl_wtype", "1", "Type of HighLighting of items.", _, true, 0.0, true, 6.0);
+		g_hCvar_HighLight_Weapon_Color   = CreateConVar("entwatch_hl_wcolor", "0", "Color of HighLighting of items.", _, true, 0.0, true, 1.0);
+		g_hCvar_HighLight_Player_Type   = CreateConVar("entwatch_hl_ptype", "0", "Type of HighLighting of players that own the item.", _, true, 0.0, true, 6.0);
+		g_hCvar_HighLight_Player_Color   = CreateConVar("entwatch_hl_pcolor", "0", "Color of HighLighting of players that own the item.", _, true, 0.0, true, 1.0);
 
-	g_iHL_wtype = GetConVarInt(g_hCvar_HighLight_Weapon_Type);
-	g_iHL_wcolor = GetConVarBool(g_hCvar_HighLight_Weapon_Color);
-	g_iHL_ptype = GetConVarInt(g_hCvar_HighLight_Player_Type);
-	g_iHL_pcolor = GetConVarBool(g_hCvar_HighLight_Player_Color);
-	
-	HookConVarChange(g_hCvar_HighLight_Weapon_Type, Cvar_HIGHLIGHT_Changed);
-	HookConVarChange(g_hCvar_HighLight_Weapon_Color, Cvar_HIGHLIGHT_Changed);
-	HookConVarChange(g_hCvar_HighLight_Player_Type, Cvar_HIGHLIGHT_Changed);
-	HookConVarChange(g_hCvar_HighLight_Player_Color, Cvar_HIGHLIGHT_Changed);
-	
-	CreateTimer(1.0, EWM_HLight_Timer, _, TIMER_REPEAT);
+		g_iHL_wtype = GetConVarInt(g_hCvar_HighLight_Weapon_Type);
+		g_iHL_wcolor = GetConVarBool(g_hCvar_HighLight_Weapon_Color);
+		g_iHL_ptype = GetConVarInt(g_hCvar_HighLight_Player_Type);
+		g_iHL_pcolor = GetConVarBool(g_hCvar_HighLight_Player_Color);
+		
+		HookConVarChange(g_hCvar_HighLight_Weapon_Type, Cvar_HIGHLIGHT_Changed);
+		HookConVarChange(g_hCvar_HighLight_Weapon_Color, Cvar_HIGHLIGHT_Changed);
+		HookConVarChange(g_hCvar_HighLight_Player_Type, Cvar_HIGHLIGHT_Changed);
+		HookConVarChange(g_hCvar_HighLight_Player_Color, Cvar_HIGHLIGHT_Changed);
+		
+		CreateTimer(1.0, EWM_HLight_Timer, _, TIMER_REPEAT);
+	}
 }
 
 stock void EWM_HLight_OnMapStart()
 {
-	g_bMapRunningHL = true;
+	if(g_evGameEngine == Engine_CSGO) g_bMapRunningHL = true;
 }
 
 stock void EWM_HLight_OnMapEnd()
 {
-	g_bMapRunningHL = false;
+	if(g_evGameEngine == Engine_CSGO) g_bMapRunningHL = false;
 }
 
 stock void EWM_HLight_RoundStart()
 {
-	for(int i = 0; i < MaxClients; i++) EWM_HLight_OnClientPrivilegeReset(i);
-	#if defined EW_MODULE_FORWARDS
-	Call_StartForward(g_hOnHLPrivWeaponForward);
-	Call_Finish();
-	Call_StartForward(g_hOnHLPrivPlayerForward);
-	Call_Finish();
-	#endif
+	if(g_evGameEngine == Engine_CSGO)
+	{
+		for(int i = 0; i < MaxClients; i++) EWM_HLight_OnClientPrivilegeReset(i);
+		#if defined EW_MODULE_FORWARDS
+		Call_StartForward(g_hOnHLPrivWeaponForward);
+		Call_Finish();
+		Call_StartForward(g_hOnHLPrivPlayerForward);
+		Call_Finish();
+		#endif
+	}
 }
 
 stock void EWM_HLight_OnClientPrivilegeReset(int iClient)
 {
-	g_bHL_Privilege_Weapon[iClient] = false;
-	g_bHL_Privilege_Player[iClient] = false;
+	if(g_evGameEngine == Engine_CSGO)
+	{
+		g_bHL_Privilege_Weapon[iClient] = false;
+		g_bHL_Privilege_Player[iClient] = false;
+	}
 }
 
 public void Cvar_HIGHLIGHT_Changed(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	if(convar==g_hCvar_HighLight_Weapon_Type)
-		g_iHL_wtype = GetConVarInt(convar);
-	else if(convar==g_hCvar_HighLight_Weapon_Color)
-		g_iHL_wcolor = GetConVarBool(convar);
-	else if(convar==g_hCvar_HighLight_Player_Type)
-		g_iHL_ptype = GetConVarInt(convar);
-	else if(convar==g_hCvar_HighLight_Player_Color)
-		g_iHL_pcolor = GetConVarBool(convar);
+	if(g_evGameEngine == Engine_CSGO)
+	{
+		if(convar==g_hCvar_HighLight_Weapon_Type)
+			g_iHL_wtype = GetConVarInt(convar);
+		else if(convar==g_hCvar_HighLight_Weapon_Color)
+			g_iHL_wcolor = GetConVarBool(convar);
+		else if(convar==g_hCvar_HighLight_Player_Type)
+			g_iHL_ptype = GetConVarInt(convar);
+		else if(convar==g_hCvar_HighLight_Player_Color)
+			g_iHL_pcolor = GetConVarBool(convar);
+	}
 }
 
+// Highlight update
 public Action EWM_HLight_Timer(Handle timer, int client)
 {
 	if (g_bMapRunningHL && g_bConfigLoaded && (g_iHL_wtype > 0 || g_iHL_ptype > 0))
@@ -96,6 +112,7 @@ public Action EWM_HLight_Timer(Handle timer, int client)
 	return Plugin_Continue;
 }
 
+// Highlight setting function
 stock void EWM_HLight_Set(class_ItemList ItemTest)
 {
 	if(IsValidEdict(ItemTest.WeaponID))
@@ -112,7 +129,7 @@ stock void EWM_HLight_Set(class_ItemList ItemTest)
 					case 1: Highlight_SetAll(ItemTest.WeaponID); //All
 					case 2: //Team
 					{
-						if(ItemTest.Team > 1)
+						if(ItemTest.Team > 1) // Highlight for all if the item is not pickup
 						{
 							int iNum = 0, iPlayers[MAXPLAYERS+1] = {0,...};
 							for(int j = 1; j<= MaxClients; j++)
@@ -129,7 +146,7 @@ stock void EWM_HLight_Set(class_ItemList ItemTest)
 					}
 					case 4: //4 - Privilege Team
 					{
-						if(ItemTest.Team > 1)
+						if(ItemTest.Team > 1) // Highlight for all privileged players if the item is not pickup
 						{
 							int iNum = 0, iPlayers[MAXPLAYERS+1] = {0,...};
 							for(int j = 1; j<= MaxClients; j++)
@@ -152,7 +169,7 @@ stock void EWM_HLight_Set(class_ItemList ItemTest)
 					}
 					case 6: //6 - Admin and Privilege Team
 					{
-						if(ItemTest.Team > 1)
+						if(ItemTest.Team > 1) // Highlight for all privileged players + Admins if the item is not pickup
 						{
 							int iNum = 0, iPlayers[MAXPLAYERS+1] = {0,...};
 							for(int j = 1; j<= MaxClients; j++)
@@ -239,16 +256,19 @@ stock void EWM_HLight_Set(class_ItemList ItemTest)
 	}
 }
 
+// Force disable weapon highlighting for everyone
 stock void EWM_HLight_WRemove(int iEntity)
 {
 	if(g_iHL_wtype > 0 && IsValidEdict(iEntity)) Highlight_RemoveAll(iEntity);
 }
 
+// Force disable player highlighting for everyone
 stock void EWM_HLight_PRemove(int iClient)
 {
 	if(g_iHL_ptype > 0 && IsValidClient(iClient) && IsClientConnected(iClient) && GetClientTeam(iClient) > 1) Highlight_RemoveAll(iClient);
 }
 
+// Color update function when using RGB
 stock void EWM_HLight_UpdateRGB()
 {
 	static int s_iHL_Tact = 0;	

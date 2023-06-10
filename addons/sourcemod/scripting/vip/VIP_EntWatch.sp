@@ -17,8 +17,8 @@ static const char g_sFeature[][] = {"EntWatchWeapon", "EntWatchPlayer"};
 
 public void VIP_OnVIPLoaded()
 {
-	VIP_RegisterFeature(g_sFeature[0], BOOL, _, OnToggleItemWeapon);
-	VIP_RegisterFeature(g_sFeature[1], BOOL, _, OnToggleItemPlayer);
+	VIP_RegisterFeature(g_sFeature[0], BOOL, _, OnToggleItemWeapon); // Register in the vipmenu the ability to switch the display of item highlighting
+	VIP_RegisterFeature(g_sFeature[1], BOOL, _, OnToggleItemPlayer); // Register in the vipmenu the ability to switch the display of highlighting players with items
 }
 
 public void OnPluginStart()
@@ -53,6 +53,7 @@ public void VIP_OnVIPClientLoaded(int iClient)
 	if(IsValidClient(iClient) && VIP_GetClientFeatureStatus(iClient, g_sFeature[1]) != NO_ACCESS) EntWatch_SetHLPlayerOne(iClient);
 }
 
+// Send to EntWatch which players to highlight items
 public void EntWatch_OnHLWeaponReady()
 {
 	int iCount = 0, iClients[MAXPLAYERS+1] = {0,...};
@@ -63,6 +64,7 @@ public void EntWatch_OnHLWeaponReady()
 	EntWatch_SetHLWeapon(iCount, iClients);
 }
 
+// Send to EntWatch which players to highlight players with items
 public void EntWatch_OnHLPlayerReady()
 {
 	int iCount = 0, iClients[MAXPLAYERS+1] = {0,...};

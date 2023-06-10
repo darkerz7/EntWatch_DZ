@@ -1,5 +1,7 @@
 #define EW_MODULE_OFFLINE_EBAN
 
+// Purpose: Allows you to e-ban trolls who left the server
+
 #if defined EW_MODULE_EBAN
 
 ConVar g_hCvar_OfflineClearRecords;
@@ -42,22 +44,21 @@ Action EWM_OfflineEban_Timer_Checker(Handle timer)
 	return Plugin_Continue;
 }
 
+// Write or overwrite records about players in the plugin database
 public void EWM_OfflineEban_OnClientPostAdminCheck(int iClient)
 {
 	if(IsClientSourceTV(iClient)) return; //ignore SourceTV
-	char sClient_Name[32], sClient_SteamID[64];
-	int iUserID = GetClientUserId(iClient);
+	char sClient_Name[32];
 	GetClientName(iClient, sClient_Name, sizeof(sClient_Name));
-	GetClientAuthId(iClient, AuthId_Steam2, sClient_SteamID, sizeof(sClient_SteamID));
 	bool bNotFound = true;
 	for(int i = 0; i < g_OfflineArray.Length; i++)
 	{
 		class_Offline_Eban OfflinePlayerTest;
 		g_OfflineArray.GetArray(i, OfflinePlayerTest, sizeof(OfflinePlayerTest));
-		if(StrEqual(OfflinePlayerTest.Player_SteamID, sClient_SteamID, false))
+		if(StrEqual(OfflinePlayerTest.Player_SteamID, g_sSteamIDs[iClient], false))
 		{
 			bNotFound = false;
-			OfflinePlayerTest.UserID = iUserID;
+			OfflinePlayerTest.UserID = g_iUserIDs[iClient];
 			FormatEx(OfflinePlayerTest.PlayerName, sizeof(OfflinePlayerTest.PlayerName), "%s", sClient_Name);
 			OfflinePlayerTest.TimeStamp = -1;
 			OfflinePlayerTest.TimeStamp_Start = -1;
@@ -69,9 +70,9 @@ public void EWM_OfflineEban_OnClientPostAdminCheck(int iClient)
 	if(bNotFound)
 	{
 		class_Offline_Eban NewOfflinePlayer;
-		NewOfflinePlayer.UserID = iUserID;
+		NewOfflinePlayer.UserID = g_iUserIDs[iClient];
 		FormatEx(NewOfflinePlayer.PlayerName, sizeof(NewOfflinePlayer.PlayerName), "%s", sClient_Name);
-		FormatEx(NewOfflinePlayer.Player_SteamID, sizeof(NewOfflinePlayer.Player_SteamID), "%s", sClient_SteamID);
+		FormatEx(NewOfflinePlayer.Player_SteamID, sizeof(NewOfflinePlayer.Player_SteamID), "%s", g_sSteamIDs[iClient]);
 		NewOfflinePlayer.TimeStamp = -1;
 		NewOfflinePlayer.TimeStamp_Start = -1;
 		FormatEx(NewOfflinePlayer.LastItem, sizeof(NewOfflinePlayer.LastItem), "None");
@@ -79,19 +80,19 @@ public void EWM_OfflineEban_OnClientPostAdminCheck(int iClient)
 	}
 }
 
+// Write information about the disconnected player to the plugin database
 public void EWM_OfflineEban_OnClientDisconnect(int iClient)
 {
 	if(!IsValidClient(iClient) || !IsClientConnected(iClient) || IsClientSourceTV(iClient) || IsFakeClient(iClient)) return;
 	
-	char sClient_Name[32], sClient_SteamID[64];
+	char sClient_Name[32];
 	GetClientName(iClient, sClient_Name, sizeof(sClient_Name));
-	GetClientAuthId(iClient, AuthId_Steam2, sClient_SteamID, sizeof(sClient_SteamID));
 	bool bNotFound = true;
 	for(int i = 0; i < g_OfflineArray.Length; i++)
 	{
 		class_Offline_Eban OfflinePlayerTest;
 		g_OfflineArray.GetArray(i, OfflinePlayerTest, sizeof(OfflinePlayerTest));
-		if(StrEqual(OfflinePlayerTest.Player_SteamID, sClient_SteamID, false))
+		if(StrEqual(OfflinePlayerTest.Player_SteamID, g_sSteamIDs[iClient], false))
 		{
 			bNotFound = false;
 			FormatEx(OfflinePlayerTest.PlayerName, sizeof(OfflinePlayerTest.PlayerName), "%s", sClient_Name);
@@ -104,9 +105,9 @@ public void EWM_OfflineEban_OnClientDisconnect(int iClient)
 	if(bNotFound)
 	{
 		class_Offline_Eban NewOfflinePlayer;
-		NewOfflinePlayer.UserID = GetClientUserId(iClient);
+		NewOfflinePlayer.UserID = g_iUserIDs[iClient];
 		FormatEx(NewOfflinePlayer.PlayerName, sizeof(NewOfflinePlayer.PlayerName), "%s", sClient_Name);
-		FormatEx(NewOfflinePlayer.Player_SteamID, sizeof(NewOfflinePlayer.Player_SteamID), "%s", sClient_SteamID);
+		FormatEx(NewOfflinePlayer.Player_SteamID, sizeof(NewOfflinePlayer.Player_SteamID), "%s", g_sSteamIDs[iClient]);
 		NewOfflinePlayer.TimeStamp_Start = GetTime();
 		NewOfflinePlayer.TimeStamp = NewOfflinePlayer.TimeStamp_Start+g_iOfflineTimeClear*60;
 		FormatEx(NewOfflinePlayer.LastItem, sizeof(NewOfflinePlayer.LastItem), "None");
@@ -114,19 +115,19 @@ public void EWM_OfflineEban_OnClientDisconnect(int iClient)
 	}
 }
 
+// Update the record in the plugin database when the player picks up an item
 public void EWM_OfflineEban_UpdateItemName(int iClient, const char[] sNameItem)
 {
 	if(IsFakeClient(iClient)) return;
 	
-	char sClient_Name[32], sClient_SteamID[64];
+	char sClient_Name[32];
 	GetClientName(iClient, sClient_Name, sizeof(sClient_Name));
-	GetClientAuthId(iClient, AuthId_Steam2, sClient_SteamID, sizeof(sClient_SteamID));
 	bool bNotFound = true;
 	for(int i = 0; i < g_OfflineArray.Length; i++)
 	{
 		class_Offline_Eban OfflinePlayerTest;
 		g_OfflineArray.GetArray(i, OfflinePlayerTest, sizeof(OfflinePlayerTest));
-		if(StrEqual(OfflinePlayerTest.Player_SteamID, sClient_SteamID, false))
+		if(StrEqual(OfflinePlayerTest.Player_SteamID, g_sSteamIDs[iClient], false))
 		{
 			bNotFound = false;
 			FormatEx(OfflinePlayerTest.PlayerName, sizeof(OfflinePlayerTest.PlayerName), "%s", sClient_Name);
@@ -138,9 +139,9 @@ public void EWM_OfflineEban_UpdateItemName(int iClient, const char[] sNameItem)
 	if(bNotFound)
 	{
 		class_Offline_Eban NewOfflinePlayer;
-		NewOfflinePlayer.UserID = GetClientUserId(iClient);
+		NewOfflinePlayer.UserID = g_iUserIDs[iClient];
 		FormatEx(NewOfflinePlayer.PlayerName, sizeof(NewOfflinePlayer.PlayerName), "%s", sClient_Name);
-		FormatEx(NewOfflinePlayer.Player_SteamID, sizeof(NewOfflinePlayer.Player_SteamID), "%s", sClient_SteamID);
+		FormatEx(NewOfflinePlayer.Player_SteamID, sizeof(NewOfflinePlayer.Player_SteamID), "%s", g_sSteamIDs[iClient]);
 		NewOfflinePlayer.TimeStamp_Start = -1;
 		NewOfflinePlayer.TimeStamp = -1;
 		FormatEx(NewOfflinePlayer.LastItem, sizeof(NewOfflinePlayer.LastItem), "%s", sNameItem);
@@ -148,67 +149,82 @@ public void EWM_OfflineEban_UpdateItemName(int iClient, const char[] sNameItem)
 	}
 }
 
+// The main function of the offline client e-ban
 public void EWM_OfflineEban_BanClient(class_Offline_Eban cPlayer, int iAdmin, int iDuration, const char[] sReason)
 {
-	char sAdmin_Name[32];
-	char sAdmin_SteamID[64];
-	if(iAdmin != 0)
+	if(g_iDBStatus == 4)
 	{
-		//Admin
-		FormatEx(sAdmin_Name, sizeof(sAdmin_Name), "%N", iAdmin);
-		GetClientAuthId(iAdmin, AuthId_Steam2, sAdmin_SteamID, sizeof(sAdmin_SteamID));
-	}else
-	{
-		//Server
-		FormatEx(sAdmin_Name, sizeof(sAdmin_Name), "Console");
-		FormatEx(sAdmin_SteamID, sizeof(sAdmin_SteamID), "SERVER");
-	}
-	int iBanDuration = iDuration;
-	if(iBanDuration<0) iBanDuration = 0;
-	if(iBanDuration==0)
-	{
-		if(g_iDBStatus == 4)
+		char sAdmin_Name[32];
+		char sAdmin_SteamID[64];
+		if(iAdmin != 0)
 		{
-			char sTQuery[1024], szAdmin_Name[32], szClient_Name[32], szReason[64];
-			
-			g_hEbanDB.Escape(sAdmin_Name, szAdmin_Name, sizeof(szAdmin_Name));//Admin Name to DB
-			g_hEbanDB.Escape(cPlayer.PlayerName, szClient_Name, sizeof(szClient_Name));//Client Name to DB
-			g_hEbanDB.Escape(sReason, szReason, sizeof(szReason));//Reason to DB
-			
+			//Admin
+			FormatEx(sAdmin_Name, sizeof(sAdmin_Name), "%N", iAdmin);
+			FormatEx(sAdmin_SteamID, sizeof(sAdmin_SteamID), "%s", g_sSteamIDs[iAdmin]);
+		}else
+		{
+			//Server
+			FormatEx(sAdmin_Name, sizeof(sAdmin_Name), "Console");
+			FormatEx(sAdmin_SteamID, sizeof(sAdmin_SteamID), "SERVER");
+		}
+		char sTQuery[1024], szAdmin_Name[32], szClient_Name[32], szReason[64];
+				
+		g_hEbanDB.Escape(sAdmin_Name, szAdmin_Name, sizeof(szAdmin_Name));//Admin Name to DB
+		g_hEbanDB.Escape(cPlayer.PlayerName, szClient_Name, sizeof(szClient_Name));//Client Name to DB
+		g_hEbanDB.Escape(sReason, szReason, sizeof(szReason));//Reason to DB
+		
+		// Only permanent or duration
+		int iBanDuration = iDuration;
+		if(iBanDuration<0) iBanDuration = 0;
+		if(iBanDuration==0)
+		{
 			int iTimeStampEBan = GetTime();
 			
 			FormatEx(sTQuery, sizeof(sTQuery), "INSERT INTO `EntWatch_Current_Eban` (`client_name`, `client_steamid`, `admin_name`, `admin_steamid`, `server`, `duration`, `timestamp_issued`, `reason`) VALUES ('%s', '%s', '%s', '%s', '%s', %d, %d, '%s')", szClient_Name, cPlayer.Player_SteamID, szAdmin_Name, sAdmin_SteamID, g_SchemeConfig.Server_Name, iBanDuration, iTimeStampEBan, szReason);
 			SQL_TQuery(g_hEbanDB, EWM_OfflineEban_SQLTCallBackBan, sTQuery,0);
-		}
-		LogAction(iAdmin, -1, "\"%L\" offline restricted \"%s [%s]\" permanently. Reason: %s", iAdmin, cPlayer.PlayerName, cPlayer.Player_SteamID, sReason);
-		CPrintToChatAll("%s%t %s%s %s%t %s%s [%s] %s%t. %s%t: %s", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, sAdmin_Name, g_SchemeConfig.Color_Disabled, "Offline Restricted", g_SchemeConfig.Color_Name, cPlayer.PlayerName, cPlayer.Player_SteamID, g_SchemeConfig.Color_Disabled, "Permanently", g_SchemeConfig.Color_Warning, "Reason", sReason);
-	} else
-	{
-		if(g_iDBStatus == 4)
+			//LogAction(iAdmin, -1, "\"%L\" offline restricted \"%s [%s]\" permanently. Reason: %s", iAdmin, cPlayer.PlayerName, cPlayer.Player_SteamID, sReason);
+			CPrintToChatAll("%s%t %s%s %s%t %s%s [%s] %s%t. %s%t: %s", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, sAdmin_Name, g_SchemeConfig.Color_Disabled, "Offline Restricted", g_SchemeConfig.Color_Name, cPlayer.PlayerName, cPlayer.Player_SteamID, g_SchemeConfig.Color_Disabled, "Permanently", g_SchemeConfig.Color_Warning, "Reason", sReason);
+		} else
 		{
-			char sTQuery[1024], szAdmin_Name[32], szClient_Name[32], szReason[64];
-			
-			g_hEbanDB.Escape(sAdmin_Name, szAdmin_Name, sizeof(szAdmin_Name));//Admin Name to DB
-			g_hEbanDB.Escape(cPlayer.PlayerName, szClient_Name, sizeof(szClient_Name));//Client Name to DB
-			g_hEbanDB.Escape(sReason, szReason, sizeof(szReason));//Reason to DB
-			
 			int iTimeStampEBan = GetTime()+iBanDuration*60;
 			
 			FormatEx(sTQuery, sizeof(sTQuery), "INSERT INTO `EntWatch_Current_Eban` (`client_name`, `client_steamid`, `admin_name`, `admin_steamid`, `server`, `duration`, `timestamp_issued`, `reason`) VALUES ('%s', '%s', '%s', '%s', '%s', %d, %d, '%s')", szClient_Name, cPlayer.Player_SteamID, szAdmin_Name, sAdmin_SteamID, g_SchemeConfig.Server_Name, iBanDuration, iTimeStampEBan, szReason);
 			SQL_TQuery(g_hEbanDB, EWM_OfflineEban_SQLTCallBackBan, sTQuery,0);
+			//LogAction(iAdmin, -1, "\"%L\" offline restricted \"%s [%s]\" for %d minutes. Reason: %s", iAdmin, cPlayer.PlayerName, cPlayer.Player_SteamID, iBanDuration, sReason);
+			CPrintToChatAll("%s%t %s%s %s%t %s%s [%s] %s%t. %s%t: %s", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, sAdmin_Name, g_SchemeConfig.Color_Disabled, "Offline Restricted", g_SchemeConfig.Color_Name, cPlayer.PlayerName, cPlayer.Player_SteamID, g_SchemeConfig.Color_Enabled, "For Minutes", iBanDuration, g_SchemeConfig.Color_Warning, "Reason", sReason);
 		}
-		
-		LogAction(iAdmin, -1, "\"%L\" offline restricted \"%s [%s]\" for %d minutes. Reason: %s", iAdmin, cPlayer.PlayerName, cPlayer.Player_SteamID, iBanDuration, sReason);
-		CPrintToChatAll("%s%t %s%s %s%t %s%s [%s] %s%t. %s%t: %s", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, sAdmin_Name, g_SchemeConfig.Color_Disabled, "Offline Restricted", g_SchemeConfig.Color_Name, cPlayer.PlayerName, cPlayer.Player_SteamID, g_SchemeConfig.Color_Enabled, "For Minutes", iBanDuration, g_SchemeConfig.Color_Warning, "Reason", sReason);
+		#if defined EW_MODULE_FORWARDS
+		Call_StartForward(g_hOnOfflineBanForward);
+		Call_PushCell(iAdmin);
+		Call_PushCell(iBanDuration);
+		Call_PushString(szClient_Name);
+		Call_PushString(cPlayer.Player_SteamID);
+		Call_PushString(szReason);
+		Call_Finish();
+		#endif
+	} else {
+		if(iAdmin != 0) CPrintToChat(iAdmin, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Disabled, "Database not ready");
+		else PrintToServer("[EntWatch] Database not ready");
 	}
 }
 
 void EWM_OfflineEban_SQLTCallBackBan(Handle hDatabase, Handle hResults, const char[] sError, any data)
 {
-	if(sError[0]) LogError("[Offline EBan DB] SQL CallBack Offline Ban Error: %s", sError);
-		else LogMessage("[Offline EBan DB] Successful Offline Ban");
+	#if defined EW_MODULE_FORWARDS
+	if(sError[0]) 
+	{
+		Call_StartForward(g_hOnOfflineBanError);
+		Call_PushString(sError);
+		Call_Finish();
+	} else
+	{
+		Call_StartForward(g_hOnOfflineBanSuccess);
+		Call_Finish();
+	}
+	#endif
 }
 
+// Menu for offline ban
 void EWM_OfflineEban_PlayerList(int iClient)
 {
 	Menu hMenu = CreateMenu(EWM_OfflineEban_PlayerList_Handler);
@@ -330,6 +346,7 @@ void EWM_OfflineEban_Reason(int iClient, int iDuration)
 	hMenu.Display(iClient, MENU_TIME_FOREVER);
 }
 
+// Menu handlers for offline ban
 public int EWM_OfflineEban_PlayerList_Handler(Menu hMenu, MenuAction hAction, int iClient, int iParam2)
 {
 	switch(hAction)
@@ -440,9 +457,7 @@ public int EWM_OfflineEban_Reason_Handler(Menu hMenu, MenuAction hAction, int iC
 	return 0;
 }
 
-//-------------------------------------------------------
-// Purpose: Offline Ban a client
-//-------------------------------------------------------
+// Offline Ban a client
 public Action EWM_OfflineEban_Command_Restrict(int iClient, int iArgs)
 {
 	if((IsClientConnected(iClient) && IsClientInGame(iClient))) EWM_OfflineEban_PlayerList(iClient);

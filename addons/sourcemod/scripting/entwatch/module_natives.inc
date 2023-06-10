@@ -1,5 +1,7 @@
 #define EW_MODULE_NATIVES
 
+// Purpose: Creates natives to interact with other plugins
+
 #tryinclude <EntWatch>
 
 bool g_bLateLoad = false;

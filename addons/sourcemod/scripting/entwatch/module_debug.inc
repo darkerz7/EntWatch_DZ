@@ -1,5 +1,7 @@
 #define EW_MODULE_DEBUG
 
+// Purpose: Checking the list of items, configs of maps and schemes
+
 stock void EWM_Debug_OnPluginStart()
 {
 	RegAdminCmd("sm_ewdebugconfig", Command_DebugConfig, ADMFLAG_CONFIG);

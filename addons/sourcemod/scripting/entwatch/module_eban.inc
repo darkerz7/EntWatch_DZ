@@ -2,17 +2,14 @@
 
 #define EW_EBAN_ENTWATCH_SECTION "EntWatch"
 
-//-------------------------------------------------------
-// Purpose: Plugin settings
-//-------------------------------------------------------
+// Module settings
 ConVar	g_hCvar_Default_BanTime,
 		g_hCvar_Default_BanReason,
+		g_hCvar_Default_UnBanReason,
 		g_hCvar_Keep_Expired_Bans,
 		g_hCvar_Use_Reason_Menu;
 
-//-------------------------------------------------------
-// Purpose: Plugin Variables
-//-------------------------------------------------------
+// Module Variables
 class_ClientSettings_EBan g_EbanClients[MAXPLAYERS+1];
 bool g_bKeepExpiredBans = true;
 
@@ -22,8 +19,9 @@ int g_iDBStatus = 0; // 0 - Def., 1 - Reconnect, 2 - Unknown Driver, 3 - Create 
 stock void EWM_Eban_OnPluginStart()
 {
 	g_hCvar_Default_BanTime		= CreateConVar("entwatch_bantime", "0", "Default ban time (0-43200)", _, true, 0.0, true, 43200.0);
-	g_hCvar_Default_BanReason	= CreateConVar("entwatch_banreason", "Item misuse", "Default ban reason.", _);
-	g_hCvar_Keep_Expired_Bans	= CreateConVar("entwatch_keep_expired_ban", "1", "Enable/Disable keep expired bans.", _, true, 0.0, true, 1.0);
+	g_hCvar_Default_BanReason		= CreateConVar("entwatch_banreason", "Item misuse", "Default ban reason.", _);
+	g_hCvar_Default_UnBanReason	= CreateConVar("entwatch_unbanreason", "Giving another chance", "Default Unban reason.", _);
+	g_hCvar_Keep_Expired_Bans		= CreateConVar("entwatch_keep_expired_ban", "1", "Enable/Disable keep expired bans.", _, true, 0.0, true, 1.0);
 	g_hCvar_Use_Reason_Menu		= CreateConVar("entwatch_use_reason_menu", "0", "Enable/Disable menu if the admin has not indicated a reason", _, true, 0.0, true, 1.0);
 
 	HookConVarChange(g_hCvar_Keep_Expired_Bans, Cvar_EBAN_Changed);
@@ -48,12 +46,19 @@ void EWM_Eban_ConnectCallBack(Database hDatabase, const char[] sError, any data)
 {
 	if (hDatabase == null)	// Fail Connect
 	{
-		LogError("[EBan DB] Database failure: %s, ReConnect after 60 sec", sError);
+		#if defined EW_MODULE_FORWARDS
+		Call_StartForward(g_hOnDatabaseFailure);
+		Call_PushString(sError);
+		Call_Finish();
+		#endif
 		g_iDBStatus = 1; //ReConnect
 		return;
 	}
 	g_hEbanDB = hDatabase;
-	LogMessage("[EBan DB] Successful connection to DB");
+	#if defined EW_MODULE_FORWARDS
+	Call_StartForward(g_hOnDatabaseSuccess);
+	Call_Finish();
+	#endif
 	EWM_Eban_CreateTables(); // Create Tables
 	g_hEbanDB.SetCharset("utf8"); // Set Charset UTF8
 }
@@ -137,23 +142,35 @@ void EWM_Eban_CreateTables()
 	} else
 	{
 		g_iDBStatus = 2;
-		LogError("[EBan] Unknown Driver: %s, cannot create tables.", sConnectDriverDB);
+		#if defined EW_MODULE_FORWARDS
+		Call_StartForward(g_hOnDatabaseUnknownDriver);
+		Call_PushString(sConnectDriverDB);
+		Call_Finish();
+		#endif
 	}
 }
 
 void EWM_Eban_SQLCreateTables_Success(Database hDatabase, any Data, int iNumQueries, Handle[] hResults, any[] QueryData)
 {
 	g_iDBStatus = 4;
-	LogMessage("[EBan DB] DB Ready");
+	#if defined EW_MODULE_FORWARDS
+	Call_StartForward(g_hOnDatabaseReady);
+	Call_Finish();
+	#endif
 	EWM_Eban_CleanData_All();
 }
 
 void EWM_Eban_SQLCreateTables_Error(Database hDatabase, any Data, int iNumQueries, const  char[] sError, int iFailIndex, any[] QueryData)
 {
 	g_iDBStatus = 1;
-	LogError("[EBan DB] SQL CreateTables Error: %s", sError);
+	#if defined EW_MODULE_FORWARDS
+	Call_StartForward(g_hOnDatabaseCreateTablesError);
+	Call_PushString(sError);
+	Call_Finish();
+	#endif
 }
 
+// Main function of player e-ban
 public void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, const char[] sReason)
 {
 	if(!g_EbanClients[iClient].Banned)
@@ -164,7 +181,7 @@ public void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, const cha
 		{
 			//Admin
 			FormatEx(sAdmin_Name, sizeof(sAdmin_Name), "%N", iAdmin);
-			GetClientAuthId(iAdmin, AuthId_Steam2, sAdmin_SteamID, sizeof(sAdmin_SteamID));
+			FormatEx(sAdmin_SteamID, sizeof(sAdmin_SteamID), "%s", g_sSteamIDs[iAdmin]);
 		}else
 		{
 			//Server
@@ -182,8 +199,8 @@ public void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, const cha
 			g_EbanClients[iClient].Duration = iBanDuration;
 			g_EbanClients[iClient].TimeStamp_Issued = GetTime();
 			FormatEx(g_EbanClients[iClient].Reason, 64, "%s", sReason);
-			LogAction(iAdmin, iClient, "\"%L\" restricted \"%L\" temporary. Reason: %s", iAdmin, iClient, sReason);
-			CPrintToChatAll("%s%t %s%s %s%t %s%N% %s%t. %s%t: %s", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, sAdmin_Name, g_SchemeConfig.Color_Disabled, "Restricted", g_SchemeConfig.Color_Name, iClient, g_SchemeConfig.Color_Enabled, "Temporary", g_SchemeConfig.Color_Warning, "Reason", sReason);
+			//LogAction(iAdmin, iClient, "\"%L\" restricted \"%L\" temporary. Reason: %s", iAdmin, iClient, sReason);
+			CPrintToChatAll("%s%t %s%s %s%t %s%N% %s%t. %s%t: %s", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, sAdmin_Name, g_SchemeConfig.Color_Disabled, "Restricted", g_SchemeConfig.Color_Name, iClient, g_SchemeConfig.Color_Disabled, "Temporary", g_SchemeConfig.Color_Warning, "Reason", sReason);
 		}else if(iBanDuration == 0)
 		{
 			//Wesker EDIT -- Restrict perma bans with command override
@@ -206,18 +223,17 @@ public void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, const cha
 			//Save to DB
 			if(g_iDBStatus == 4)
 			{
-				char sTQuery[1024], szAdmin_Name[32], sClient_Name[32], szClient_Name[32], sClient_SteamID[64], szReason[64];
+				char sTQuery[1024], szAdmin_Name[32], sClient_Name[32], szClient_Name[32], szReason[64];
 				
 				g_hEbanDB.Escape(sAdmin_Name, szAdmin_Name, sizeof(szAdmin_Name));//Admin Name to DB
 				GetClientName(iClient, sClient_Name, sizeof(sClient_Name));//Get Client Name
 				g_hEbanDB.Escape(sClient_Name, szClient_Name, sizeof(szClient_Name));//Client Name to DB
-				GetClientAuthId(iClient, AuthId_Steam2, sClient_SteamID, sizeof(sClient_SteamID));//Client SteamId to DB
 				g_hEbanDB.Escape(sReason, szReason, sizeof(szReason));//Reason to DB
 				
-				FormatEx(sTQuery, sizeof(sTQuery), "INSERT INTO `EntWatch_Current_Eban` (`client_name`, `client_steamid`, `admin_name`, `admin_steamid`, `server`, `duration`, `timestamp_issued`, `reason`) VALUES ('%s', '%s', '%s', '%s', '%s', %d, %d, '%s')", szClient_Name, sClient_SteamID, szAdmin_Name, sAdmin_SteamID, g_SchemeConfig.Server_Name, iBanDuration, g_EbanClients[iClient].TimeStamp_Issued, szReason);
+				FormatEx(sTQuery, sizeof(sTQuery), "INSERT INTO `EntWatch_Current_Eban` (`client_name`, `client_steamid`, `admin_name`, `admin_steamid`, `server`, `duration`, `timestamp_issued`, `reason`) VALUES ('%s', '%s', '%s', '%s', '%s', %d, %d, '%s')", szClient_Name, g_sSteamIDs[iClient], szAdmin_Name, sAdmin_SteamID, g_SchemeConfig.Server_Name, iBanDuration, g_EbanClients[iClient].TimeStamp_Issued, szReason);
 				SQL_TQuery(g_hEbanDB, EWM_Eban_SQLTCallBackBan, sTQuery,0);
 			}
-			LogAction(iAdmin, iClient, "\"%L\" restricted \"%L\" permanently. Reason: %s", iAdmin, iClient, sReason);
+			//LogAction(iAdmin, iClient, "\"%L\" restricted \"%L\" permanently. Reason: %s", iAdmin, iClient, sReason);
 			CPrintToChatAll("%s%t %s%s %s%t %s%N %s%t. %s%t: %s", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, sAdmin_Name, g_SchemeConfig.Color_Disabled, "Restricted", g_SchemeConfig.Color_Name, iClient, g_SchemeConfig.Color_Disabled, "Permanently", g_SchemeConfig.Color_Warning, "Reason", sReason);
 		}else
 		{
@@ -241,19 +257,18 @@ public void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, const cha
 			//Save to DB
 			if(g_iDBStatus == 4)
 			{
-				char sTQuery[1024], szAdmin_Name[32], sClient_Name[32], szClient_Name[32], sClient_SteamID[64], szReason[64];
+				char sTQuery[1024], szAdmin_Name[32], sClient_Name[32], szClient_Name[32], szReason[64];
 				
 				g_hEbanDB.Escape(sAdmin_Name, szAdmin_Name, sizeof(szAdmin_Name));//Admin Name to DB
 				GetClientName(iClient, sClient_Name, sizeof(sClient_Name));//Get Client Name
 				g_hEbanDB.Escape(sClient_Name, szClient_Name, sizeof(szClient_Name));//Client Name to DB
-				GetClientAuthId(iClient, AuthId_Steam2, sClient_SteamID, sizeof(sClient_SteamID));//Client SteamId to DB
 				g_hEbanDB.Escape(sReason, szReason, sizeof(szReason));//Reason to DB
 				
-				FormatEx(sTQuery, sizeof(sTQuery), "INSERT INTO `EntWatch_Current_Eban` (`client_name`, `client_steamid`, `admin_name`, `admin_steamid`, `server`, `duration`, `timestamp_issued`, `reason`) VALUES ('%s', '%s', '%s', '%s', '%s', %d, %d, '%s')", szClient_Name, sClient_SteamID, szAdmin_Name, sAdmin_SteamID, g_SchemeConfig.Server_Name, iBanDuration, g_EbanClients[iClient].TimeStamp_Issued, szReason);
+				FormatEx(sTQuery, sizeof(sTQuery), "INSERT INTO `EntWatch_Current_Eban` (`client_name`, `client_steamid`, `admin_name`, `admin_steamid`, `server`, `duration`, `timestamp_issued`, `reason`) VALUES ('%s', '%s', '%s', '%s', '%s', %d, %d, '%s')", szClient_Name, g_sSteamIDs[iClient], szAdmin_Name, sAdmin_SteamID, g_SchemeConfig.Server_Name, iBanDuration, g_EbanClients[iClient].TimeStamp_Issued, szReason);
 				SQL_TQuery(g_hEbanDB, EWM_Eban_SQLTCallBackBan, sTQuery,0);
 			}
 			
-			LogAction(iAdmin, iClient, "\"%L\" restricted \"%L\" for %d minutes. Reason: %s", iAdmin, iClient, iBanDuration, sReason);
+			//LogAction(iAdmin, iClient, "\"%L\" restricted \"%L\" for %d minutes. Reason: %s", iAdmin, iClient, iBanDuration, sReason);
 			CPrintToChatAll("%s%t %s%s %s%t %s%N %s%t. %s%t: %s", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, sAdmin_Name, g_SchemeConfig.Color_Disabled, "Restricted", g_SchemeConfig.Color_Name, iClient, g_SchemeConfig.Color_Enabled, "For Minutes", iBanDuration, g_SchemeConfig.Color_Warning, "Reason", sReason);
 		}
 		
@@ -277,10 +292,22 @@ public void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, const cha
 
 void EWM_Eban_SQLTCallBackBan(Handle hDatabase, Handle hResults, const char[] sError, any data)
 {
-	if(sError[0]) LogError("[EBan DB] SQL CallBack Ban Error: %s", sError);
-		else LogMessage("[EBan DB] Successful Ban");
+	#if defined EW_MODULE_FORWARDS
+	if(sError[0])
+	{
+		Call_StartForward(g_hOnDatabaseBanError);
+		Call_PushString(sError);
+		Call_Finish();
+	}
+	else
+	{
+		Call_StartForward(g_hOnDatabaseBanSuccess);
+		Call_Finish();
+	}
+	#endif
 }
 
+// Main function of player e-unban
 public void EWM_Eban_UnBanClient(int iClient, int iAdmin, const char[] sReason)
 {
 	char sAdmin_Name[32];
@@ -309,7 +336,7 @@ public void EWM_Eban_UnBanClient(int iClient, int iAdmin, const char[] sReason)
 		
 		//Admin
 		FormatEx(sAdmin_Name, sizeof(sAdmin_Name), "%N", iAdmin);
-		GetClientAuthId(iAdmin, AuthId_Steam2, sAdmin_SteamID, sizeof(sAdmin_SteamID));
+		FormatEx(sAdmin_SteamID, sizeof(sAdmin_SteamID), "%s", g_sSteamIDs[iAdmin]);
 	}else
 	{
 		//Server
@@ -319,8 +346,7 @@ public void EWM_Eban_UnBanClient(int iClient, int iAdmin, const char[] sReason)
 	
 	if(g_iDBStatus == 4)
 	{
-		char sSQL_Query[1024], sClient_SteamID[64], szReason[64], szAdmin_Name[32];
-		GetClientAuthId(iClient, AuthId_Steam2, sClient_SteamID, sizeof(sClient_SteamID));
+		char sSQL_Query[1024], szReason[64], szAdmin_Name[32];
 		g_hEbanDB.Escape(sReason, szReason, sizeof(szReason));//Reason Unban to DB
 		g_hEbanDB.Escape(sAdmin_Name, szAdmin_Name, sizeof(szAdmin_Name));//Admin Name Unban to DB
 		
@@ -329,16 +355,16 @@ public void EWM_Eban_UnBanClient(int iClient, int iAdmin, const char[] sReason)
 		if(g_bKeepExpiredBans)
 		{
 			FormatEx(sSQL_Query, sizeof(sSQL_Query), "UPDATE `EntWatch_Current_Eban` SET `reason_unban`='%s', `admin_name_unban`='%s', `admin_steamid_unban`='%s', `timestamp_unban`=%d \
-														WHERE `client_steamid`='%s' and `server`='%s' and `admin_steamid_unban` IS NULL", szReason, szAdmin_Name, sAdmin_SteamID, GetTime(), sClient_SteamID, g_SchemeConfig.Server_Name);
+														WHERE `client_steamid`='%s' and `server`='%s' and `admin_steamid_unban` IS NULL", szReason, szAdmin_Name, sAdmin_SteamID, GetTime(), g_sSteamIDs[iClient], g_SchemeConfig.Server_Name);
 			T_UnBan.AddQuery(sSQL_Query);
 			FormatEx(sSQL_Query, sizeof(sSQL_Query), "INSERT INTO `EntWatch_Old_Eban` (`client_name`, `client_steamid`, `admin_name`, `admin_steamid`, `server`, `duration`, `timestamp_issued`, `reason`, `reason_unban`, `admin_name_unban`, `admin_steamid_unban`, `timestamp_unban`) \
 														SELECT `client_name`, `client_steamid`, `admin_name`, `admin_steamid`, `server`, `duration`, `timestamp_issued`, `reason`, `reason_unban`, `admin_name_unban`, `admin_steamid_unban`, `timestamp_unban` FROM `EntWatch_Current_Eban` \
-														WHERE `client_steamid`='%s' and `server`='%s'", sClient_SteamID, g_SchemeConfig.Server_Name);
+														WHERE `client_steamid`='%s' and `server`='%s'", g_sSteamIDs[iClient], g_SchemeConfig.Server_Name);
 			T_UnBan.AddQuery(sSQL_Query);
 		}
 		
 		FormatEx(sSQL_Query, sizeof(sSQL_Query), "DELETE FROM `EntWatch_Current_Eban` \
-													WHERE `client_steamid`='%s' and `server`='%s'", sClient_SteamID, g_SchemeConfig.Server_Name);
+													WHERE `client_steamid`='%s' and `server`='%s'", g_sSteamIDs[iClient], g_SchemeConfig.Server_Name);
 		T_UnBan.AddQuery(sSQL_Query);
 		SQL_ExecuteTransaction(g_hEbanDB, T_UnBan, EWM_Eban_SQLUnBan_Success, EWM_Eban_SQLUnBan_Error, _, DBPrio_Normal);
 	}
@@ -355,37 +381,49 @@ public void EWM_Eban_UnBanClient(int iClient, int iAdmin, const char[] sReason)
 
 	EWM_Eban_Update_Client(iClient);
 	
-	LogAction(iAdmin, iClient, "\"%L\" unrestricted \"%L\". Reason: %s", iAdmin, iClient, sReason);
+	//LogAction(iAdmin, iClient, "\"%L\" unrestricted \"%L\". Reason: %s", iAdmin, iClient, sReason);
 	CPrintToChatAll("%s%t %s%s %s%t %s%N%. %s%t: %s", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, sAdmin_Name, g_SchemeConfig.Color_Enabled, "Unrestricted", g_SchemeConfig.Color_Name, iClient, g_SchemeConfig.Color_Warning, "Reason", sReason);
 }
 
 void EWM_Eban_SQLUnBan_Success(Database hDatabase, any Data, int iNumQueries, Handle[] hResults, any[] QueryData)
 {
-	LogMessage("[EBan DB] Successful UnBan");
+	#if defined EW_MODULE_FORWARDS
+	Call_StartForward(g_hOnDatabaseUnBanSuccess);
+	Call_Finish();
+	#endif
 }
 
 void EWM_Eban_SQLUnBan_Error(Database hDatabase, any Data, int iNumQueries, const  char[] sError, int iFailIndex, any[] QueryData)
 {
-	LogError("[EBan DB] SQL UnBan Error: %s", sError);
+	#if defined EW_MODULE_FORWARDS
+	Call_StartForward(g_hOnDatabaseUnBanError);
+	Call_PushString(sError);
+	Call_Finish();
+	#endif
 }
 
+// Function to send a request about active player bans
 void EWM_Eban_Update_Client(int iClient)
 {
 	if(g_iDBStatus == 4)
 	{
-		char sTQuery[1024], sClient_SteamID[64];
-		GetClientAuthId(iClient, AuthId_Steam2, sClient_SteamID, sizeof(sClient_SteamID));
+		char sTQuery[1024];
 		FormatEx(sTQuery, sizeof(sTQuery), "SELECT `admin_name`, `admin_steamid`, `duration`, `timestamp_issued`, `reason` FROM `EntWatch_Current_Eban` \
-												WHERE `client_steamid`='%s' and `server`='%s'", sClient_SteamID, g_SchemeConfig.Server_Name);
-		SQL_TQuery(g_hEbanDB, EWM_Eban_SQLTCallBackUpdate, sTQuery, GetClientUserId(iClient));
+												WHERE `client_steamid`='%s' and `server`='%s'", g_sSteamIDs[iClient], g_SchemeConfig.Server_Name);
+		SQL_TQuery(g_hEbanDB, EWM_Eban_SQLTCallBackUpdate, sTQuery, g_iUserIDs[iClient]);
 	}
 }
 
+// Function to update the ban when receiving a response from the database
 void EWM_Eban_SQLTCallBackUpdate(Handle hDatabase, Handle hResults, const char[] sError, any iUserID)
 {
 	if(sError[0])
 	{
-		LogError("[EBan DB] SQL CallBack Update Error: %s", sError);
+		#if defined EW_MODULE_FORWARDS
+		Call_StartForward(g_hOnDatabaseBanUpdateError);
+		Call_PushString(sError);
+		Call_Finish();
+		#endif
 	}
 	else
 	{
@@ -445,6 +483,7 @@ void EWM_Eban_SQLTCallBackUpdate(Handle hDatabase, Handle hResults, const char[]
 	}
 }
 
+// Getting a list of banned people whose e-ban has expired
 void EWM_Eban_Offline_Unban(int iTime)
 {
 	if(g_iDBStatus == 4)
@@ -456,11 +495,16 @@ void EWM_Eban_Offline_Unban(int iTime)
 	}
 }
 
+// E-unbanned a player and moving the ban entry to the e-unbanned table
 void EWM_Eban_SQLTCallBackOfflineUnban(Handle hDatabase, Handle hResults, const char[] sError, any iTime)
 {
 	if(sError[0])
 	{
-		LogError("[EBan DB] SQL CallBack Update Error: %s", sError);
+		#if defined EW_MODULE_FORWARDS
+		Call_StartForward(g_hOnDatabaseOfflineUnBanError);
+		Call_PushString(sError);
+		Call_Finish();
+		#endif
 	}
 	else
 	{
@@ -490,6 +534,7 @@ void EWM_Eban_SQLTCallBackOfflineUnban(Handle hDatabase, Handle hResults, const 
 	}
 }
 
+// E-unban player
 Action EWM_Eban_Timer_Checker(Handle timer)
 {
 	if(g_iDBStatus>0)
@@ -558,9 +603,7 @@ void EWM_Eban_CleanData_All()
 	}
 }
 
-//-------------------------------------------------------
-// Purpose: Ban a client
-//-------------------------------------------------------
+// Ban a client
 public Action EWM_Eban_Command_Restrict(int iClient, int iArgs)
 {
 	if((IsClientConnected(iClient) && IsClientInGame(iClient)))
@@ -614,9 +657,7 @@ public Action EWM_Eban_Command_Restrict(int iClient, int iArgs)
 	return Plugin_Handled;
 }
 
-//-------------------------------------------------------
-// Purpose: Unban a client
-//-------------------------------------------------------
+// Unban a client
 public Action EWM_Eban_Command_Unrestrict(int iClient, int iArgs)
 {
 	if((IsClientConnected(iClient) && IsClientInGame(iClient)))
@@ -633,15 +674,20 @@ public Action EWM_Eban_Command_Unrestrict(int iClient, int iArgs)
 		if((iTarget = FindTarget(iClient, sTarget_argument, true)) == -1) return Plugin_Handled;
 		
 		FormatEx(sTarget_argument, sizeof(sTarget_argument), "No Reason");
-		if(GetCmdArgs() > 1) GetCmdArg(2, sTarget_argument, sizeof(sTarget_argument));
-		EWM_Eban_UnBanClient(iTarget, iClient, sTarget_argument);
+		if(GetConVarBool(g_hCvar_Use_Reason_Menu))
+		{
+			EWM_Eban_Menu_EUnBanReason(iClient, iTarget);
+		} else
+		{
+			GetConVarString(g_hCvar_Default_UnBanReason, sTarget_argument, sizeof(sTarget_argument));
+			if(GetCmdArgs() > 1) GetCmdArg(2, sTarget_argument, sizeof(sTarget_argument));
+			EWM_Eban_UnBanClient(iTarget, iClient, sTarget_argument);
+		}
 	}
 	return Plugin_Handled;
 }
 
-//-------------------------------------------------------
-// Purpose: Lists the clients that are currently on the server and banned
-//-------------------------------------------------------
+// Lists the clients that are currently on the server and banned
 public Action EWM_Eban_Command_EBanlist(int iClient, int iArgs)
 {
 	if((IsClientConnected(iClient) && IsClientInGame(iClient)))
@@ -666,7 +712,7 @@ public Action EWM_Eban_Command_EBanlist(int iClient, int iArgs)
 					FormatTime(sIssuedBuf, sizeof(sIssuedBuf), NULL_STRING, g_EbanClients[i].TimeStamp_Issued);
 					FormatEx(sBuff, sizeof(sBuff), "%T: %i %T: %s", "Duration", iClient, g_EbanClients[i].Duration, "Issued", iClient, sIssuedBuf);
 				}
-				CReplyToCommand(iClient, "%s#%i \t%N \t%t: %s(%s) \t%s \t%t: %s", g_SchemeConfig.Color_Warning, GetClientUserId(i), i, "Admin", g_EbanClients[i].Admin_Name,  g_EbanClients[i].Admin_SteamID, sBuff, "Reason", g_EbanClients[i].Reason);
+				CReplyToCommand(iClient, "%s#%i \t%N \t%t: %s(%s) \t%s \t%t: %s", g_SchemeConfig.Color_Warning, g_iUserIDs[i], i, "Admin", g_EbanClients[i].Admin_Name,  g_EbanClients[i].Admin_SteamID, sBuff, "Reason", g_EbanClients[i].Reason);
 			}
 		}
 		if(bFirst) CReplyToCommand(iClient, "%s%t.", g_SchemeConfig.Color_Warning, "No EBans");
@@ -735,37 +781,35 @@ void EWM_Eban_Menu_EBanReason(int iClient, int iTarget, int iDuration)
 		else FormatEx(sMenuTranslate, sizeof(sMenuTranslate), "%T %T %N [%i %T]", "EW_Tag", iClient, "EBan Reason for", iClient, iTarget, iDuration, "Minutes", iClient);
 	hMenu.SetTitle(sMenuTranslate);
 	
-	int iUserID = GetClientUserId(iTarget);
-	
-	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, iUserID, "Item misuse");
+	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Item misuse");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Item misuse", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
 	
-	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, iUserID, "Trolling on purpose");
+	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Trolling on purpose");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Trolling on purpose", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
 	
-	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, iUserID, "Throwing item away");
+	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Throwing item away");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Throwing item away", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
 	
-	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, iUserID, "Not using an item");
+	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Not using an item");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Not using an item", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
 	
-	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, iUserID, "Trimming team");
+	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Trimming team");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Trimming team", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
 	
-	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, iUserID, "Not listening to leader");
+	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Not listening to leader");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Not listening to leader", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
 	
-	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, iUserID, "Spamming an item");
+	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Spamming an item");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Spamming an item", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
 	
-	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, iUserID, "Other");
+	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Other");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Other", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
 	
@@ -787,6 +831,56 @@ public int EWM_Eban_Menu_EBanReason_Handler(Menu hMenu, MenuAction hAction, int 
 			FormatEx(sReason, sizeof(sReason), "%s", Explode_sParam[2]);
 			if(IsValidClient(iTarget))
 				EWM_Eban_BanClient(iTarget, iClient, iDuration, sReason);
+			else
+				CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Player is not valid anymore");
+		}
+	}
+	return 0;
+}
+void EWM_Eban_Menu_EUnBanReason(int iClient, int iTarget)
+{
+	Menu hMenu = CreateMenu(EWM_Eban_Menu_EUnBanReason_Handler);
+	char sMenuTranslate[128], sMenuTemp[64], sIndexTemp[96];
+	FormatEx(sMenuTranslate, sizeof(sMenuTranslate), "%T %T %N", "EW_Tag", iClient, "EUnBan Reason for", iClient, iTarget, iClient);
+	hMenu.SetTitle(sMenuTranslate);
+
+	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%s", g_iUserIDs[iTarget], "Wrong target");
+	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Wrong target", iClient);
+	hMenu.AddItem(sIndexTemp, sMenuTemp);
+
+	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%s", g_iUserIDs[iTarget], "Giving another chance");
+	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Giving another chance", iClient);
+	hMenu.AddItem(sIndexTemp, sMenuTemp);
+
+	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%s", g_iUserIDs[iTarget], "Bad duration");
+	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Bad duration", iClient);
+	hMenu.AddItem(sIndexTemp, sMenuTemp);
+
+	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%s", g_iUserIDs[iTarget], "Was not on purpose");
+	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Was not on purpose", iClient);
+	hMenu.AddItem(sIndexTemp, sMenuTemp);
+
+	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%s", g_iUserIDs[iTarget], "Other");
+	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Other", iClient);
+	hMenu.AddItem(sIndexTemp, sMenuTemp);
+
+	hMenu.Display(iClient, MENU_TIME_FOREVER);
+}
+
+public int EWM_Eban_Menu_EUnBanReason_Handler(Menu hMenu, MenuAction hAction, int iClient, int iParam2)
+{
+	switch(hAction)
+	{
+		case MenuAction_End: delete hMenu;
+		case MenuAction_Select:
+		{
+			char sSelected[96], Explode_sParam[2][96], sReason[32];
+			hMenu.GetItem(iParam2, sSelected, sizeof(sSelected));
+			ExplodeString(sSelected, "/", Explode_sParam, 2, 96);
+			int iTarget = GetClientOfUserId(StringToInt(Explode_sParam[0]));
+			FormatEx(sReason, sizeof(sReason), "%s", Explode_sParam[1]);
+			if(IsValidClient(iTarget))
+				EWM_Eban_UnBanClient(iTarget, iClient, sReason);
 			else
 				CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Player is not valid anymore");
 		}

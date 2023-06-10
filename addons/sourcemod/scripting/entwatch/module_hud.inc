@@ -1,29 +1,28 @@
 #define EW_MODULE_HUD
 
+// Purpose: Displays items information in HUD or KeyHint
+
 #define MAXSHOWHUDITEMS 12
 #define MAXSIZESTRINGFORITEM 40
 #define TIMEROTORHUD 3
 
+// Include to display more items information in the HUD
 #include <bighud>
 
-//-------------------------------------------------------
-// Purpose: Plugin settings
-//-------------------------------------------------------
+// Purpose: Module settings
 ConVar	g_hCvar_DisplayEnabled,
 		g_hCvar_DisplayCooldowns,
 		g_hCvar_Admins_See,
 		g_hCvar_HUD_Channel,
 		g_hCvar_ZM_pry;
-//-------------------------------------------------------
-// Purpose: Client settings
-//-------------------------------------------------------
+
+// Purpose: Module Client settings
 Handle	g_hCookie_Display		  = null,
 		g_hCookie_HudColor		  = null,
 		g_hCookie_HudPos		  = null,
 		g_hCookie_HudName		  = null;
-//-------------------------------------------------------
-// Purpose: Plugin Local settings
-//-------------------------------------------------------
+
+// Purpose: Module Local settings
 bool	g_bDispEnabled = true,
 		g_bDispCooldowns = true,
 		g_bAdminsSee = true,
@@ -202,6 +201,7 @@ public Action EWM_Hud_Timer_DisplayHUD(Handle timer, int client)
 				else if(GetClientTeam(ItemTest.OwnerID)==2) g_iZMItemsArray.Push(i);
 			}
 		}
+		// If there are a lot of items, we split the entire list into sheets
 		int iCountHItems = g_iHItemsArray.Length;
 		int iCountZMItems = g_iZMItemsArray.Length;
 		int iCountAItems = iCountHItems + iCountZMItems;
@@ -251,6 +251,7 @@ public Action EWM_Hud_Timer_DisplayHUD(Handle timer, int client)
 				if(g_iRotation[2][1] > iMaxAList-1) g_iRotation[2][1] = 0;
 			}
 		}
+		// We form 6 lists of items to display to different users: Humans, Humans(Only itemname+CD), ZM, ZM(Only itemname+CD), Admins/Spectator, Admins(Only itemname+CD)
 		char sMes_Humans[1024];
 		char sMes_Humans_woname[1024];
 		char sMes_Zombies[1024];
@@ -261,88 +262,99 @@ public Action EWM_Hud_Timer_DisplayHUD(Handle timer, int client)
 		EWM_Hud_Construct_String(sMes_Zombies, sizeof(sMes_Zombies), sMes_Zombies_woname, sizeof(sMes_Zombies_woname), iCountZMItems, iMaxZMList, 1);
 		EWM_Hud_Construct_String(sMes_Admins, sizeof(sMes_Admins), sMes_Admins_woname, sizeof(sMes_Admins_woname), iCountAItems, iMaxAList, 2, iCountHItems);
 		
+		// We display information in the corresponding HUD
 		if(iCountHItems > 0 || iCountZMItems > 0)
 		{
 			for(int i = 1; i <= MaxClients; i++)
 			{
-				//if(IsClientInGame(i) && !IsFakeClient(i) && g_CSettings_Hud[i].Display && (!IsVoteInProgress() || !IsClientInVotePool(i)) && GetClientMenu(i) == MenuSource_None)
-				if(IsClientInGame(i) && !IsFakeClient(i) && g_CSettings_Hud[i].Display && GetClientMenu(i) == MenuSource_None)
+				switch (g_evGameEngine)
 				{
-					BigHud_SetHudTextParams(g_CSettings_Hud[i].Pos_X, g_CSettings_Hud[i].Pos_Y, 1.1, g_CSettings_Hud[i].Color[0], g_CSettings_Hud[i].Color[1], g_CSettings_Hud[i].Color[2], g_CSettings_Hud[i].Color[3], 0, 0.0, 0.0, 0.0);
-					
-					if(g_bAdminsSee && g_bIsAdmin[i])
+					case Engine_CSGO:
 					{
-						if(g_CSettings_Hud[i].Name)
+						//if(IsClientInGame(i) && !IsFakeClient(i) && g_CSettings_Hud[i].Display && (!IsVoteInProgress() || !IsClientInVotePool(i)) && GetClientMenu(i) == MenuSource_None)
+						if(IsClientInGame(i))
 						{
-							#if defined DYNAMIC_CHANNELS
-							BigHud_ShowHudText(i, GetDynamicChannel(g_iHUDChannel), sMes_Admins);
-							#else
-							BigHud_ShowHudText(i, g_iHUDChannel, sMes_Admins);
-							#endif
-						}else
-						{
-							#if defined DYNAMIC_CHANNELS
-							BigHud_ShowHudText(i, GetDynamicChannel(g_iHUDChannel), sMes_Admins_woname);
-							#else
-							BigHud_ShowHudText(i, g_iHUDChannel, sMes_Admins_woname);
-							#endif
-						}
-					}else if((g_bTeamOnly && GetClientTeam(i)==3) || (g_bZombieNoItemPry && iCountZMItems<=0 && GetClientTeam(i)==2))
-					{
-						if(iCountHItems > 0)
-						{
-							if(g_CSettings_Hud[i].Name)
+							if(!IsClientSourceTV(i)) // Always display full information to the SourceTV
 							{
-								#if defined DYNAMIC_CHANNELS
-								BigHud_ShowHudText(i, GetDynamicChannel(g_iHUDChannel), sMes_Humans);
-								#else
-								BigHud_ShowHudText(i, g_iHUDChannel, sMes_Humans);
-								#endif
-							}else
+								if(!IsFakeClient(i) && g_CSettings_Hud[i].Display && GetClientMenu(i) == MenuSource_None)
+								{
+									BigHud_SetHudTextParams(g_CSettings_Hud[i].Pos_X, g_CSettings_Hud[i].Pos_Y, 1.1, g_CSettings_Hud[i].Color[0], g_CSettings_Hud[i].Color[1], g_CSettings_Hud[i].Color[2], g_CSettings_Hud[i].Color[3], 0, 0.0, 0.0, 0.0);
+									
+									#if defined _DynamicChannels_included_
+									int iHUDChannel = GetDynamicChannel(g_iHUDChannel);
+									#else
+									int iHUDChannel = g_iHUDChannel;
+									#endif
+									
+									if(g_bAdminsSee && g_bIsAdmin[i])
+									{
+										if(g_CSettings_Hud[i].Name) BigHud_ShowHudText(i, iHUDChannel, sMes_Admins);
+										else BigHud_ShowHudText(i, iHUDChannel, sMes_Admins_woname);
+									}else if((g_bTeamOnly && GetClientTeam(i)==3) || (g_bZombieNoItemPry && iCountZMItems<=0 && GetClientTeam(i)==2))
+									{
+										if(iCountHItems > 0)
+										{
+											if(g_CSettings_Hud[i].Name) BigHud_ShowHudText(i, iHUDChannel, sMes_Humans);
+											else BigHud_ShowHudText(i, iHUDChannel, sMes_Humans_woname);
+										}
+									}else if(g_bTeamOnly && GetClientTeam(i)==2)
+									{
+										if(iCountZMItems > 0)
+										{
+											if(g_CSettings_Hud[i].Name) BigHud_ShowHudText(i, iHUDChannel, sMes_Zombies);
+											else BigHud_ShowHudText(i, iHUDChannel, sMes_Zombies_woname);
+										}
+									}else
+									{
+										if(g_CSettings_Hud[i].Name) BigHud_ShowHudText(i, iHUDChannel, sMes_Admins);
+										else BigHud_ShowHudText(i, iHUDChannel, sMes_Admins_woname);
+									}
+								}
+							} else if(g_CSettings_Hud[i].Display)
 							{
-								#if defined DYNAMIC_CHANNELS
-								BigHud_ShowHudText(i, GetDynamicChannel(g_iHUDChannel), sMes_Humans_woname);
+								BigHud_SetHudTextParams(g_CSettings_Hud[i].Pos_X, g_CSettings_Hud[i].Pos_Y, 1.1, g_CSettings_Hud[i].Color[0], g_CSettings_Hud[i].Color[1], g_CSettings_Hud[i].Color[2], g_CSettings_Hud[i].Color[3], 0, 0.0, 0.0, 0.0);
+								#if defined _DynamicChannels_included_
+								int iHUDChannel = GetDynamicChannel(g_iHUDChannel);
 								#else
-								BigHud_ShowHudText(i, g_iHUDChannel, sMes_Humans_woname);
+								int iHUDChannel = g_iHUDChannel;
 								#endif
+								BigHud_ShowHudText(i, iHUDChannel, sMes_Admins);
 							}
 						}
-					}else if(g_bTeamOnly && GetClientTeam(i)==2)
+					}
+					default:
 					{
-						if(iCountZMItems > 0)
+						if(IsClientInGame(i))
 						{
-							if(g_CSettings_Hud[i].Name)
+							if(!IsClientSourceTV(i)) // Always display full information to the SourceTV
 							{
-								#if defined DYNAMIC_CHANNELS
-								BigHud_ShowHudText(i, GetDynamicChannel(g_iHUDChannel), sMes_Zombies);
-								#else
-								BigHud_ShowHudText(i, g_iHUDChannel, sMes_Zombies);
-								#endif
-							}else
-							{
-								#if defined DYNAMIC_CHANNELS
-								BigHud_ShowHudText(i, GetDynamicChannel(g_iHUDChannel), sMes_Zombies_woname);
-								#else
-								BigHud_ShowHudText(i, g_iHUDChannel, sMes_Zombies_woname);
-								#endif
-							}
-						}
-					}else
-					{
-						if(g_CSettings_Hud[i].Name)
-						{
-							#if defined DYNAMIC_CHANNELS
-							BigHud_ShowHudText(i, GetDynamicChannel(g_iHUDChannel), sMes_Admins);
-							#else
-							BigHud_ShowHudText(i, g_iHUDChannel, sMes_Admins);
-							#endif
-						}else
-						{
-							#if defined DYNAMIC_CHANNELS
-							BigHud_ShowHudText(i, GetDynamicChannel(g_iHUDChannel), sMes_Admins_woname);
-							#else
-							BigHud_ShowHudText(i, g_iHUDChannel, sMes_Admins_woname);
-							#endif
+								if(IsClientInGame(i) && !IsFakeClient(i) && g_CSettings_Hud[i].Display)
+								{
+									if(g_bAdminsSee && g_bIsAdmin[i])
+									{
+										if(g_CSettings_Hud[i].Name) EWM_Hud_Show_Hint_Message(i, sMes_Admins);
+										else EWM_Hud_Show_Hint_Message(i, sMes_Admins_woname);
+									}else if((g_bTeamOnly && GetClientTeam(i)==3) || (g_bZombieNoItemPry && iCountZMItems<=0 && GetClientTeam(i)==2))
+									{
+										if(iCountHItems > 0)
+										{
+											if(g_CSettings_Hud[i].Name) EWM_Hud_Show_Hint_Message(i, sMes_Humans);
+											else EWM_Hud_Show_Hint_Message(i, sMes_Humans_woname);
+										}
+									}else if(g_bTeamOnly && GetClientTeam(i)==2)
+									{
+										if(iCountZMItems > 0)
+										{
+											if(g_CSettings_Hud[i].Name) EWM_Hud_Show_Hint_Message(i, sMes_Zombies);
+											else EWM_Hud_Show_Hint_Message(i, sMes_Zombies_woname);
+										}
+									}else
+									{
+										if(g_CSettings_Hud[i].Name) EWM_Hud_Show_Hint_Message(i, sMes_Admins);
+										else EWM_Hud_Show_Hint_Message(i, sMes_Admins_woname);
+									}
+								}
+							} else if(g_CSettings_Hud[i].Display) EWM_Hud_Show_Hint_Message(i, sMes_Admins);
 						}
 					}
 				}
@@ -352,6 +364,16 @@ public Action EWM_Hud_Timer_DisplayHUD(Handle timer, int client)
 	return Plugin_Continue;
 }
 
+// Display function in KeyHint
+void EWM_Hud_Show_Hint_Message(int iClient, char[] sMessage)
+{
+	Handle hBuffer = StartMessageOne("KeyHintText", iClient);
+	BfWriteByte(hBuffer, 1);
+	BfWriteString(hBuffer, sMessage);
+	EndMessage();
+}
+
+// A function that collects information about items based on parameters
 void EWM_Hud_Construct_String(char[] sResult, int iSizeResult, char[] sResult_woname, int iSizeResult_woname, int iCountItems, int iMaxList, int iType, int iCountHItems = 0)
 {
 	if(iCountItems > 0)
@@ -494,6 +516,7 @@ void EWM_Hud_Construct_String(char[] sResult, int iSizeResult, char[] sResult_wo
 	}
 }
 
+// Client command handlers
 public Action EWM_Hud_Command_ToggleHUD(int iClient, int iArgs)
 {
 	if((IsClientConnected(iClient) && IsClientInGame(iClient)))
@@ -538,35 +561,42 @@ public Action EWM_Hud_Command_Hudpos(int iClient, int iArgs)
 {
 	if((IsClientConnected(iClient) && IsClientInGame(iClient)))
 	{
-		if (GetCmdArgs() < 2)
+		switch (g_evGameEngine)
 		{
-			CReplyToCommand(iClient, "%s%t %s%t: sm_hudpos <x> <y>. %t: %.3f %.3f", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Usage", "Default", g_SchemeConfig.Pos_HUD_X, g_SchemeConfig.Pos_HUD_Y);
-			return Plugin_Handled;
+			case Engine_CSGO:
+			{
+				if (GetCmdArgs() < 2)
+				{
+					CReplyToCommand(iClient, "%s%t %s%t: sm_hudpos <x> <y>. %t: %.3f %.3f", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Usage", "Default", g_SchemeConfig.Pos_HUD_X, g_SchemeConfig.Pos_HUD_Y);
+					return Plugin_Handled;
+				}
+				char sBuffer[128];
+				float HudPosX_validate;
+				float HudPosY_validate;
+				GetCmdArg(1, sBuffer, sizeof(sBuffer));
+				HudPosX_validate = StringToFloat(sBuffer);
+				
+				GetCmdArg(2, sBuffer, sizeof(sBuffer));
+				HudPosY_validate = StringToFloat(sBuffer);
+				
+				if(((HudPosX_validate >= 0.0 && HudPosX_validate <= 1.0) || HudPosX_validate == -1.0) && ((HudPosY_validate >= 0.0 && HudPosY_validate <= 1.0) || HudPosY_validate == -1.0))
+				{
+					g_CSettings_Hud[iClient].Pos_X = HudPosX_validate;
+					g_CSettings_Hud[iClient].Pos_Y = HudPosY_validate;
+					
+					char sBuffer_cookie[32];
+					FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%f/%f", HudPosX_validate, HudPosY_validate);
+					SetClientCookie(iClient, g_hCookie_HudPos, sBuffer_cookie);
+				} else 
+				{
+					CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Position", g_SchemeConfig.Color_Disabled, "Wrong");
+					return Plugin_Handled;
+				}
+				
+				CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Position", g_SchemeConfig.Color_Enabled, "Saved");
+			}
+			default: CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Not available in this game");
 		}
-		char sBuffer[128];
-		float HudPosX_validate;
-		float HudPosY_validate;
-		GetCmdArg(1, sBuffer, sizeof(sBuffer));
-		HudPosX_validate = StringToFloat(sBuffer);
-		
-		GetCmdArg(2, sBuffer, sizeof(sBuffer));
-		HudPosY_validate = StringToFloat(sBuffer);
-		
-		if(((HudPosX_validate >= 0.0 && HudPosX_validate <= 1.0) || HudPosX_validate == -1.0) && ((HudPosY_validate >= 0.0 && HudPosY_validate <= 1.0) || HudPosY_validate == -1.0))
-		{
-			g_CSettings_Hud[iClient].Pos_X = HudPosX_validate;
-			g_CSettings_Hud[iClient].Pos_Y = HudPosY_validate;
-			
-			char sBuffer_cookie[32];
-			FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%f/%f", HudPosX_validate, HudPosY_validate);
-			SetClientCookie(iClient, g_hCookie_HudPos, sBuffer_cookie);
-		} else 
-		{
-			CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Position", g_SchemeConfig.Color_Disabled, "Wrong");
-			return Plugin_Handled;
-		}
-		
-		CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Position", g_SchemeConfig.Color_Enabled, "Saved");
 	}
 	return Plugin_Handled;
 }
@@ -575,44 +605,51 @@ public Action EWM_Hud_Command_HudColor(int iClient, int iArgs)
 {
 	if((IsClientConnected(iClient) && IsClientInGame(iClient)))
 	{
-		if (GetCmdArgs() < 4)
+		switch (g_evGameEngine)
 		{
-			CReplyToCommand(iClient, "%s%t %s%t: sm_hudcolor <R> <G> <B> <A>. %t: %i %i %i %i", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Usage", "Default", g_SchemeConfig.Color_HUD[0], g_SchemeConfig.Color_HUD[1], g_SchemeConfig.Color_HUD[2], g_SchemeConfig.Color_HUD[3]);
-			return Plugin_Handled;
+			case Engine_CSGO:
+			{
+				if (GetCmdArgs() < 4)
+				{
+					CReplyToCommand(iClient, "%s%t %s%t: sm_hudcolor <R> <G> <B> <A>. %t: %i %i %i %i", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Usage", "Default", g_SchemeConfig.Color_HUD[0], g_SchemeConfig.Color_HUD[1], g_SchemeConfig.Color_HUD[2], g_SchemeConfig.Color_HUD[3]);
+					return Plugin_Handled;
+				}
+				char sBuffer[128];
+				int iColor_validate[4];
+				GetCmdArg(1, sBuffer, sizeof(sBuffer));
+				iColor_validate[0] = StringToInt(sBuffer);
+				
+				GetCmdArg(2, sBuffer, sizeof(sBuffer));
+				iColor_validate[1] = StringToInt(sBuffer);
+				
+				GetCmdArg(3, sBuffer, sizeof(sBuffer));
+				iColor_validate[2] = StringToInt(sBuffer);
+				
+				GetCmdArg(4, sBuffer, sizeof(sBuffer));
+				iColor_validate[3] = StringToInt(sBuffer);
+				
+				if(iColor_validate[0] >= 0 && iColor_validate[0] <= 255 && 
+					iColor_validate[1] >= 0 && iColor_validate[1] <= 255 && 
+					iColor_validate[2] >= 0 && iColor_validate[2] <= 255 && 
+					iColor_validate[3] >= 0 && iColor_validate[3] <= 255)
+				{
+					g_CSettings_Hud[iClient].Color[0] = iColor_validate[0];
+					g_CSettings_Hud[iClient].Color[1] = iColor_validate[1];
+					g_CSettings_Hud[iClient].Color[2] = iColor_validate[2];
+					g_CSettings_Hud[iClient].Color[3] = iColor_validate[3];
+					char sBuffer_cookie[32];
+					Format(sBuffer_cookie, sizeof(sBuffer_cookie), "%i/%i/%i/%i", iColor_validate[0], iColor_validate[1], iColor_validate[2], iColor_validate[3]);
+					SetClientCookie(iClient, g_hCookie_HudColor, sBuffer_cookie);
+				} else 
+				{
+					CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Color", g_SchemeConfig.Color_Disabled, "Wrong");
+					return Plugin_Handled;
+				}
+				
+				CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Color", g_SchemeConfig.Color_Enabled, "Saved");
+			}
+			default: CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Not available in this game");
 		}
-		char sBuffer[128];
-		int iColor_validate[4];
-		GetCmdArg(1, sBuffer, sizeof(sBuffer));
-		iColor_validate[0] = StringToInt(sBuffer);
-		
-		GetCmdArg(2, sBuffer, sizeof(sBuffer));
-		iColor_validate[1] = StringToInt(sBuffer);
-		
-		GetCmdArg(3, sBuffer, sizeof(sBuffer));
-		iColor_validate[2] = StringToInt(sBuffer);
-		
-		GetCmdArg(4, sBuffer, sizeof(sBuffer));
-		iColor_validate[3] = StringToInt(sBuffer);
-		
-		if(iColor_validate[0] >= 0 && iColor_validate[0] <= 255 && 
-			iColor_validate[1] >= 0 && iColor_validate[1] <= 255 && 
-			iColor_validate[2] >= 0 && iColor_validate[2] <= 255 && 
-			iColor_validate[3] >= 0 && iColor_validate[3] <= 255)
-		{
-			g_CSettings_Hud[iClient].Color[0] = iColor_validate[0];
-			g_CSettings_Hud[iClient].Color[1] = iColor_validate[1];
-			g_CSettings_Hud[iClient].Color[2] = iColor_validate[2];
-			g_CSettings_Hud[iClient].Color[3] = iColor_validate[3];
-			char sBuffer_cookie[32];
-			Format(sBuffer_cookie, sizeof(sBuffer_cookie), "%i/%i/%i/%i", iColor_validate[0], iColor_validate[1], iColor_validate[2], iColor_validate[3]);
-			SetClientCookie(iClient, g_hCookie_HudColor, sBuffer_cookie);
-		} else 
-		{
-			CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Color", g_SchemeConfig.Color_Disabled, "Wrong");
-			return Plugin_Handled;
-		}
-		
-		CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Color", g_SchemeConfig.Color_Enabled, "Saved");
 	}
 	return Plugin_Handled;
 }
