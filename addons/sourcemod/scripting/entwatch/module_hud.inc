@@ -252,15 +252,21 @@ public Action EWM_Hud_Timer_DisplayHUD(Handle timer, int client)
 			}
 		}
 		// We form 6 lists of items to display to different users: Humans, Humans(Only itemname+CD), ZM, ZM(Only itemname+CD), Admins/Spectator, Admins(Only itemname+CD)
-		char sMes_Humans[1024];
-		char sMes_Humans_woname[1024];
-		char sMes_Zombies[1024];
-		char sMes_Zombies_woname[1024];
-		char sMes_Admins[1024];
-		char sMes_Admins_woname[1024];
-		EWM_Hud_Construct_String(sMes_Humans, sizeof(sMes_Humans), sMes_Humans_woname, sizeof(sMes_Humans_woname), iCountHItems, iMaxHList, 0);
-		EWM_Hud_Construct_String(sMes_Zombies, sizeof(sMes_Zombies), sMes_Zombies_woname, sizeof(sMes_Zombies_woname), iCountZMItems, iMaxZMList, 1);
-		EWM_Hud_Construct_String(sMes_Admins, sizeof(sMes_Admins), sMes_Admins_woname, sizeof(sMes_Admins_woname), iCountAItems, iMaxAList, 2, iCountHItems);
+
+		int maxBufferSize = 1024;
+		// KeyHintText is maximum 255 bytes
+		if (g_evGameEngine != Engine_CSGO)
+			maxBufferSize = 254;
+
+		char[] sMes_Humans = new char[maxBufferSize];
+		char[] sMes_Humans_woname = new char[maxBufferSize];
+		char[] sMes_Zombies = new char[maxBufferSize];
+		char[] sMes_Zombies_woname = new char[maxBufferSize];
+		char[] sMes_Admins = new char[maxBufferSize];
+		char[] sMes_Admins_woname = new char[maxBufferSize];
+		EWM_Hud_Construct_String(sMes_Humans, maxBufferSize, sMes_Humans_woname, maxBufferSize, iCountHItems, iMaxHList, 0);
+		EWM_Hud_Construct_String(sMes_Zombies, maxBufferSize, sMes_Zombies_woname, maxBufferSize, iCountZMItems, iMaxZMList, 1);
+		EWM_Hud_Construct_String(sMes_Admins, maxBufferSize, sMes_Admins_woname, maxBufferSize, iCountAItems, iMaxAList, 2, iCountHItems);
 		
 		// We display information in the corresponding HUD
 		if(iCountHItems > 0 || iCountZMItems > 0)
