@@ -6,7 +6,7 @@
 #include <sdkhooks>
 #include <cstrike>
 #include <clientprefs>
-#include <csgocolors_fix>
+#include <multicolors>
 
 #include "entwatch/function.inc"
 
@@ -72,7 +72,7 @@ public Plugin myinfo =
 	name = "EntWatch",
 	author = "DarkerZ[RUS], AgentWesker, notkoen, sTc2201, maxime1907",
 	description = "Notify players about entity interactions.",
-	version = "3.DZ.44",
+	version = "3.DZ.45",
 	url = "dark-skill.ru"
 };
  
