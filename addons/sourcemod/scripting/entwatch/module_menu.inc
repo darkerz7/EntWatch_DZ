@@ -379,7 +379,7 @@ void EWM_Menu_PM_ItemTransfer(int iClient, int iItemIndex)
 	bool bNotFound = true;
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if(!IsClientInGame(i) || i == ItemTest.OwnerID) continue;
+		if(!IsClientInGame(i) || IsFakeClient(i) || !IsPlayerAlive(i) || i == ItemTest.OwnerID) continue;
 		#if defined EW_MODULE_EBAN
 		if(g_EbanClients[i].Banned) continue;
 		#endif
