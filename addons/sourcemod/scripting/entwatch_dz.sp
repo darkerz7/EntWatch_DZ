@@ -653,7 +653,13 @@ stock void LoadConfig()
 			
 			KvGetString(hKeyValues, "filtername", sBuffer_temp, sizeof(sBuffer_temp), "");
 			FormatEx(NewItem.FilterName, sizeof(NewItem.FilterName), "%s", sBuffer_temp);
-			
+
+			KvGetString(hKeyValues, "hasfiltername", sBuffer_temp, sizeof(sBuffer_temp), "notfound");
+			if (StrEqual(sBuffer_temp, "notfound", true))
+				NewItem.HasFilterName = true;
+			else
+				NewItem.HasFilterName = StrEqual(sBuffer_temp, "true", true);
+
 			KvGetString(hKeyValues, "blockpickup", sBuffer_temp, sizeof(sBuffer_temp), "false");
 			NewItem.BlockPickup = StrEqual(sBuffer_temp, "true", false);
 			
@@ -849,6 +855,7 @@ public bool RegisterItem(class_ItemConfig ItemConfig, int iEntity, int iHammerID
 		FormatEx(NewItem.Color,			sizeof(NewItem.Color),			"%s",	ItemConfig.Color);
 		FormatEx(NewItem.ButtonClass,	sizeof(NewItem.ButtonClass),	"%s",	ItemConfig.ButtonClass);
 		FormatEx(NewItem.FilterName,	sizeof(NewItem.FilterName),		"%s",	ItemConfig.FilterName);
+		NewItem.HasFilterName = ItemConfig.HasFilterName;
 		NewItem.BlockPickup = ItemConfig.BlockPickup;
 		NewItem.AllowTransfer = ItemConfig.AllowTransfer;
 		NewItem.ForceDrop = ItemConfig.ForceDrop;
@@ -1214,7 +1221,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 						
 						
 						if(ItemTest.OwnerID != iActivator && ItemTest.OwnerID != iCaller) return Plugin_Handled;
-							else if(!(StrEqual(ItemTest.FilterName,""))) DispatchKeyValue(iActivator, "targetname", ItemTest.FilterName);
+							else if(ItemTest.HasFilterName && !(StrEqual(ItemTest.FilterName,""))) DispatchKeyValue(iActivator, "targetname", ItemTest.FilterName);
 						
 						UpdateTime();
 						if(ItemTest.CheckDelay() > 0.0) return Plugin_Handled;
@@ -1535,7 +1542,7 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 				if(iAbility == 1 && ItemTest.ButtonID2 == INVALID_ENT_REFERENCE) iAbility = 0;
 				if(iAbility > -1)
 				{
-					if(!(StrEqual(ItemTest.FilterName,""))) DispatchKeyValue(iActivator, "targetname", ItemTest.FilterName);
+					if(ItemTest.HasFilterName && !(StrEqual(ItemTest.FilterName,""))) DispatchKeyValue(iActivator, "targetname", ItemTest.FilterName);
 					UpdateTime();
 					if(ItemTest.CheckDelay() > 0.0) continue;
 					if(iAbility != 2)

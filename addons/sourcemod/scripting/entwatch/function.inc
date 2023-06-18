@@ -10,6 +10,7 @@ enum struct class_ItemConfig
 	char		Color[16];
 	char		ButtonClass[32];
 	char		FilterName[32];
+	bool		HasFilterName;
 	bool		BlockPickup;
 	bool		AllowTransfer;
 	bool		ForceDrop;
@@ -44,6 +45,7 @@ enum struct class_ItemList
 	char		Color[16];			// String:	Color for visual highlighting in chat and highlight color definitions
 	char		ButtonClass[32];	// String:	Entity class name to activate item actions (func_button/func_door/game_ui)
 	char		FilterName[32];		// String:	Targetname of the player that can activate the item (filter_activator_name)
+	bool		HasFilterName;		// Bool:	Ignore filtername (Support for old configs)
 	bool		BlockPickup;		// Bool:	Disable item selection
 	bool		AllowTransfer;		// Bool:	Allow transferring an item to another player
 	bool		ForceDrop;			// Bool:	Necessary for proper handling of the drop function
