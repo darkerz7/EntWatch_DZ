@@ -469,4 +469,8 @@
 	{
 		"en" 	"Database not ready"
 	}
+	"Reload Configs"
+	{
+		"en"	"Configs has been reloaded.."
+	}
 }

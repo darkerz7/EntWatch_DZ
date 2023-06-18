@@ -1909,6 +1909,8 @@ public Action EW_Command_ReloadConfig(int iClient, int iArgs)
 	LoadConfig();
 	LoadScheme();
 
+	CReplyToCommand(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Reload Configs");
+
 	return Plugin_Handled;
 }
 
