@@ -7,7 +7,8 @@ ConVar	g_hCvar_Default_BanTime,
 		g_hCvar_Default_BanReason,
 		g_hCvar_Default_UnBanReason,
 		g_hCvar_Keep_Expired_Bans,
-		g_hCvar_Use_Reason_Menu;
+		g_hCvar_Use_Reason_Menu,
+		g_hCvar_MaxBanTime;
 
 // Module Variables
 class_ClientSettings_EBan g_EbanClients[MAXPLAYERS+1];
@@ -23,6 +24,7 @@ stock void EWM_Eban_OnPluginStart()
 	g_hCvar_Default_UnBanReason	= CreateConVar("entwatch_unbanreason", "Giving another chance", "Default Unban reason.", _);
 	g_hCvar_Keep_Expired_Bans		= CreateConVar("entwatch_keep_expired_ban", "1", "Enable/Disable keep expired bans.", _, true, 0.0, true, 1.0);
 	g_hCvar_Use_Reason_Menu		= CreateConVar("entwatch_use_reason_menu", "0", "Enable/Disable menu if the admin has not indicated a reason", _, true, 0.0, true, 1.0);
+	g_hCvar_MaxBanTime			= CreateConVar("entwatch_max_bantime", "0", "Maximum ban time allowed via console command (0 = disabled)", _, true, 0.0);
 
 	HookConVarChange(g_hCvar_Keep_Expired_Bans, Cvar_EBAN_Changed);
 	
@@ -246,6 +248,11 @@ public void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, const cha
 					CPrintToChat(iAdmin, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Not have permission lEBan");
 					return;
 				}
+			}
+			if (GetConVarInt(g_hCvar_MaxBanTime) != 0 && iDuration > GetConVarInt(g_hCvar_MaxBanTime))
+			{
+				LogError("Invalid ban duration time %d", iBanDuration);
+				return;
 			}
 			//Duration
 			g_EbanClients[iClient].Banned = true;
@@ -651,6 +658,11 @@ public Action EWM_Eban_Command_Restrict(int iClient, int iArgs)
 			GetCmdArg(3, sTarget_argument, sizeof(sTarget_argument));
 			
 			FormatEx(sReason, sizeof(sReason), "%s", sTarget_argument);
+		}
+		if (GetConVarInt(g_hCvar_MaxBanTime) != 0 && iDuration > GetConVarInt(g_hCvar_MaxBanTime) || iDuration < -1)
+		{
+			CReplyToCommand(iClient, "%s%t %s%t: Invalid duration supplied, value must be between 1 and %d (0 = Perma, -1 = Temporary)", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Usage", GetConVarInt(g_hCvar_MaxBanTime));
+			return Plugin_Handled;
 		}
 		EWM_Eban_BanClient(iTarget, iClient, iDuration, sReason);
 	}
