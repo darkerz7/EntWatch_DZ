@@ -6,6 +6,7 @@
 #include <sdkhooks>
 #include <cstrike>
 #include <clientprefs>
+#include <smlib>
 //Priority: 1.csgocolors_fix - 85 kB, 2. multicolors - 93 kB, 3. morecolors - 89 kB
 #tryinclude <csgocolors_fix>
 #if !defined _csgocolors_included
@@ -946,8 +947,8 @@ public bool RegisterButton(class_ItemList ItemInstance, int iEntity)
 		Entity_GetParentName(iEntity, Item_Weapon_Parent, sizeof(Item_Weapon_Parent));
 		if (!StrEqual(Item_Weapon_Targetname,"") && StrEqual(Item_Weapon_Targetname, Item_Weapon_Parent))
 		{
-			if(ItemInstance.ButtonID == INVALID_ENT_REFERENCE) ItemInstance.ButtonID = Entity_GetHammerID(iEntity); //Default the first button spawned will be the main button. Need to module use_priority
-			else if(ItemInstance.ButtonID2 == INVALID_ENT_REFERENCE) ItemInstance.ButtonID2 = Entity_GetHammerID(iEntity); //May be Second Button?
+			if(ItemInstance.ButtonID == INVALID_ENT_REFERENCE) ItemInstance.ButtonID = Entity_GetHammerId(iEntity); //Default the first button spawned will be the main button. Need to module use_priority
+			else if(ItemInstance.ButtonID2 == INVALID_ENT_REFERENCE) ItemInstance.ButtonID2 = Entity_GetHammerId(iEntity); //May be Second Button?
 			SDKHookEx(iEntity, SDKHook_Use, OnButtonUse);
 			ItemInstance.ButtonsArray.Push(iEntity);
 			return true;
@@ -960,7 +961,7 @@ public bool RegisterMath(class_ItemList ItemInstance, int iEntity)
 {
 	if (IsValidEntity(ItemInstance.WeaponID))
 	{
-		if (ItemInstance.EnergyID == Entity_GetHammerID(iEntity))
+		if (ItemInstance.EnergyID == Entity_GetHammerId(iEntity))
 		{
 			char Item_Counter_Targetname[64];
 			Entity_GetTargetName(iEntity, Item_Counter_Targetname, sizeof(Item_Counter_Targetname));
@@ -991,7 +992,7 @@ public bool RegisterMath(class_ItemList ItemInstance, int iEntity)
 					return true;
 				}
 			}
-		}else if (ItemInstance.EnergyID2 == Entity_GetHammerID(iEntity))
+		}else if (ItemInstance.EnergyID2 == Entity_GetHammerId(iEntity))
 		{
 			char Item_Counter_Targetname[64];
 			Entity_GetTargetName(iEntity, Item_Counter_Targetname, sizeof(Item_Counter_Targetname));
@@ -1078,7 +1079,7 @@ public void OnItemSpawned(int iEntity)
 {
 	if(!IsValidEntity(iEntity) || !g_bConfigLoaded) return;
 	
-	int iHammerID = Entity_GetHammerID(iEntity);
+	int iHammerID = Entity_GetHammerId(iEntity);
 	if(iHammerID>0)
 	{
 		for(int i = 0; i<g_ItemConfig.Length; i++)
@@ -1148,7 +1149,7 @@ public Action Timer_OnTriggerSpawned(Handle timer, int iEntity)
 {
 	if(!IsValidEntity(iEntity) || !g_bConfigLoaded) return Plugin_Stop;
 	
-	int iHammerID = Entity_GetHammerID(iEntity);
+	int iHammerID = Entity_GetHammerId(iEntity);
 	if(iHammerID>0)
 	{
 		for(int i = 0; i<g_ItemConfig.Length; i++)
@@ -1217,7 +1218,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 						//PrintToConsoleAll("[EntWatch] DEBUG: Delay - %i", ItemTest.Delay);
 						//PrintToConsoleAll("[EntWatch] DEBUG: ButtonID - %i", ItemTest.ButtonID);
 						//PrintToConsoleAll("[EntWatch] DEBUG: iButton - %i", iButton);
-						//PrintToConsoleAll("[EntWatch] DEBUG: HammerID of iButton - %i", Entity_GetHammerID(iButton));
+						//PrintToConsoleAll("[EntWatch] DEBUG: HammerID of iButton - %i", Entity_GetHammerId(iButton));
 						
 						
 						if(ItemTest.OwnerID != iActivator && ItemTest.OwnerID != iCaller) return Plugin_Handled;
@@ -1228,13 +1229,13 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 						
 						int iAbility = 0; //0 - once button, 1 - first button, 2 - second button
 						
-						if(ItemTest.ButtonID != INVALID_ENT_REFERENCE && ItemTest.ButtonID == Entity_GetHammerID(iButton))
+						if(ItemTest.ButtonID != INVALID_ENT_REFERENCE && ItemTest.ButtonID == Entity_GetHammerId(iButton))
 						{
 							if(ItemTest.LockButton) return Plugin_Handled;
 							if(ItemTest.CheckWaitTime() > 0 ) return Plugin_Handled;
 							iAbility = 1;
 						}
-						else if (ItemTest.ButtonID2 != INVALID_ENT_REFERENCE && ItemTest.ButtonID2 == Entity_GetHammerID(iButton))
+						else if (ItemTest.ButtonID2 != INVALID_ENT_REFERENCE && ItemTest.ButtonID2 == Entity_GetHammerId(iButton))
 						{
 							if(ItemTest.LockButton2) return Plugin_Handled;
 							if(ItemTest.CheckWaitTime2() > 0 ) return Plugin_Handled;

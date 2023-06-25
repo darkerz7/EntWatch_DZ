@@ -1,5 +1,5 @@
 project:
-  sourceknight: 0.2
+  sourceknight: 0.3
   name: EntWatch
   dependencies:
     - name: sourcemod
@@ -36,6 +36,14 @@ project:
       repo: https://github.com/R1KO/VIP-Core
       unpack:
       - source: /addons/sourcemod/scripting/include
+        dest: /addons/sourcemod/scripting/include
+
+    - name: smlib
+      type: git
+      repo: https://github.com/bcserv/smlib
+      version: origin/transitional_syntax
+      unpack:
+      - source: /scripting/include
         dest: /addons/sourcemod/scripting/include
 
   root: /

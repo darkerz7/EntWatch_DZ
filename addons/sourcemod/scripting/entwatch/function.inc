@@ -342,21 +342,3 @@ stock int GetSlotCSGO(int eWeapon)
 		return 4;
 	else return -1;
 }
-
-// Entity targetname getting function from SMLib
-stock char[] Entity_GetTargetName(int entity, char[] buffer, int size)
-{
-	return GetEntPropString(entity, Prop_Data, "m_iName", buffer, size);
-}
-
-// Entity parentname getting function from SMLib
-stock char[] Entity_GetParentName(int entity, char[] buffer, int size)
-{
-	return GetEntPropString(entity, Prop_Data, "m_iParent", buffer, size);
-}
-
-// Entity HammerID getting function from SMLib
-stock int Entity_GetHammerID(int entity)
-{
-	return GetEntProp(entity, Prop_Data, "m_iHammerID");
-}

@@ -69,7 +69,7 @@ public Action OnPlayerRunCmd(int iClient, int& iButtons, int& iImpulse, float aV
 					if(iCountButtons == 1 && iCurCountButton == 1)
 					{
 						int iBtnBuff = ItemTest.ButtonsArray.Get(0);
-						if(IsValidEdict(iBtnBuff) && ItemTest.ButtonID == Entity_GetHammerID(iBtnBuff)) 
+						if(IsValidEdict(iBtnBuff) && ItemTest.ButtonID == Entity_GetHammerId(iBtnBuff))
 						{
 							iButton = iBtnBuff;
 							iMode = ItemTest.Mode;
