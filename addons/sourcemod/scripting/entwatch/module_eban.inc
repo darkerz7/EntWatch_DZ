@@ -5,6 +5,7 @@
 // Module settings
 ConVar	g_hCvar_Default_BanTime,
 		g_hCvar_Default_BanReason,
+		g_hCvar_Admin_BanLong,
 		g_hCvar_Default_UnBanReason,
 		g_hCvar_Keep_Expired_Bans,
 		g_hCvar_Use_Reason_Menu,
@@ -19,21 +20,22 @@ int g_iDBStatus = 0; // 0 - Def., 1 - Reconnect, 2 - Unknown Driver, 3 - Create 
 
 stock void EWM_Eban_OnPluginStart()
 {
-	g_hCvar_Default_BanTime		= CreateConVar("entwatch_bantime", "0", "Default ban time (0-43200)", _, true, 0.0, true, 43200.0);
+	g_hCvar_Default_BanTime			= CreateConVar("entwatch_bantime", "0", "Default ban time (0-43200)", _, true, 0.0, true, 43200.0);
 	g_hCvar_Default_BanReason		= CreateConVar("entwatch_banreason", "Item misuse", "Default ban reason.", _);
-	g_hCvar_Default_UnBanReason	= CreateConVar("entwatch_unbanreason", "Giving another chance", "Default Unban reason.", _);
+	g_hCvar_Admin_BanLong			= CreateConVar("entwatch_ban_long", "720", "Maximum time in minutes that an admin is able to eban.", _, true, 1.0);
+	g_hCvar_Default_UnBanReason		= CreateConVar("entwatch_unbanreason", "Giving another chance", "Default Unban reason.", _);
 	g_hCvar_Keep_Expired_Bans		= CreateConVar("entwatch_keep_expired_ban", "1", "Enable/Disable keep expired bans.", _, true, 0.0, true, 1.0);
-	g_hCvar_Use_Reason_Menu		= CreateConVar("entwatch_use_reason_menu", "0", "Enable/Disable menu if the admin has not indicated a reason", _, true, 0.0, true, 1.0);
-	g_hCvar_MaxBanTime			= CreateConVar("entwatch_max_bantime", "0", "Maximum ban time allowed via console command (0 = disabled)", _, true, 0.0);
+	g_hCvar_Use_Reason_Menu			= CreateConVar("entwatch_use_reason_menu", "0", "Enable/Disable menu if the admin has not indicated a reason", _, true, 0.0, true, 1.0);
+	g_hCvar_MaxBanTime				= CreateConVar("entwatch_max_bantime", "0", "Maximum ban time allowed via console command (0 = disabled)", _, true, 0.0);
 
 	HookConVarChange(g_hCvar_Keep_Expired_Bans, Cvar_EBAN_Changed);
-	
+
 	RegConsoleCmd("sm_status", EWM_Eban_Command_Status);
-	
+
 	RegAdminCmd("sm_eban", EWM_Eban_Command_Restrict, ADMFLAG_BAN);
 	RegAdminCmd("sm_eunban", EWM_Eban_Command_Unrestrict, ADMFLAG_BAN);
 	RegAdminCmd("sm_ebanlist", EWM_Eban_Command_EBanlist, ADMFLAG_BAN);
-	
+
 	Database.Connect(EWM_Eban_ConnectCallBack, EW_EBAN_ENTWATCH_SECTION);
 	//Timer Checker
 	CreateTimer(60.0, EWM_Eban_Timer_Checker, _, TIMER_REPEAT);
@@ -240,7 +242,7 @@ public void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, const cha
 		}else
 		{
 			//Wesker EDIT -- Restrict longer bans with command override
-			if(iAdmin != 0 && iBanDuration >= 720)
+			if(iAdmin != 0 && iBanDuration >= GetConVarInt(g_hCvar_Admin_BanLong))
 			{
 				//Check if admin has permission
 				if (!CheckCommandAccess(iAdmin, "sm_eban_long", ADMFLAG_ROOT))
@@ -331,7 +333,7 @@ public void EWM_Eban_UnBanClient(int iClient, int iAdmin, const char[] sReason)
 				CPrintToChat(iAdmin, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Not have permission rEBan");
 				return;
 			}
-		}else if(iBanDuration >= 720)
+		}else if(iBanDuration >= GetConVarInt(g_hCvar_Admin_BanLong))
 		{
 			//Check if admin has permission
 			if (!CheckCommandAccess(iAdmin, "sm_eban_long", ADMFLAG_ROOT))
