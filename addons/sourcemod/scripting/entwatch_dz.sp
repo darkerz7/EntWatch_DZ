@@ -1244,8 +1244,11 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 
 						if(ItemTest.ButtonID2 == INVALID_ENT_REFERENCE) iAbility = 0;
 						
-						//Base delay on the wait time of the button (button is locked for this duration)
-						int waitTime = RoundToFloor(GetEntPropFloat(iButton, Prop_Data, "m_flWait"));
+						// Base delay on the wait time of the button (button is locked for this duration)
+						int waitTime = 0;
+						if (HasEntProp(iButton, Prop_Data, "m_flWait"))
+							waitTime = RoundToFloor(GetEntPropFloat(iButton, Prop_Data, "m_flWait"));
+
 						if(waitTime < 0) waitTime = 0;
 						
 						if(iAbility!=2)
