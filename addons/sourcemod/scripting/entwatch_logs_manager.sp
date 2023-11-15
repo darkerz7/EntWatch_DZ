@@ -6,7 +6,10 @@
 //Using discordWebhookAPI: https://github.com/srcdslab/sm-plugin-DiscordWebhookAPI
 #tryinclude <discordWebhookAPI>
 
-#define WEBHOOK_URL_MAX_SIZE	1000
+#undef REQUIRE_PLUGIN
+#tryinclude <ExtendedDiscord> //Using Extended-Discord: https://github.com/srcdslab/sm-plugin-Extended-Discord
+#define REQUIRE_PLUGIN
+
 #define DB_ENTWATCH_SECTION "EntWatch"
 
 ConVar	g_hCvar_System_Server,
@@ -20,6 +23,15 @@ ConVar	g_hCvar_System_Server,
 		g_hCvar_Item_Webhook,
 		g_hCvar_Admin_Webhook,
 		g_hCvar_Webhook_Retry,
+		g_hCvar_Username,
+		g_hCvar_Avatar,
+		g_hCvar_Item_ChannelType,
+		g_hCvar_Item_ThreadID,
+		g_hCvar_Admin_ChannelType,
+		g_hCvar_Admin_ThreadID,
+		g_hCvar_System_ChannelType,
+		g_hCvar_System_ThreadName,
+		g_hCvar_System_ThreadID,
 		#endif
 		g_hCvar_System_Database,
 		g_hCvar_Item_Database,
@@ -32,17 +44,21 @@ bool	g_bSystem_Server = true,
 		g_bSystem_Discord = false,
 		g_bItem_Discord = false,
 		g_bAdmin_Discord = false,
-		#endif		
+		g_Plugin_ExtDiscord = false,
+		#endif
 		g_bSystem_Database = false,
 		g_bItem_Database = false,
 		g_bAdmin_Database = false;
 
 #if defined _discordWebhookAPI_included_	
+#define WEBHOOK_URL_MAX_SIZE			1000
+#define WEBHOOK_THREAD_NAME_MAX_SIZE	100
 int		g_iRetry;
 
 char	g_sSystem_URL[WEBHOOK_URL_MAX_SIZE],
 		g_sItem_URL[WEBHOOK_URL_MAX_SIZE],
-		g_sAdmin_URL[WEBHOOK_URL_MAX_SIZE];
+		g_sAdmin_URL[WEBHOOK_URL_MAX_SIZE],
+		sMessageDiscord[2000]; // Discord limit is 2k
 #endif
 
 Database g_hDB;
@@ -55,9 +71,9 @@ char g_sSteamIDs[MAXPLAYERS+1][32];
 public Plugin myinfo = 
 {
 	name = "EntWatch Logs Manager",
-	author = "DarkerZ[RUS]",
+	author = "DarkerZ[RUS], .Rushaway",
 	description = "Allows you to manage logs from the plugin EntWatch.",
-	version = "1.DZ.0",
+	version = "1.DZ.1",
 	url = "dark-skill.ru"
 };
 
@@ -75,6 +91,17 @@ public void OnPluginStart()
 	g_hCvar_Item_Webhook			= CreateConVar("entwatch_item_webhook", "", "The items messages webhook URL of your Discord channel.", FCVAR_PROTECTED);
 	g_hCvar_Admin_Webhook			= CreateConVar("entwatch_admin_webhook", "", "The admin activites messages webhook URL of your Discord channel.", FCVAR_PROTECTED);
 	g_hCvar_Webhook_Retry	 		= CreateConVar("entwatch_webhook_retry", "3", "Number of retries if webhook fails.", FCVAR_PROTECTED);
+	g_hCvar_Username 				= CreateConVar("entwatch_username", "EntWatch Logs Manager", "Discord username.");
+	g_hCvar_Avatar 					= CreateConVar("entwatch_avatar", "https://avatars.githubusercontent.com/u/25752428?v=4", "URL to Avatar image.");
+
+	/* Thread config */
+	g_hCvar_Item_ChannelType 		= CreateConVar("entwatch_item_channel_type", "0", "Items logs: Type of your channel: (1 = Thread Reply, 0 = Classic Text channel");
+	g_hCvar_Item_ThreadID 			= CreateConVar("entwatch_item_threadid", "0", "Items logs: If thread_id is provided, the message will send in that thread.", FCVAR_PROTECTED);
+	g_hCvar_Admin_ChannelType 		= CreateConVar("entwatch_admin_channel_type", "0", "Admin activites: Type of your channel: (1 = Thread Reply, 0 = Classic Text channel");
+	g_hCvar_Admin_ThreadID 			= CreateConVar("entwatch_admin_threadid", "0", "Admin activites: If thread_id is provided, the message will send in that thread.", FCVAR_PROTECTED);
+	g_hCvar_System_ChannelType 		= CreateConVar("entwatch_system_channel_type", "0", "System Logs: Type of your channel: (1 = Thread, 0 = Classic Text channel");
+	g_hCvar_System_ThreadName 		= CreateConVar("entwatch_system_threadname", "EntWatch System Logs", "System Logs: The Thread Name of your Discord forums. (If not empty, will create a new thread)", FCVAR_PROTECTED);
+	g_hCvar_System_ThreadID 		= CreateConVar("entwatch_system_threadid", "0", "System Logs: If thread_id is provided, the message will send in that thread.", FCVAR_PROTECTED);
 	#endif
 	
 	g_hCvar_System_Database			= CreateConVar("entwatch_system_database", "0", "Whether LM will write system logs to the database");
@@ -125,10 +152,29 @@ public void OnPluginStart()
 	AutoExecConfig(true, "EntWatch_LM_DZ");
 }
 
+#if defined _discordWebhookAPI_included_
+public void OnAllPluginsLoaded()
+{
+	g_Plugin_ExtDiscord = LibraryExists("ExtendedDiscord");
+}
+
+public void OnLibraryAdded(const char[] sName)
+{
+	if (strcmp(sName, "ExtendedDiscord", false) == 0)
+		g_Plugin_ExtDiscord = true;
+}
+
+public void OnLibraryRemoved(const char[] sName)
+{
+	if (strcmp(sName, "ExtendedDiscord", false) == 0)
+		g_Plugin_ExtDiscord = false;
+}
+#endif
+
 public void OnClientPostAdminCheck(int iClient)
 {
 	char sSteamID[32];
-	GetClientAuthId(iClient, AuthId_Steam2, sSteamID, sizeof(sSteamID));
+	GetClientAuthId(iClient, AuthId_Steam2, sSteamID, sizeof(sSteamID), false);
 	FormatEx(g_sSteamIDs[iClient], sizeof(g_sSteamIDs[]), "%s", sSteamID);
 }
 
@@ -137,9 +183,9 @@ public void OnClientDisconnect(int iClient)
 	FormatEx(g_sSteamIDs[iClient], sizeof(g_sSteamIDs[]), "");
 }
 
-public void OnMapStart()
+public void OnMapInit(const char[] mapName)
 {
-	GetCurrentMap(g_sCurrentMap, sizeof(g_sCurrentMap));
+	FormatEx(g_sCurrentMap, sizeof(g_sCurrentMap), mapName);
 }
 
 // Database connection function
@@ -332,8 +378,8 @@ stock void System_Handler(const char[] sMessage, bool bType)
 	#endif
 	{
 		FormatTime(sTime, sizeof(sTime), NULL_STRING, GetTime());
-		if(bType) FormatEx(sMessageToLog, sizeof(sMessageToLog), "*%s - %s* ```%s```", g_sCurrentMap, sTime, sMessage);
-		else FormatEx(sMessageToLog, sizeof(sMessageToLog), "*%s - %s* {Error} ```%s```", g_sCurrentMap, sTime, sMessage);
+		if(bType) FormatEx(sMessageToLog, sizeof(sMessageToLog), "%s - %s - %s", g_sCurrentMap, sTime, sMessage);
+		else FormatEx(sMessageToLog, sizeof(sMessageToLog), "%s - %s - {Error} %s", g_sCurrentMap, sTime, sMessage);
 		if(StrContains(sMessageToLog, "\"") != -1) ReplaceString(sMessageToLog, sizeof(sMessageToLog), "\"", "");
 	}
 	// Send a message to the log
@@ -342,7 +388,13 @@ stock void System_Handler(const char[] sMessage, bool bType)
 		else LogError("[EW-LM] %s", sMessageToLog);
 	#if defined _discordWebhookAPI_included_
 	// Send a message to the discord
-	if(g_bSystem_Discord && g_sSystem_URL[0]) SendWebHook(g_sSystem_URL, sMessageToLog);
+	if(g_bSystem_Discord && g_sSystem_URL[0])
+	{
+		if(bType) FormatEx(sMessageDiscord, sizeof(sMessageDiscord), "*%s - %s* ```%s```", g_sCurrentMap, sTime, sMessage);
+		else FormatEx(sMessageDiscord, sizeof(sMessageDiscord), "**Error** *%s - %s* ```%s```", g_sCurrentMap, sTime, sMessage);
+		if(StrContains(sMessageDiscord, "\"") != -1) ReplaceString(sMessageDiscord, sizeof(sMessageDiscord), "\"", "");
+		SendWebHook(g_sSystem_URL, sMessageDiscord, 1);
+	}
 	#endif
 	// Send a message to the database, if connection succeeded
 	if(g_bSystem_Database && g_iDBStatus == 5 && g_sServer[0])
@@ -364,12 +416,17 @@ stock void Item_Handler(const char[] sMessage, int iClient, const char[] sItemNa
 	#endif
 	{
 		FormatTime(sTime, sizeof(sTime), NULL_STRING, GetTime());
-		FormatEx(sMessageToLog, sizeof(sMessageToLog), "*%s - %s* ```'%L' %s %s```", g_sCurrentMap, sTime, iClient, sMessage, sItemName);
+		FormatEx(sMessageToLog, sizeof(sMessageToLog), "%s - %s - %N [%s] %s %s", g_sCurrentMap, sTime, iClient, g_sSteamIDs[iClient], sMessage, sItemName);
 		if(StrContains(sMessageToLog, "\"") != -1) ReplaceString(sMessageToLog, sizeof(sMessageToLog), "\"", "");
 	}
 	if(g_bItem_Server) LogAction(iClient, -1, "[EW-LM] %s", sMessageToLog);
 	#if defined _discordWebhookAPI_included_
-	if(g_bItem_Discord && g_sItem_URL[0]) SendWebHook(g_sItem_URL, sMessageToLog);
+	if(g_bItem_Discord && g_sItem_URL[0])
+	{
+		FormatEx(sMessageDiscord, sizeof(sMessageDiscord), "*%s - %s* ```%N [%s] %s %s```", g_sCurrentMap, sTime, iClient, g_sSteamIDs[iClient], sMessage, sItemName);
+		if(StrContains(sMessageDiscord, "\"") != -1) ReplaceString(sMessageDiscord, sizeof(sMessageDiscord), "\"", "");
+		SendWebHook(g_sItem_URL, sMessageDiscord, 2);
+	}
 	#endif
 	if(g_bItem_Database && g_iDBStatus == 5 && g_sServer[0])
 	{
@@ -392,13 +449,19 @@ stock void Admin_Eban_Handler(const char[] sMessage, int iAdmin, const char[] sC
 	#endif
 	{
 		FormatTime(sTime, sizeof(sTime), NULL_STRING, GetTime());
-		if(sActionTime[0]) FormatEx(sMessageToLog, sizeof(sMessageToLog), "*%s - %s* ```'%L' %s '%s [%s]' %s. Reason: %s```", g_sCurrentMap, sTime, iAdmin, sMessage, sClientName, sClientSteamID, sActionTime, sReason);
-		else FormatEx(sMessageToLog, sizeof(sMessageToLog), "*%s - %s* ```'%L' %s '%s [%s]'. Reason: %s```", g_sCurrentMap, sTime, iAdmin, sMessage, sClientName, sClientSteamID, sReason);
+		if(sActionTime[0]) FormatEx(sMessageToLog, sizeof(sMessageToLog), "%s - %s - %N [%s] %s '%s [%s]' %s. Reason: %s", g_sCurrentMap, sTime, iAdmin, g_sSteamIDs[iAdmin], sMessage, sClientName, sClientSteamID, sActionTime, sReason);
+		else FormatEx(sMessageToLog, sizeof(sMessageToLog), "%s - %s - %N [%s] %s '%s [%s]'. Reason: %s", g_sCurrentMap, sTime, iAdmin, g_sSteamIDs[iAdmin], sMessage, sClientName, sClientSteamID, sReason);
 		if(StrContains(sMessageToLog, "\"") != -1) ReplaceString(sMessageToLog, sizeof(sMessageToLog), "\"", "");
 	}
 	if(g_bAdmin_Server) LogAction(iAdmin, -1, "[EW-LM] %s", sMessageToLog);
 	#if defined _discordWebhookAPI_included_
-	if(g_bAdmin_Discord && g_sAdmin_URL[0]) SendWebHook(g_sAdmin_URL, sMessageToLog);
+	if(g_bAdmin_Discord && g_sAdmin_URL[0])
+	{
+		if(sActionTime[0]) FormatEx(sMessageDiscord, sizeof(sMessageDiscord), "*%s - %s* ```%N [%s] %s '%s [%s]' %s. Reason: %s```", g_sCurrentMap, sTime, iAdmin, g_sSteamIDs[iAdmin], sMessage, sClientName, sClientSteamID, sActionTime, sReason);
+		else FormatEx(sMessageDiscord, sizeof(sMessageDiscord), "*%s - %s* ```%N [%s] %s '%s [%s]'. Reason: %s```", g_sCurrentMap, sTime, iAdmin, g_sSteamIDs[iAdmin], sMessage, sClientName, sClientSteamID, sReason);
+		if(StrContains(sMessageDiscord, "\"") != -1) ReplaceString(sMessageDiscord, sizeof(sMessageDiscord), "\"", "");
+		SendWebHook(g_sAdmin_URL, sMessageDiscord, 3);
+	}
 	#endif
 	if(g_bAdmin_Database && g_iDBStatus == 5 && g_sServer[0])
 	{
@@ -421,16 +484,23 @@ stock void Admin_Other_Handler(const char[] sMessage, int iAdmin, int iTarget, i
 	#endif
 	{
 		FormatTime(sTime, sizeof(sTime), NULL_STRING, GetTime());
-		if(iReceiver == -1) FormatEx(sMessageToLog, sizeof(sMessageToLog), "*%s - %s* ```'%L' %s %s %s '%L'```", g_sCurrentMap, sTime, iAdmin, sMessage, sItemName, sMessage2, iTarget);
-		else if(iTarget == -1) FormatEx(sMessageToLog, sizeof(sMessageToLog), "*%s - %s* ```'%L' %s '%s' %s '%L'```", g_sCurrentMap, sTime, iAdmin, sMessage, sItemName, sMessage2, iReceiver);
-		else FormatEx(sMessageToLog, sizeof(sMessageToLog), "*%s - %s* ```'%L' %s '%L' %s '%L'```", g_sCurrentMap, sTime, iAdmin, sMessage, iTarget, sMessage2, iReceiver);
+		if(iReceiver == -1) FormatEx(sMessageToLog, sizeof(sMessageToLog), "%s - %s - %N [%s] %s %s %s %N [%s]", g_sCurrentMap, sTime, iAdmin, g_sSteamIDs[iAdmin], sMessage, sItemName, sMessage2, iTarget, g_sSteamIDs[iTarget]);
+		else if(iTarget == -1) FormatEx(sMessageToLog, sizeof(sMessageToLog), "%s - %s - %N [%s] %s %s %s %N [%s]", g_sCurrentMap, sTime, iAdmin, g_sSteamIDs[iAdmin], sMessage, sItemName, sMessage2, iReceiver, g_sSteamIDs[iReceiver]);
+		else FormatEx(sMessageToLog, sizeof(sMessageToLog), "%s - %s - %N [%s] %s %N [%s] %s %N [%s]", g_sCurrentMap, sTime, iAdmin, g_sSteamIDs[iAdmin], sMessage, iTarget, g_sSteamIDs[iTarget], sMessage2, iReceiver, g_sSteamIDs[iReceiver]);
 		if(StrContains(sMessageToLog, "\"") != -1) ReplaceString(sMessageToLog, sizeof(sMessageToLog), "\"", "");
 	}
 	if(g_bAdmin_Server) 
 		if(iTarget == -1) LogAction(iAdmin, iReceiver, "[EW-LM] %s", sMessageToLog);
 		else LogAction(iAdmin, iTarget, "[EW-LM] %s", sMessageToLog);
 	#if defined _discordWebhookAPI_included_
-	if(g_bAdmin_Discord && g_sAdmin_URL[0]) SendWebHook(g_sAdmin_URL, sMessageToLog);
+	if(g_bAdmin_Discord && g_sAdmin_URL[0])
+	{
+		if(iReceiver == -1) FormatEx(sMessageDiscord, sizeof(sMessageDiscord), "*%s - %s* ```%N [%s] %s %s %s %N [%s]```", g_sCurrentMap, sTime, iAdmin, g_sSteamIDs[iAdmin], sMessage, sItemName, sMessage2, iTarget, g_sSteamIDs[iTarget]);
+		else if(iTarget == -1) FormatEx(sMessageDiscord, sizeof(sMessageDiscord), "*%s - %s* ```%N [%s] %s %s %s %N [%s]```", g_sCurrentMap, sTime, iAdmin, g_sSteamIDs[iAdmin], sMessage, sItemName, sMessage2, iReceiver, g_sSteamIDs[iReceiver]);
+		else FormatEx(sMessageDiscord, sizeof(sMessageDiscord), "*%s - %s* ```%N [%s] %s %N [%s] %s %N [%s]```", g_sCurrentMap, sTime, iAdmin, g_sSteamIDs[iAdmin], sMessage, iTarget, g_sSteamIDs[iTarget], sMessage2, iReceiver, g_sSteamIDs[iReceiver]);
+		if(StrContains(sMessageDiscord, "\"") != -1) ReplaceString(sMessageDiscord, sizeof(sMessageDiscord), "\"", "");
+		SendWebHook(g_sAdmin_URL, sMessageDiscord, 3);
+	}
 	#endif
 	if(g_bAdmin_Database && g_iDBStatus == 5 && g_sServer[0])
 	{
@@ -460,14 +530,69 @@ void SQLTCallBack(Handle hDatabase, Handle hResults, const char[] sError, any da
 }
 
 #if defined _discordWebhookAPI_included_
-stock void SendWebHook(const char[] sWebhookURL, const char[] sMessage)
+stock void SendWebHook(const char[] sWebhookURL, const char[] sMessage, int type = 1)
 {
 	Webhook webhook = new Webhook(sMessage);
+	
+	char sThreadID[32], sThreadName[WEBHOOK_THREAD_NAME_MAX_SIZE];
+	bool IsThread = false;
+
+	switch(type)
+	{
+		case 1: // System
+		{
+			IsThread = g_hCvar_System_ChannelType.BoolValue;
+			g_hCvar_System_ThreadID.GetString(sThreadID, sizeof sThreadID);
+			g_hCvar_System_ThreadName.GetString(sThreadName, sizeof sThreadName);
+		}
+		case 2: // Items
+		{
+			IsThread = g_hCvar_Item_ChannelType.BoolValue;
+			g_hCvar_Item_ThreadID.GetString(sThreadID, sizeof sThreadID);
+		}
+		case 3: // Admin Activites
+		{
+			IsThread = g_hCvar_Admin_ChannelType.BoolValue;
+			g_hCvar_Admin_ThreadID.GetString(sThreadID, sizeof sThreadID);
+		}
+	}
+
+	if (IsThread)
+	{
+		if (type <= 1 && !sThreadName[0] && !sThreadID[0])
+		{
+			LogError("[EW-LM Discord] Thread Name or ThreadID not found or specified.");
+			delete webhook;
+			return;
+		}
+		else
+		{
+			if (strlen(sThreadName) > 0)
+			{
+				webhook.SetThreadName(sThreadName);
+				sThreadID[0] = '\0';
+			}
+		}
+	}
+
+	char sName[128], sAvatar[256];
+	g_hCvar_Username.GetString(sName, sizeof(sName));
+	g_hCvar_Avatar.GetString(sAvatar, sizeof(sAvatar));
+	if (strlen(sName) > 0) webhook.SetUsername(sName);
+	if (strlen(sAvatar) > 0) webhook.SetAvatarURL(sAvatar);
+
 	DataPack pack = new DataPack();
+
+	if (IsThread && strlen(sThreadName) <= 0 && strlen(sThreadID) > 0)
+		pack.WriteCell(1);
+	else
+		pack.WriteCell(0);
+
+	pack.WriteCell(type);
 	pack.WriteString(sMessage);
 	pack.WriteString(sWebhookURL);
 
-	webhook.Execute(sWebhookURL, OnWebHookExecuted, pack);
+	webhook.Execute(sWebhookURL, OnWebHookExecuted, pack, sThreadID);
 	delete webhook;
 }
 
@@ -475,19 +600,31 @@ public void OnWebHookExecuted(HTTPResponse response, DataPack pack)
 {
 	static int s_iRetries = 0;
 	pack.Reset();
+	bool IsThreadReply = pack.ReadCell();
+	int iType = pack.ReadCell();
 	char sMessage[1024], sWebhookURL[WEBHOOK_URL_MAX_SIZE];
 	pack.ReadString(sMessage, sizeof(sMessage));
 	pack.ReadString(sWebhookURL, sizeof(sWebhookURL));
 	delete pack;
-	if (response.Status != HTTPStatus_OK)
+	
+	if ((!IsThreadReply && response.Status != HTTPStatus_OK) || (IsThreadReply && response.Status != HTTPStatus_NoContent))
 	{
 		if (s_iRetries < g_iRetry)
 		{
 			PrintToServer("[EW-LM Discord] Failed to send the webhook. Resending it .. (%d/%d)", s_iRetries, g_iRetry);
-			SendWebHook(sWebhookURL, sMessage);
+			SendWebHook(sMessage, sWebhookURL, iType);
 			s_iRetries++;
 			return;
-		} else LogError("[EW-LM Discord] Failed to send the webhook after %d retries, aborting.", s_iRetries);
+		} else {
+		#if defined _extendeddiscord_included
+			if (g_Plugin_ExtDiscord)
+				ExtendedDiscord_LogError("[EW-LM Discord] Failed to send the webhook after %d retries, aborting.", s_iRetries);
+			else
+				LogError("[EW-LM Discord] Failed to send the webhook after %d retries, aborting.", s_iRetries);
+		#else
+			LogError("[EW-LM Discord] Failed to send the webhook after %d retries, aborting.", s_iRetries);
+		#endif
+		}
 	}
 	s_iRetries = 0;
 }
