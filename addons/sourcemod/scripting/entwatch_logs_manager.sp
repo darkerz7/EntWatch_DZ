@@ -50,15 +50,13 @@ bool	g_bSystem_Server = true,
 		g_bItem_Database = false,
 		g_bAdmin_Database = false;
 
-#if defined _discordWebhookAPI_included_	
-#define WEBHOOK_URL_MAX_SIZE			1000
-#define WEBHOOK_THREAD_NAME_MAX_SIZE	100
+#if defined _discordWebhookAPI_included_
 int		g_iRetry;
 
 char	g_sSystem_URL[WEBHOOK_URL_MAX_SIZE],
 		g_sItem_URL[WEBHOOK_URL_MAX_SIZE],
 		g_sAdmin_URL[WEBHOOK_URL_MAX_SIZE],
-		sMessageDiscord[2000]; // Discord limit is 2k
+		sMessageDiscord[WEBHOOK_MSG_MAX_SIZE];
 #endif
 
 Database g_hDB;
@@ -73,7 +71,7 @@ public Plugin myinfo =
 	name = "EntWatch Logs Manager",
 	author = "DarkerZ[RUS], .Rushaway",
 	description = "Allows you to manage logs from the plugin EntWatch.",
-	version = "1.DZ.1",
+	version = "1.DZ.2",
 	url = "dark-skill.ru"
 };
 
