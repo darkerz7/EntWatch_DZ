@@ -195,11 +195,14 @@ enum struct class_Scheme
 // Structure for client settings
 enum struct class_ClientSettings_Hud
 {
-	bool		Display;	// Bool:	Show HUD on client
-	int			Color[4];	// Array:	Color of HUD on client
-	float		Pos_X;		// Float:	HUD position in X on client
-	float		Pos_Y;		// Float:	HUD position in Y on client
-	bool		Name;		// Bool:	Show player nicknames on items
+	bool		Display;		// Bool:	Show HUD on client
+	int 		Type;			// Integer:	Type of HUD 0 = KeyHintText, 1 = HUD
+	int 		Color[4];		// Array:	Color of HUD on client
+	float		Pos_X;			// Float:	HUD position in X on client
+	float		Pos_Y;			// Float:	HUD position in Y on client
+	bool		Name;			// Bool:	Show player nicknames on items
+	int 		ItemsCount;		// Integer: Number of items to show in HUD
+	int 		RotationTime;		// Integer: Time in seconds to switch HUD page
 }
 
 // Structure for player e-ban information
@@ -232,6 +235,15 @@ enum struct class_Offline_Eban
 	char		LastItem[32];			// String:	The last item picked up by the disconnected player
 }
 
+// Used to readmap name without any uppercase characters
+void StringToLowerCase(char[] input)
+{
+    for (int i = 0; i < strlen(input); i++)
+    {
+        input[i] = CharToLower(input[i]);
+    }
+}
+
 // Checks the player for validity
 stock bool IsValidClient(int iClient) 
 { 
@@ -255,17 +267,17 @@ stock void FixedEquipPlayerWeapon(int iClient, int iWeapon)
 
 // Correctly getting the value in the math_counter
 stock int GetCounterValue(int counter) {
-    char szType[64];
-    GetEntityClassname(counter, szType, sizeof(szType));
+	char szType[64];
+	GetEntityClassname(counter, szType, sizeof(szType));
 
-    if(!StrEqual(szType, "math_counter", false)) {
-        return -1;
-    }
+	if(strcmp(szType, "math_counter", false) != 0) {
+		return -1;
+	}
 
-    if(g_iOutValueOffset == -1)
-        g_iOutValueOffset = FindDataMapInfo(counter, "m_OutValue");
-    
-    return RoundFloat(GetEntDataFloat(counter, g_iOutValueOffset));
+	if(g_iOutValueOffset == -1)
+		g_iOutValueOffset = FindDataMapInfo(counter, "m_OutValue");
+	
+	return RoundFloat(GetEntDataFloat(counter, g_iOutValueOffset));
 }
 
 // Kludge, Getting a weapon slot without using a gamedata

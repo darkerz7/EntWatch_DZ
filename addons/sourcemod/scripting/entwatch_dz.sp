@@ -30,14 +30,18 @@ ConVar	g_hCvar_TeamOnly,
 		g_hCvar_Delay_Use,
 		g_hCvar_Scheme,
 		g_hCvar_BlockEPick,
-		g_hCvar_GlobalBlock;
+		g_hCvar_GlobalBlock,
+		g_hCvar_LowerMapName,
+		g_hCvar_Directory;
 
 //-------------------------------------------------------
 // Purpose: Plugin Local settings
 //-------------------------------------------------------
 bool	g_bTeamOnly = true,
 		g_bBlockEPick = true,
-		g_bGlobalBlock = false;
+		g_bGlobalBlock = false,
+		g_bLowerMapName = false,
+		g_bSMDirectory = false;
 float	g_fDelayUse = 3.0;
 
 //-------------------------------------------------------
@@ -45,9 +49,11 @@ float	g_fDelayUse = 3.0;
 //-------------------------------------------------------
 bool g_bConfigLoaded = false;
 bool g_bIsAdmin[MAXPLAYERS+1] = {false,...};
+char g_sMap[PLATFORM_MAX_PATH];
 char g_sSteamIDs[MAXPLAYERS+1][32];
 char g_sSteamIDs_short[MAXPLAYERS+1][32];
 int  g_iUserIDs[MAXPLAYERS+1];
+int g_iClientEbansNumber[MAXPLAYERS+1] = {0,... };
 
 //Using DynamicChannels: https://github.com/Vauff/DynamicChannels
 #tryinclude <DynamicChannels>
@@ -58,7 +64,7 @@ int  g_iUserIDs[MAXPLAYERS+1];
 #include "entwatch/module_hud.inc"
 #include "entwatch/module_eban.inc"
 #include "entwatch/module_offline_eban.inc" // Need module_eban. Experimental
-#include "entwatch/module_highlight.inc"
+#include "entwatch/module_highlight.inc" // CS:GO only
 #include "entwatch/module_natives.inc" //For the include EntWatch.inc to work correctly, use with module_eban
 #include "entwatch/module_transfer.inc"
 #include "entwatch/module_spawn_item.inc"
@@ -77,9 +83,9 @@ ArrayList g_TriggerArray;
 public Plugin myinfo = 
 {
 	name = "EntWatch",
-	author = "DarkerZ[RUS], AgentWesker, notkoen, sTc2201, maxime1907",
+	author = "DarkerZ[RUS], AgentWesker, notkoen, sTc2201, maxime1907, Cmer, .Rushaway, Dolly",
 	description = "Notify players about entity interactions.",
-	version = "3.DZ.46",
+	version = "3.DZ.47",
 	url = "dark-skill.ru"
 };
  
@@ -89,9 +95,9 @@ public void OnPluginStart()
 	if(g_ItemList == INVALID_HANDLE) g_ItemList = new ArrayList(512);
 	
 	if(g_TriggerArray == INVALID_HANDLE) g_TriggerArray = new ArrayList(512);
-	
+
 	g_evGameEngine = GetEngineVersion();
-	
+
 	#if defined EW_MODULE_PHYSBOX
 	EWM_Physbox_OnPluginStart();
 	#endif
@@ -100,8 +106,10 @@ public void OnPluginStart()
 	g_hCvar_TeamOnly		= CreateConVar("entwatch_mode_teamonly", "1", "Enable/Disable team only mode.", _, true, 0.0, true, 1.0);
 	g_hCvar_Delay_Use		= CreateConVar("entwatch_delay_use", "3.0", "Change delay before use", _, true, 0.0, true, 60.0);
 	g_hCvar_Scheme			= CreateConVar("entwatch_scheme", "classic", "The name of the scheme config.", _);
-	g_hCvar_BlockEPick		= CreateConVar("entwatch_blockepick", "1", "Block players from using E key to grab items.", _, true, 0.0, true, 1.0);
+	g_hCvar_BlockEPick		= CreateConVar("entwatch_blockepick", "0", "Block players from using E key to grab items.", _, true, 0.0, true, 1.0);
 	g_hCvar_GlobalBlock		= CreateConVar("entwatch_globalblock", "0", "Blocks the pickup of any items by players.", _, true, 0.0, true, 1.0);
+	g_hCvar_LowerMapName	= CreateConVar("entwatch_lower_mapname", "0", "Automatically lowercase map name. (usefull for linux srcds)", _, true, 0.0, true, 1.0);
+	g_hCvar_Directory		= CreateConVar("entwatch_directory", "0", "Directory for configs and schemes. [0 = cfgs/entwatch | 1 = addons/sourcemod/configs/entwatch]", _, true, 0.0, true, 1.0);
 	
 	//Commands
 	RegAdminCmd("sm_ew_reloadconfig", EW_Command_ReloadConfig, ADMFLAG_CONFIG);
@@ -127,20 +135,25 @@ public void OnPluginStart()
 	HookConVarChange(g_hCvar_Delay_Use, Cvar_Main_Changed);
 	HookConVarChange(g_hCvar_BlockEPick, Cvar_Main_Changed);
 	HookConVarChange(g_hCvar_GlobalBlock, Cvar_Main_Changed);
+	HookConVarChange(g_hCvar_LowerMapName, Cvar_Main_Changed);
 	
-	//Fix for plugin reload (?)
+	//Initialize values
 	g_bTeamOnly = GetConVarBool(g_hCvar_TeamOnly);
 	g_fDelayUse = GetConVarFloat(g_hCvar_Delay_Use);
 	g_bBlockEPick = GetConVarBool(g_hCvar_BlockEPick);
 	g_bGlobalBlock = GetConVarBool(g_hCvar_GlobalBlock);
+	g_bLowerMapName = GetConVarBool(g_hCvar_LowerMapName);
+	g_bSMDirectory = GetConVarBool(g_hCvar_Directory);
 	
 	//Hook Events
+	HookEvent("player_disconnect", Event_ClientDisconnect, EventHookMode_Pre);
 	HookEvent("round_start", Event_RoundStart, EventHookMode_Pre);
 	HookEvent("round_end", Event_RoundEnd, EventHookMode_Pre);
 	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Pre);
 	HookEvent("player_team", Event_PlayerTeam, EventHookMode_Pre);
 	
 	//Hook Output Right-Click
+	HookEntityOutput("game_ui", "PressedAttack", Event_GameUI_LeftClick);
 	HookEntityOutput("game_ui", "PressedAttack2", Event_GameUI_RightClick);
 	
 	//Hook Output OutValue
@@ -149,9 +162,13 @@ public void OnPluginStart()
 	#if defined EW_MODULE_FORWARDS
 	EWM_Forwards_OnPluginStart();
 	#endif
-	
-	//Load Scheme
-	LoadScheme();
+
+	// Fix late load
+	if(g_bLateLoad)
+	{
+		LoadConfig();
+		LoadScheme();
+	}
 	
 	#if defined EW_MODULE_EBAN
 	EWM_Eban_OnPluginStart();
@@ -196,6 +213,7 @@ public void OnPluginStart()
 	
 	LoadTranslations("EntWatch_DZ.phrases");
 	LoadTranslations("common.phrases");
+	LoadTranslations("clientprefs.phrases");
 	
 	AutoExecConfig(true, "EntWatch_DZ");
 	
@@ -221,13 +239,15 @@ public void Cvar_Main_Changed(ConVar convar, const char[] oldValue, const char[]
 		g_bBlockEPick = GetConVarBool(convar);
 	else if (convar == g_hCvar_GlobalBlock)
 		g_bGlobalBlock = GetConVarBool(convar);
+	else if (convar == g_hCvar_LowerMapName)
+		g_bLowerMapName = GetConVarBool(convar);
+	else if (convar == g_hCvar_Directory)
+		g_bSMDirectory = GetConVarBool(convar);
 }
 
 public void OnMapStart()
 {
 	CleanData();
-	LoadConfig();
-	LoadScheme();
 	#if defined EW_MODULE_EBAN
 	EWM_Eban_OnMapStart();
 	#endif
@@ -243,6 +263,12 @@ public void OnMapStart()
 	#if defined EW_MODULE_HUD
 	EWM_Hud_OnMapStart();
 	#endif
+}
+
+public void OnConfigsExecuted()
+{
+	LoadConfig();
+	LoadScheme();
 }
 
 public void OnMapEnd()
@@ -326,10 +352,9 @@ public Action Event_PlayerDeath(Event hEvent, const char[] sName, bool bDontBroa
 
 stock void EWM_Drop_Forward(Handle hEvent)
 {
-	int iClient = GetClientOfUserId(GetEventInt(hEvent, "userid"));
-
 	if (g_bConfigLoaded)
 	{
+		int iClient = GetClientOfUserId(GetEventInt(hEvent, "userid"));
 		for(int i = 0; i<g_ItemList.Length; i++)
 		{
 			class_ItemList ItemTest;
@@ -414,7 +439,7 @@ public void OnClientPutInServer(int iClient)
 	
 	g_bIsAdmin[iClient] = false;
 	char sSteamID[32];
-	GetClientAuthId(iClient, AuthId_Steam2, sSteamID, sizeof(sSteamID));
+	GetClientAuthId(iClient, AuthId_Steam2, sSteamID, sizeof(sSteamID), false);
 	FormatEx(g_sSteamIDs[iClient], sizeof(g_sSteamIDs[]), "%s", sSteamID);
 	FormatEx(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "%s", sSteamID);
 	ReplaceString(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "STEAM_", "", true);
@@ -449,12 +474,19 @@ public void OnClientPostAdminCheck(int iClient)
 	#endif
 	int iFlags = GetUserFlagBits(iClient);
 	if(iFlags & ADMFLAG_KICK || iFlags & ADMFLAG_ROOT) g_bIsAdmin[iClient] = true;
+	#if defined EW_MODULE_EBAN
+	EWM_Eban_OnClientPostAdminCheck(iClient);
+	#endif
 }
 
-public void OnClientDisconnect(int iClient)
+// We do that with Hook to prevent get this functions run during map change
+public void Event_ClientDisconnect(Handle event, const char[] name, bool dontBroadcast)
 {
 	if(g_bConfigLoaded)
 	{
+		int userid = GetEventInt(event, "userid");
+		int iClient = GetClientOfUserId(userid);
+
 		for(int i = 0; i<g_ItemList.Length; i++)
 		{
 			class_ItemList ItemTest;
@@ -512,7 +544,10 @@ public void OnClientDisconnect(int iClient)
 			}
 		}
 	}
-	
+}
+
+public void OnClientDisconnect(int iClient)
+{
 	g_bIsAdmin[iClient] = false;
 	
 	#if defined EW_MODULE_EBAN
@@ -583,15 +618,28 @@ void CleanData()
 
 stock void LoadConfig()
 {
-	Handle hKeyValues = CreateKeyValues("entities");
-	char sBuffer_map[128], sBuffer_path[PLATFORM_MAX_PATH], sBuffer_path_override[PLATFORM_MAX_PATH], sBuffer_temp[32];
+	GetCurrentMap(g_sMap, sizeof(g_sMap));
+	if (g_bLowerMapName) StringToLowerCase(g_sMap);
 
-	GetCurrentMap(sBuffer_map, sizeof(sBuffer_map));
-	FormatEx(sBuffer_path, sizeof(sBuffer_path), "cfg/sourcemod/entwatch/maps/%s.cfg", sBuffer_map);
-	FormatEx(sBuffer_path_override, sizeof(sBuffer_path_override), "cfg/sourcemod/entwatch/maps/%s_override.cfg", sBuffer_map);
+	Handle hKeyValues = CreateKeyValues("entities");
+	char sBuffer_path[PLATFORM_MAX_PATH * 2], sBuffer_path_override[PLATFORM_MAX_PATH * 2], sBuffer_temp[32];
+
+	if (g_bSMDirectory)
+	{
+		BuildPath(Path_SM, sBuffer_path, sizeof(sBuffer_path), "configs/entwatch/maps/%s.cfg", g_sMap);
+		BuildPath(Path_SM, sBuffer_path_override, sizeof(sBuffer_path_override), "configs/entwatch/maps/%s_override.cfg", g_sMap);
+	}else
+	{
+		FormatEx(sBuffer_path, sizeof(sBuffer_path), "cfg/sourcemod/entwatch/maps/%s.cfg", g_sMap);
+		FormatEx(sBuffer_path_override, sizeof(sBuffer_path_override), "cfg/sourcemod/entwatch/maps/%s_override.cfg", g_sMap);
+	}
+
+	LogMessage(" config: %s", sBuffer_path_override);
+
 	// If there is an override config then load it
 	if(FileExists(sBuffer_path_override))
 	{
+		LogMessage("Loading override config: %s", sBuffer_path_override);
 		FileToKeyValues(hKeyValues, sBuffer_path_override);
 		#if defined EW_MODULE_FORWARDS
 		Call_StartForward(g_hOnCfgLoading);
@@ -600,6 +648,7 @@ stock void LoadConfig()
 		#endif
 	}else
 	{
+		LogMessage("Loading config: %s", sBuffer_path);
 		FileToKeyValues(hKeyValues, sBuffer_path);
 		#if defined EW_MODULE_FORWARDS
 		Call_StartForward(g_hOnCfgLoading);
@@ -660,24 +709,24 @@ stock void LoadConfig()
 			
 			KvGetString(hKeyValues, "filtername", sBuffer_temp, sizeof(sBuffer_temp), "");
 			FormatEx(NewItem.FilterName, sizeof(NewItem.FilterName), "%s", sBuffer_temp);
-			
+
 			KvGetString(hKeyValues, "blockpickup", sBuffer_temp, sizeof(sBuffer_temp), "false");
-			NewItem.BlockPickup = StrEqual(sBuffer_temp, "true", false);
+			NewItem.BlockPickup = (strcmp(sBuffer_temp, "true", false) == 0);
 			
 			KvGetString(hKeyValues, "allowtransfer", sBuffer_temp, sizeof(sBuffer_temp), "false");
-			NewItem.AllowTransfer = StrEqual(sBuffer_temp, "true", false);
+			NewItem.AllowTransfer = (strcmp(sBuffer_temp, "true", false) == 0);
 			
 			KvGetString(hKeyValues, "forcedrop", sBuffer_temp, sizeof(sBuffer_temp), "false");
-			NewItem.ForceDrop = StrEqual(sBuffer_temp, "true", false);
+			NewItem.ForceDrop = (strcmp(sBuffer_temp, "true", false) == 0);
 			
 			KvGetString(hKeyValues, "chat", sBuffer_temp, sizeof(sBuffer_temp), "false");
-			NewItem.Chat = StrEqual(sBuffer_temp, "true", false);
+			NewItem.Chat = (strcmp(sBuffer_temp, "true", false) == 0);
 			
 			KvGetString(hKeyValues, "chat_uses", sBuffer_temp, sizeof(sBuffer_temp), "false");
-			NewItem.Chat_Uses = StrEqual(sBuffer_temp, "true", false);
+			NewItem.Chat_Uses = (strcmp(sBuffer_temp, "true", false) == 0);
 			
 			KvGetString(hKeyValues, "hud", sBuffer_temp, sizeof(sBuffer_temp), "false");
-			NewItem.Hud = StrEqual(sBuffer_temp, "true", false);
+			NewItem.Hud = (strcmp(sBuffer_temp, "true", false) == 0);
 			
 			KvGetString(hKeyValues, "hammerid", sBuffer_temp, sizeof(sBuffer_temp), "0");
 			NewItem.HammerID = StringToInt(sBuffer_temp);
@@ -693,8 +742,8 @@ stock void LoadConfig()
 			
 			KvGetString(hKeyValues, "cooldown", sBuffer_temp, sizeof(sBuffer_temp), "0");
 			NewItem.CoolDown = StringToInt(sBuffer_temp);
-			
-			if(!StrEqual(NewItem.ButtonClass, "game_ui"))
+
+			if(strcmp(NewItem.ButtonClass, "game_ui", false) != 0)
 			{
 				KvGetString(hKeyValues, "buttonid", sBuffer_temp, sizeof(sBuffer_temp), "0");
 				NewItem.ButtonID = StringToInt(sBuffer_temp);
@@ -708,12 +757,12 @@ stock void LoadConfig()
 			
 			KvGetString(hKeyValues, "pt_spawner", sBuffer_temp, sizeof(sBuffer_temp), "");
 			FormatEx(NewItem.Spawner, sizeof(NewItem.Spawner), "%s", sBuffer_temp);
-			
+
 			KvGetString(hKeyValues, "physbox", sBuffer_temp, sizeof(sBuffer_temp), "false");
-			NewItem.PhysBox = StrEqual(sBuffer_temp, "true", false);
+			NewItem.PhysBox = (strcmp(sBuffer_temp, "true", false) == 0);
 			
 			KvGetString(hKeyValues, "use_priority", sBuffer_temp, sizeof(sBuffer_temp), "true");
-			NewItem.UsePriority = StrEqual(sBuffer_temp, "true", false);
+			NewItem.UsePriority = (strcmp(sBuffer_temp, "true", false) == 0);
 			
 			//Second Button
 			KvGetString(hKeyValues, "buttonclass2", sBuffer_temp, sizeof(sBuffer_temp), "");
@@ -731,7 +780,7 @@ stock void LoadConfig()
 			KvGetString(hKeyValues, "cooldown2", sBuffer_temp, sizeof(sBuffer_temp), "0");
 			NewItem.CoolDown2 = StringToInt(sBuffer_temp);
 
-			if(!StrEqual(NewItem.ButtonClass2, "game_ui"))
+			if(strcmp(NewItem.ButtonClass2, "game_ui", false) != 0)
 			{
 				KvGetString(hKeyValues, "buttonid2", sBuffer_temp, sizeof(sBuffer_temp), "0");
 				NewItem.ButtonID2 = StringToInt(sBuffer_temp);
@@ -777,8 +826,13 @@ stock void LoadScheme()
 	KeyValues KvConfig = CreateKeyValues("EW_Scheme");
 	char	ConfigFullPath[PLATFORM_MAX_PATH],
 			ConfigFile[16];
+
 	GetConVarString(g_hCvar_Scheme, ConfigFile, sizeof(ConfigFile));
-	FormatEx(ConfigFullPath, sizeof(ConfigFullPath), "cfg/sourcemod/entwatch/scheme/%s.cfg", ConfigFile);
+	if (g_bSMDirectory)
+		BuildPath(Path_SM, ConfigFullPath, sizeof(ConfigFullPath), "configs/entwatch/scheme/%s.cfg", ConfigFile);
+	else
+		FormatEx(ConfigFullPath, sizeof(ConfigFullPath), "cfg/sourcemod/entwatch/scheme/%s.cfg", ConfigFile);
+	
 	if(!FileToKeyValues(KvConfig, ConfigFullPath))
 	{
 		CloseHandle(KvConfig);
@@ -794,41 +848,41 @@ stock void LoadScheme()
 	KvConfig.Rewind();
 	
 	KvConfig.GetString("color_tag", szBuffer, sizeof(szBuffer));
-	if(!StrEqual(szBuffer,"")) FormatEx(g_SchemeConfig.Color_Tag, sizeof(g_SchemeConfig.Color_Tag), "%s", szBuffer);
+	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Tag, sizeof(g_SchemeConfig.Color_Tag), "%s", szBuffer);
 	
 	KvConfig.GetString("color_name", szBuffer, sizeof(szBuffer));
-	if(!StrEqual(szBuffer,"")) FormatEx(g_SchemeConfig.Color_Name, sizeof(g_SchemeConfig.Color_Name), "%s", szBuffer);
+	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Name, sizeof(g_SchemeConfig.Color_Name), "%s", szBuffer);
 	
 	KvConfig.GetString("color_steamid", szBuffer, sizeof(szBuffer));
-	if(!StrEqual(szBuffer,"")) FormatEx(g_SchemeConfig.Color_SteamID, sizeof(g_SchemeConfig.Color_SteamID), "%s", szBuffer);
+	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_SteamID, sizeof(g_SchemeConfig.Color_SteamID), "%s", szBuffer);
 	
 	KvConfig.GetString("color_use", szBuffer, sizeof(szBuffer));
-	if(!StrEqual(szBuffer,"")) FormatEx(g_SchemeConfig.Color_Use, sizeof(g_SchemeConfig.Color_Use), "%s", szBuffer);
+	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Use, sizeof(g_SchemeConfig.Color_Use), "%s", szBuffer);
 	
 	KvConfig.GetString("color_pickup", szBuffer, sizeof(szBuffer));
-	if(!StrEqual(szBuffer,"")) FormatEx(g_SchemeConfig.Color_Pickup, sizeof(g_SchemeConfig.Color_Pickup), "%s", szBuffer);
+	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Pickup, sizeof(g_SchemeConfig.Color_Pickup), "%s", szBuffer);
 	
 	KvConfig.GetString("color_drop", szBuffer, sizeof(szBuffer));
-	if(!StrEqual(szBuffer,"")) FormatEx(g_SchemeConfig.Color_Drop, sizeof(g_SchemeConfig.Color_Drop), "%s", szBuffer);
+	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Drop, sizeof(g_SchemeConfig.Color_Drop), "%s", szBuffer);
 	
 	KvConfig.GetString("color_disconnect", szBuffer, sizeof(szBuffer));
-	if(!StrEqual(szBuffer,"")) FormatEx(g_SchemeConfig.Color_Disconnect, sizeof(g_SchemeConfig.Color_Disconnect), "%s", szBuffer);
+	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Disconnect, sizeof(g_SchemeConfig.Color_Disconnect), "%s", szBuffer);
 	
 	KvConfig.GetString("color_death", szBuffer, sizeof(szBuffer));
-	if(!StrEqual(szBuffer,"")) FormatEx(g_SchemeConfig.Color_Death, sizeof(g_SchemeConfig.Color_Death), "%s", szBuffer);
+	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Death, sizeof(g_SchemeConfig.Color_Death), "%s", szBuffer);
 	
 	KvConfig.GetString("color_warning", szBuffer, sizeof(szBuffer));
-	if(!StrEqual(szBuffer,"")) FormatEx(g_SchemeConfig.Color_Warning, sizeof(g_SchemeConfig.Color_Warning), "%s", szBuffer);
+	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Warning, sizeof(g_SchemeConfig.Color_Warning), "%s", szBuffer);
 	
 	KvConfig.GetString("color_enabled", szBuffer, sizeof(szBuffer));
-	if(!StrEqual(szBuffer,"")) FormatEx(g_SchemeConfig.Color_Enabled, sizeof(g_SchemeConfig.Color_Enabled), "%s", szBuffer);
+	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Enabled, sizeof(g_SchemeConfig.Color_Enabled), "%s", szBuffer);
 	
 	KvConfig.GetString("color_disabled", szBuffer, sizeof(szBuffer));
-	if(!StrEqual(szBuffer,"")) FormatEx(g_SchemeConfig.Color_Disabled, sizeof(g_SchemeConfig.Color_Disabled), "%s", szBuffer);
+	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Disabled, sizeof(g_SchemeConfig.Color_Disabled), "%s", szBuffer);
 	
 	#if defined EW_MODULE_EBAN || defined EW_MODULE_FORWARDS
 	KvConfig.GetString("server_name", szBuffer, sizeof(szBuffer));
-	if(!StrEqual(szBuffer,"")) FormatEx(g_SchemeConfig.Server_Name, sizeof(g_SchemeConfig.Server_Name), "%s", szBuffer);
+	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Server_Name, sizeof(g_SchemeConfig.Server_Name), "%s", szBuffer);
 		else FormatEx(g_SchemeConfig.Server_Name, sizeof(g_SchemeConfig.Server_Name), "Server");
 	#endif
 	#if defined EW_MODULE_HUD
@@ -910,7 +964,7 @@ public bool RegisterItem(class_ItemConfig ItemConfig, int iEntity, int iHammerID
 		NewItem.Team = -1;
 		NewItem.LockButton = false;
 		NewItem.LockButton2 = false;
-		//PrintToServer("[EW]Item Spawned: %s |%i", NewItem.ShortName, iEntity);
+		PrintToServer("[EW]Item Spawned: %s |%i", NewItem.ShortName, iEntity);
 		
 		g_ItemList.PushArray(NewItem, sizeof(NewItem));
 		
@@ -944,7 +998,7 @@ public bool RegisterButton(class_ItemList ItemInstance, int iEntity)
 		char Item_Weapon_Targetname[64], Item_Weapon_Parent[64];
 		Entity_GetTargetName(ItemInstance.WeaponID, Item_Weapon_Targetname, sizeof(Item_Weapon_Targetname));
 		Entity_GetParentName(iEntity, Item_Weapon_Parent, sizeof(Item_Weapon_Parent));
-		if (!StrEqual(Item_Weapon_Targetname,"") && StrEqual(Item_Weapon_Targetname, Item_Weapon_Parent))
+		if(strcmp(Item_Weapon_Targetname, "", false) != 0 && strcmp(Item_Weapon_Targetname, Item_Weapon_Parent, false) == 0)
 		{
 			if(ItemInstance.ButtonID == INVALID_ENT_REFERENCE) ItemInstance.ButtonID = Entity_GetHammerID(iEntity); //Default the first button spawned will be the main button. Need to module use_priority
 			else if(ItemInstance.ButtonID2 == INVALID_ENT_REFERENCE) ItemInstance.ButtonID2 = Entity_GetHammerID(iEntity); //May be Second Button?
@@ -1029,12 +1083,12 @@ public bool RegisterMath(class_ItemList ItemInstance, int iEntity)
 
 public void OnEntityCreated(int iEntity, const char[] sClassname)
 {
-	if(IsValidEntity(iEntity))
+	if(IsValidEntity(iEntity) && IsValidEdict(iEntity))
 	{
 		if(StrContains(sClassname, "weapon_", false) != -1) SDKHook(iEntity, SDKHook_SpawnPost, OnItemSpawned);
-		else if(StrEqual(sClassname,"func_button")||StrEqual(sClassname,"func_rot_button")||
-			StrEqual(sClassname,"func_door")||StrEqual(sClassname,"func_door_rotating")) SDKHook(iEntity, SDKHook_SpawnPost, OnButtonSpawned);
-		else if (StrEqual(sClassname,"math_counter")) SDKHook(iEntity, SDKHook_SpawnPost, OnMathSpawned);
+		else if (strcmp(sClassname,"func_button", false) || strcmp(sClassname,"func_rot_button", false) || strcmp(sClassname,"func_physbox_multiplayer", false) ||
+			strcmp(sClassname,"func_door", false) || strcmp(sClassname,"func_door_rotating", false) == 0) SDKHook(iEntity, SDKHook_SpawnPost, OnButtonSpawned);
+		else if (strcmp(sClassname,"math_counter", false) == 0) SDKHook(iEntity, SDKHook_SpawnPost, OnMathSpawned);
 		else if(StrContains(sClassname, "trigger_", false) != -1) SDKHook(iEntity, SDKHook_SpawnPost, OnTriggerSpawned);
 		#if defined EW_MODULE_PHYSBOX
 		else if(StrContains(sClassname, "func_physbox", false) != -1) SDKHook(iEntity, SDKHook_SpawnPost, OnPhysboxSpawned);
@@ -1120,7 +1174,7 @@ public void OnButtonSpawned(int iEntity) //Button with parent spawns after weapo
 	
 	char sClassname[32];
 	GetEdictClassname(iEntity, sClassname, sizeof(sClassname));
-	if (StrEqual(sClassname,"func_door") || StrEqual(sClassname,"func_door_rotating"))
+	if (strcmp(sClassname,"func_door", false) == 0 || strcmp(sClassname,"func_door_rotating", false) == 0)
 	{
 		int spawnflags = GetEntProp(iEntity, Prop_Data, "m_spawnflags");
 		if (!(spawnflags & 256))return; //The entity cannot be pressed so don't register it as a button
@@ -1221,7 +1275,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 						
 						
 						if(ItemTest.OwnerID != iActivator && ItemTest.OwnerID != iCaller) return Plugin_Handled;
-							else if(!(StrEqual(ItemTest.FilterName,""))) DispatchKeyValue(iActivator, "targetname", ItemTest.FilterName);
+						else if(strcmp(ItemTest.FilterName,"") != 0) DispatchKeyValue(iActivator, "targetname", ItemTest.FilterName);
 						
 						UpdateTime();
 						if(ItemTest.CheckDelay() > 0.0) return Plugin_Handled;
@@ -1259,11 +1313,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 									if(ItemTest.CheckCoolDown() <= 0)
 									{
 										#if defined EW_MODULE_FORWARDS
-										Call_StartForward(g_hOnUseItem);
-										Call_PushString(ItemTest.Name);
-										Call_PushCell(iActivator);
-										Call_PushCell(iAbility);
-										Call_Finish();
+										Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1278,11 +1328,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 									if(ItemTest.Uses < ItemTest.MaxUses)
 									{
 										#if defined EW_MODULE_FORWARDS
-										Call_StartForward(g_hOnUseItem);
-										Call_PushString(ItemTest.Name);
-										Call_PushCell(iActivator);
-										Call_PushCell(iAbility);
-										Call_Finish();
+										Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1297,11 +1343,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 									if(ItemTest.Uses < ItemTest.MaxUses && ItemTest.CheckCoolDown() <= 0)
 									{
 										#if defined EW_MODULE_FORWARDS
-										Call_StartForward(g_hOnUseItem);
-										Call_PushString(ItemTest.Name);
-										Call_PushCell(iActivator);
-										Call_PushCell(iAbility);
-										Call_Finish();
+										Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1317,11 +1359,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 									if(ItemTest.CheckCoolDown() <= 0)
 									{
 										#if defined EW_MODULE_FORWARDS
-										Call_StartForward(g_hOnUseItem);
-										Call_PushString(ItemTest.Name);
-										Call_PushCell(iActivator);
-										Call_PushCell(iAbility);
-										Call_Finish();
+										Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1344,11 +1382,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 										if(ItemTest.CheckCoolDown() <= 0)
 										{
 											#if defined EW_MODULE_FORWARDS
-											Call_StartForward(g_hOnUseItem);
-											Call_PushString(ItemTest.Name);
-											Call_PushCell(iActivator);
-											Call_PushCell(iAbility);
-											Call_Finish();
+											Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 											#endif
 											#if defined EW_MODULE_CHAT
 											if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1371,11 +1405,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 									if(ItemTest.CheckCoolDown2() <= 0)
 									{
 										#if defined EW_MODULE_FORWARDS
-										Call_StartForward(g_hOnUseItem);
-										Call_PushString(ItemTest.Name);
-										Call_PushCell(iActivator);
-										Call_PushCell(iAbility);
-										Call_Finish();
+										Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1390,11 +1420,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 									if(ItemTest.Uses2 < ItemTest.MaxUses2)
 									{
 										#if defined EW_MODULE_FORWARDS
-										Call_StartForward(g_hOnUseItem);
-										Call_PushString(ItemTest.Name);
-										Call_PushCell(iActivator);
-										Call_PushCell(iAbility);
-										Call_Finish();
+										Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1409,11 +1435,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 									if(ItemTest.Uses2 < ItemTest.MaxUses2 && ItemTest.CheckCoolDown2() <= 0)
 									{
 										#if defined EW_MODULE_FORWARDS
-										Call_StartForward(g_hOnUseItem);
-										Call_PushString(ItemTest.Name);
-										Call_PushCell(iActivator);
-										Call_PushCell(iAbility);
-										Call_Finish();
+										Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1429,11 +1451,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 									if(ItemTest.CheckCoolDown2() <= 0)
 									{
 										#if defined EW_MODULE_FORWARDS
-										Call_StartForward(g_hOnUseItem);
-										Call_PushString(ItemTest.Name);
-										Call_PushCell(iActivator);
-										Call_PushCell(iAbility);
-										Call_Finish();
+										Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1456,11 +1474,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 										if(ItemTest.CheckCoolDown2() <= 0)
 										{
 											#if defined EW_MODULE_FORWARDS
-											Call_StartForward(g_hOnUseItem);
-											Call_PushString(ItemTest.Name);
-											Call_PushCell(iActivator);
-											Call_PushCell(iAbility);
-											Call_Finish();
+											Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 											#endif
 											#if defined EW_MODULE_CHAT
 											if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1520,6 +1534,225 @@ public void Event_OutValue(const char[] sOutput, int iCaller, int iActivator, fl
 //-------------------------------------------------------
 //Purpose: Notify when they use a special weapon
 //-------------------------------------------------------
+public Action Event_GameUI_LeftClick(const char[] sOutput, int iCaller, int iActivator, float Delay)
+{
+	if(g_bConfigLoaded)
+	{
+		for(int i = 0; i < g_ItemList.Length; i++)
+		{
+			class_ItemList ItemTest;
+			g_ItemList.GetArray(i, ItemTest, sizeof(ItemTest));
+			
+			if(IsValidEdict(ItemTest.WeaponID) && ItemTest.OwnerID==iActivator)
+			{
+				int iAbility = -1;
+				if(ItemTest.ButtonID == -5)
+				{
+					if(ItemTest.LockButton) continue;
+					iAbility = 1;
+				}
+				else if(ItemTest.ButtonID2 == -5)
+				{
+					if(ItemTest.LockButton2) continue;
+					iAbility = 2;
+				}
+				if (ItemTest.ButtonID == -5 && ItemTest.ButtonID2 == -5)
+				{
+					if(ItemTest.LockButton || ItemTest.LockButton2) continue;
+					iAbility = 2;
+				}
+
+				if(iAbility == 1 && ItemTest.ButtonID2 == INVALID_ENT_REFERENCE) iAbility = 0;
+				if(iAbility > -1)
+				{
+					if(strcmp(ItemTest.FilterName,"") != 0) DispatchKeyValue(iActivator, "targetname", ItemTest.FilterName);
+					UpdateTime();
+					if(ItemTest.CheckDelay() > 0.0) continue;
+					if(iAbility != 2)
+					{
+						switch (ItemTest.Mode)
+						{
+							case 2: 
+								if(ItemTest.CheckCoolDown() <= 0)
+								{
+									#if defined EW_MODULE_FORWARDS
+									Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
+									#endif
+									#if defined EW_MODULE_CHAT
+									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+									#endif
+									
+									ItemTest.SetCoolDown(ItemTest.CoolDown);
+									g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
+									continue;
+								}
+							case 3:
+								if(ItemTest.Uses < ItemTest.MaxUses)
+								{
+									#if defined EW_MODULE_FORWARDS
+									Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
+									#endif
+									#if defined EW_MODULE_CHAT
+									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+									#endif
+									
+									ItemTest.Uses++;
+									g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
+									continue;
+								}
+							case 4:
+								if(ItemTest.Uses < ItemTest.MaxUses && ItemTest.CheckCoolDown() <= 0)
+								{
+									#if defined EW_MODULE_FORWARDS
+									Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
+									#endif
+									#if defined EW_MODULE_CHAT
+									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+									#endif
+									
+									ItemTest.SetCoolDown(ItemTest.CoolDown);
+									ItemTest.Uses++;
+									g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
+									continue;
+								}
+							case 5:
+								if(ItemTest.CheckCoolDown() <= 0)
+								{
+									#if defined EW_MODULE_FORWARDS
+									Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
+									#endif
+									#if defined EW_MODULE_CHAT
+									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+									#endif
+									
+									ItemTest.Uses++;
+									if(ItemTest.Uses >= ItemTest.MaxUses)
+									{
+										ItemTest.SetCoolDown(ItemTest.CoolDown);
+										ItemTest.Uses = 0;
+									}
+									g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
+									continue;
+								}
+							case 6,7:
+							{
+								if(ItemTest.CoolDown > 0)
+								{
+									if(ItemTest.CheckCoolDown() <= 0)
+									{
+										#if defined EW_MODULE_FORWARDS
+										Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
+										#endif
+										#if defined EW_MODULE_CHAT
+										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+										#endif
+										
+										ItemTest.SetCoolDown(ItemTest.CoolDown);
+										g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
+									}else continue;
+								}
+								continue;
+							}
+							default: continue;
+						}
+					}else
+					{
+						switch (ItemTest.Mode2)
+						{
+							case 2: 
+								if(ItemTest.CheckCoolDown2() <= 0)
+								{
+									#if defined EW_MODULE_FORWARDS
+									Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
+									#endif
+									#if defined EW_MODULE_CHAT
+									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+									#endif
+									
+									ItemTest.SetCoolDown2(ItemTest.CoolDown2);
+									g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
+									continue;
+								}
+							case 3:
+								if(ItemTest.Uses2 < ItemTest.MaxUses2)
+								{
+									#if defined EW_MODULE_FORWARDS
+									Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
+									#endif
+									#if defined EW_MODULE_CHAT
+									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+									#endif
+									
+									ItemTest.Uses2++;
+									g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
+									continue;
+								}
+							case 4:
+								if(ItemTest.Uses2 < ItemTest.MaxUses2 && ItemTest.CheckCoolDown2() <= 0)
+								{
+									#if defined EW_MODULE_FORWARDS
+									Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
+									#endif
+									#if defined EW_MODULE_CHAT
+									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+									#endif
+									
+									ItemTest.SetCoolDown2(ItemTest.CoolDown2);
+									ItemTest.Uses2++;
+									g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
+									continue;
+								}
+							case 5:
+								if(ItemTest.CheckCoolDown2() <= 0)
+								{
+									#if defined EW_MODULE_FORWARDS
+									Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
+									#endif
+									#if defined EW_MODULE_CHAT
+									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+									#endif
+									
+									ItemTest.Uses2++;
+									if(ItemTest.Uses2 >= ItemTest.MaxUses2)
+									{
+										ItemTest.SetCoolDown2(ItemTest.CoolDown2);
+										ItemTest.Uses2 = 0;
+									}
+									g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
+									continue;
+								}
+							case 6,7:
+							{
+								if(ItemTest.CoolDown2 > 0)
+								{
+									if(ItemTest.CheckCoolDown2() <= 0)
+									{
+										#if defined EW_MODULE_FORWARDS
+										Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
+										#endif
+										#if defined EW_MODULE_CHAT
+										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+										#endif
+										
+										ItemTest.SetCoolDown2(ItemTest.CoolDown2);
+										g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
+									}else continue;
+								}
+								continue;
+							}
+							default: continue;
+						}
+					}
+				}
+			}
+		}
+	}
+	return Plugin_Continue;
+}
+
+//-------------------------------------------------------
+//Purpose: Notify when they use a special weapon
+//-------------------------------------------------------
 public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iActivator, float Delay)
 {
 	if(g_bConfigLoaded)
@@ -1542,10 +1775,15 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 					if(ItemTest.LockButton2) continue;
 					iAbility = 2;
 				}
+				if (ItemTest.ButtonID == -5 && ItemTest.ButtonID2 == -5)
+				{
+					if(ItemTest.LockButton || ItemTest.LockButton2) continue;
+					iAbility = 1;
+				}
 				if(iAbility == 1 && ItemTest.ButtonID2 == INVALID_ENT_REFERENCE) iAbility = 0;
 				if(iAbility > -1)
 				{
-					if(!(StrEqual(ItemTest.FilterName,""))) DispatchKeyValue(iActivator, "targetname", ItemTest.FilterName);
+					if(strcmp(ItemTest.FilterName,"") != 0) DispatchKeyValue(iActivator, "targetname", ItemTest.FilterName);
 					UpdateTime();
 					if(ItemTest.CheckDelay() > 0.0) continue;
 					if(iAbility != 2)
@@ -1556,11 +1794,7 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 								if(ItemTest.CheckCoolDown() <= 0)
 								{
 									#if defined EW_MODULE_FORWARDS
-									Call_StartForward(g_hOnUseItem);
-									Call_PushString(ItemTest.Name);
-									Call_PushCell(iActivator);
-									Call_PushCell(iAbility);
-									Call_Finish();
+									Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 									#endif
 									#if defined EW_MODULE_CHAT
 									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1574,11 +1808,7 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 								if(ItemTest.Uses < ItemTest.MaxUses)
 								{
 									#if defined EW_MODULE_FORWARDS
-									Call_StartForward(g_hOnUseItem);
-									Call_PushString(ItemTest.Name);
-									Call_PushCell(iActivator);
-									Call_PushCell(iAbility);
-									Call_Finish();
+									Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 									#endif
 									#if defined EW_MODULE_CHAT
 									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1592,11 +1822,7 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 								if(ItemTest.Uses < ItemTest.MaxUses && ItemTest.CheckCoolDown() <= 0)
 								{
 									#if defined EW_MODULE_FORWARDS
-									Call_StartForward(g_hOnUseItem);
-									Call_PushString(ItemTest.Name);
-									Call_PushCell(iActivator);
-									Call_PushCell(iAbility);
-									Call_Finish();
+									Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 									#endif
 									#if defined EW_MODULE_CHAT
 									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1611,11 +1837,7 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 								if(ItemTest.CheckCoolDown() <= 0)
 								{
 									#if defined EW_MODULE_FORWARDS
-									Call_StartForward(g_hOnUseItem);
-									Call_PushString(ItemTest.Name);
-									Call_PushCell(iActivator);
-									Call_PushCell(iAbility);
-									Call_Finish();
+									Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 									#endif
 									#if defined EW_MODULE_CHAT
 									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1637,11 +1859,7 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 									if(ItemTest.CheckCoolDown() <= 0)
 									{
 										#if defined EW_MODULE_FORWARDS
-										Call_StartForward(g_hOnUseItem);
-										Call_PushString(ItemTest.Name);
-										Call_PushCell(iActivator);
-										Call_PushCell(iAbility);
-										Call_Finish();
+										Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1663,11 +1881,7 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 								if(ItemTest.CheckCoolDown2() <= 0)
 								{
 									#if defined EW_MODULE_FORWARDS
-									Call_StartForward(g_hOnUseItem);
-									Call_PushString(ItemTest.Name);
-									Call_PushCell(iActivator);
-									Call_PushCell(iAbility);
-									Call_Finish();
+									Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 									#endif
 									#if defined EW_MODULE_CHAT
 									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1681,11 +1895,7 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 								if(ItemTest.Uses2 < ItemTest.MaxUses2)
 								{
 									#if defined EW_MODULE_FORWARDS
-									Call_StartForward(g_hOnUseItem);
-									Call_PushString(ItemTest.Name);
-									Call_PushCell(iActivator);
-									Call_PushCell(iAbility);
-									Call_Finish();
+									Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 									#endif
 									#if defined EW_MODULE_CHAT
 									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1699,11 +1909,7 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 								if(ItemTest.Uses2 < ItemTest.MaxUses2 && ItemTest.CheckCoolDown2() <= 0)
 								{
 									#if defined EW_MODULE_FORWARDS
-									Call_StartForward(g_hOnUseItem);
-									Call_PushString(ItemTest.Name);
-									Call_PushCell(iActivator);
-									Call_PushCell(iAbility);
-									Call_Finish();
+									Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 									#endif
 									#if defined EW_MODULE_CHAT
 									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1718,11 +1924,7 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 								if(ItemTest.CheckCoolDown2() <= 0)
 								{
 									#if defined EW_MODULE_FORWARDS
-									Call_StartForward(g_hOnUseItem);
-									Call_PushString(ItemTest.Name);
-									Call_PushCell(iActivator);
-									Call_PushCell(iAbility);
-									Call_Finish();
+									Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 									#endif
 									#if defined EW_MODULE_CHAT
 									if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -1744,11 +1946,7 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 									if(ItemTest.CheckCoolDown2() <= 0)
 									{
 										#if defined EW_MODULE_FORWARDS
-										Call_StartForward(g_hOnUseItem);
-										Call_PushString(ItemTest.Name);
-										Call_PushCell(iActivator);
-										Call_PushCell(iAbility);
-										Call_Finish();
+										Forward_OnUseItem(ItemTest.Name, iActivator, iAbility);
 										#endif
 										#if defined EW_MODULE_CHAT
 										if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
@@ -2276,14 +2474,20 @@ public Action EW_Command_Setname(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 
-	char sHammerID[32], sNewName[32];
+	char Arguments[256], sArg[64], sNewName[32];
+	GetCmdArgString(Arguments, sizeof(Arguments));
+	
+	int len = BreakString(Arguments, sArg, sizeof(sArg));
+	if(len == -1)
+	{
+		len = 0;
+		Arguments[0] = '\0';
+	}
 
-	GetCmdArg(1, sHammerID, sizeof(sHammerID));
-	GetCmdArg(2, sNewName, sizeof(sNewName));
-
-	int iHammerID = StringToInt(sHammerID);
-
+	int iHammerID = StringToInt(sArg);
+	FormatEx(sNewName, sizeof(sNewName), Arguments[len]);
 	TrimString(sNewName);
+	StripQuotes(sNewName);
 	
 	if (g_bConfigLoaded)
 		for(int i = 0; i<g_ItemList.Length; i++)
@@ -2308,14 +2512,20 @@ public Action EW_Command_Setshortname(int iClient, int iArgs)
 		return Plugin_Handled;
 	}
 
-	char sHammerID[32], sNewName[32];
+	char Arguments[256], sArg[64], sNewName[32];
+	GetCmdArgString(Arguments, sizeof(Arguments));
+	
+	int len = BreakString(Arguments, sArg, sizeof(sArg));
+	if(len == -1)
+	{
+		len = 0;
+		Arguments[0] = '\0';
+	}
 
-	GetCmdArg(1, sHammerID, sizeof(sHammerID));
-	GetCmdArg(2, sNewName, sizeof(sNewName));
-
-	int iHammerID = StringToInt(sHammerID);
-
+	int iHammerID = StringToInt(sArg);
+	FormatEx(sNewName, sizeof(sNewName), Arguments[len]);
 	TrimString(sNewName);
+	StripQuotes(sNewName);
 	
 	if (g_bConfigLoaded)
 		for(int i = 0; i<g_ItemList.Length; i++)

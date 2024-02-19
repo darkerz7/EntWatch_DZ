@@ -58,11 +58,11 @@
 	}
 	"Hud Position"
 	{
-		"en" 	"HUD Position"
+		"en" 	"Position"
 	}
 	"Hud Color"
 	{
-		"en" 	"HUD Color"
+		"en" 	"Color"
 	}
 	"Wrong"
 	{
@@ -95,6 +95,10 @@
 	"EBan Reason for"
 	{
 		"en" 	"EBan Reason for"
+	}
+	"EUnBan Reason for"
+	{
+		"en" 	"EUnBan Reason for"
 	}
 	"Temporary"
 	{
@@ -353,6 +357,22 @@
 	{
 		"en" 	"Not listening to leader"
 	}
+	"Wrong target"
+	{
+		"en"	"Wrong target"
+	}
+	"Giving another chance"
+	{
+		"en"	"Giving another chance"
+	}
+	"Bad duration"
+	{
+		"en"	"Bad duration"
+	}
+	"Was not on purpose"
+	{
+		"en"	"Was not on purpose"
+	}
 	"Other"
 	{
 		"en" 	"Other"
@@ -413,9 +433,37 @@
 	{
 		"en" 	"Default"
 	}
+	"Modified"
+	{
+		"en"	"Modified"
+	}
+	"Status"
+	{
+		"en"	"Status"
+	}
+	"Hud Type"
+	{
+		"en" 	"Type"
+	}
+	"HUD"
+	{
+		"en"	"HUD"
+	}
+	"KeyHintText"
+	{
+		"en"	"KeyHintText"
+	}
 	"Hud Names"
 	{
-		"en" 	"Names in HUD are"
+		"en" 	"Name"
+	}
+	"Hud Item Number"
+	{
+		"en" 	"Items per page"
+	}
+	"Hud Rotation Time"
+	{
+		"en" 	"Rotation Time"
 	}
 	"Offline EBan"
 	{
@@ -451,7 +499,8 @@
 	}
 	"Not have permission lEBan"
 	{
-		"en" 	"You do not have permission to EBan longer than 12 hours"
+		"#format"	"{1:i}"
+		"en" 	"You do not have permission to EBan longer than {1} minutes"
 	}
 	"Not have permission rEBan"
 	{
@@ -461,16 +510,44 @@
 	{
 		"en" 	"Force use function"
 	}
-	"Not available in this game"
-	{
-		"en" 	"Not available in this game"
-	}
-	"Database not ready"
-	{
-		"en" 	"Database not ready"
-	}
 	"Reload Configs"
 	{
 		"en"	"Configs has been reloaded.."
+	}
+	"Hud Items"
+	{
+		"en"	"Items"
+	}
+	"Hud Top Left"
+	{
+		"en"	"Top Left"
+	}
+	"Hud Top Center"
+	{
+		"en"	"Top Center"
+	}
+	"Hud Top Right"
+	{
+		"en"	"Top Right"
+	}
+	"Hud Middle Left"
+	{
+		"en"	"Middle Left"
+	}
+	"Hud Middle Right"
+	{
+		"en"	"Middle Right"
+	}
+	"Hud Bottom Left"
+	{
+		"en"	"Bottom Left"
+	}
+	"Hud Bottom Center"
+	{
+		"en"	"Bottom Center"
+	}
+	"Hud Bottom Right"
+	{
+		"en"	"Bottom Right"
 	}
 }

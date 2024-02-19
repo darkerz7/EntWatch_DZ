@@ -1,0 +1,553 @@
+"Phrases"
+{
+	"EW_Tag"
+	{
+		"fr"	"[EntWatch]"
+	}
+	"Welcome"
+	{
+		"fr"	"La carte actuelle est supportée par ce plugin."
+	}
+	"Use"
+	{
+		"fr"	"a utilisé"
+	}
+	"Use First"
+	{
+		"fr"	"a utilisé la première capacité de"
+	}
+	"Use Second"
+	{
+		"fr"	"a utilisé la deuxième capacité de"
+	}
+	"Pickup"
+	{
+		"fr"	"a collecté"
+	}
+	"Drop"
+	{
+		"fr"	"a laché"
+	}
+	"Death"
+	{
+		"fr"	"est mort avec"
+	}
+	"Death and drop"
+	{
+		"fr"	"est mort et a laché"
+	}
+	"Disconnect"
+	{
+		"fr"	"s'est déconnecté avec"
+	}
+	"Disconnect and drop"
+	{
+		"fr"	"s'est déconnecté et a laché"
+	}
+	"Enabled"
+	{
+		"fr"	"Activé"
+	}
+	"Disabled"
+	{
+		"fr"	"Désactivé"
+	}
+	"Hud"
+	{
+		"fr"	"Le HUD est maintenant"
+	}
+	"Hud Position"
+	{
+		"fr"	"Position"
+	}
+	"Hud Color"
+	{
+		"fr"	"Couleur"
+	}
+	"Wrong"
+	{
+		"fr"	"Mauvais"
+	}
+	"Saved"
+	{
+		"fr"	"Sauvegardé"
+	}
+	"Usage"
+	{
+		"fr"	"Utilisation"
+	}
+	"Restricted"
+	{
+		"fr"	"restreint"
+	}
+	"Unrestricted"
+	{
+		"fr"	"dé-restreint"
+	}
+	"Duration"
+	{
+		"fr"	"Durée"
+	}
+	"EBan Duration for"
+	{
+		"fr"	"Durée de l'EBan pour"
+	}
+	"EBan Reason for"
+	{
+		"fr"	"Raison de l'EBan pour"
+	}
+	"EUnBan Reason for"
+	{
+		"fr"	"Raison de l'EUnBan pour"
+	}
+	"Temporary"
+	{
+		"fr"	"Temporaire"
+	}
+	"Permanently"
+	{
+		"fr"	"Permanente"
+	}
+	"For Minutes"
+	{
+		"#format"	"{1:i}"
+		"fr"	"pour {1} minutes"
+	}
+	"Issued"
+	{
+		"fr"	"Invoqué"
+	}
+	"Reason"
+	{
+		"fr"	"Raison"
+	}
+	"Currently Eban"
+	{
+		"fr"	"Actuellement Eban"
+	}
+	"Player"
+	{
+		"fr"	"Joueur"
+	}
+	"Admin"
+	{
+		"fr"	"Admin"
+	}
+	"No EBans"
+	{
+		"fr"	"Aucun Ebans"
+	}
+	"No owner"
+	{
+		"fr"	"Aucun propriétaire"
+	}
+	"No Receivers"
+	{
+		"fr"	"Aucun Receveurs"
+	}
+	"No Players"
+	{
+		"fr"	"Aucun Joueurs"
+	}
+	"Already EBanned"
+	{
+		"fr"	"Déjà Eban"
+	}
+	"Already UnEBanned"
+	{
+		"fr"	"Déjà UnEban"
+	}
+	"Restricted By"
+	{
+		"fr"	"restreint par"
+	}
+	"Invalid item name"
+	{
+		"fr"	"Nom d'item invalide"
+	}
+	"Has a Restrict"
+	{
+		"fr"	"a un restrict"
+	}
+	"Transfered all items"
+	{
+		"fr"	"a transféré tous les items de"
+	}
+	"Transfered"
+	{
+		"fr"	"a transféré"
+	}
+	"Differs team"
+	{
+		"fr"	"L'équipe du receveur diffère de l'équipe de la cible"
+	}
+	"Already owns"
+	{
+		"fr"	"Le receveur possède déjà cet item"
+	}
+	"Target has no items"
+	{
+		"fr"	"La cible n'a pas d'items"
+	}
+	"EW to"
+	{
+		"fr"	"à"
+	}
+	"Item targets"
+	{
+		"fr"	"Cibles de l'item"
+	}
+	"Item to Spawn"
+	{
+		"fr"	"Item à Spawn"
+	}
+	"Player is not valid anymore"
+	{
+		"fr"	"Le joueur n'est plus valide"
+	}
+	"Receiver is not valid anymore"
+	{
+		"fr"	"Le receveur n'est plus valide"
+	}
+	"The player must be in one of the teams"
+	{
+		"fr"	"Le joueur doit être dans une des équipes"
+	}
+	"PT configuration not found"
+	{
+		"fr"	"L'item n'a pas de configuration correspondante"
+	}
+	"PT configuration Error"
+	{
+		"fr"	"Point_Template non trouvé"
+	}
+	"Item not available"
+	{
+		"fr"	"L'item n'est plus disponible"
+	}
+	"EntWatch Commands"
+	{
+		"fr"	"Commandes EntWatch"
+	}
+	"EntWatch Commands Title"
+	{
+		"fr"	"[EntWatch] Commandes"
+	}
+	"List of Items"
+	{
+		"fr"	"Liste des Items"
+	}
+	"EBan a Player"
+	{
+		"fr"	"EBan un Joueur"
+	}
+	"List of EBan"
+	{
+		"fr"	"Liste des EBan"
+	}
+	"Spawn an Item"
+	{
+		"fr"	"Spawn un Item"
+	}
+	"Restrict Player"
+	{
+		"fr"	"Restreindre un joueur"
+	}
+	"EBan Info"
+	{
+		"fr"	"EBan Informations"
+	}
+	"Transfer Item"
+	{
+		"fr"	"Transférer un Item"
+	}
+	"UnEBan a Player"
+	{
+		"fr"	"UnEBan un Joueur"
+	}
+	"Receiver of the Item"
+	{
+		"fr"	"Receveur de l'Item"
+	}
+	"Item Info"
+	{
+		"fr"	"Informations de l'Item"
+	}
+	"Owner"
+	{
+		"fr"	"Propriétaire"
+	}
+	"Mode"
+	{
+		"fr"	"Mode"
+	}
+	"CoolDown"
+	{
+		"fr"	"Temps de recharge"
+	}
+	"Max Uses"
+	{
+		"fr"	"Utilisations Max"
+	}
+	"Mode Default"
+	{
+		"fr"	"Protection contre le spam seulement"
+	}
+	"Mode 2"
+	{
+		"fr"	"Temps de recharge"
+	}
+	"Mode 3"
+	{
+		"fr"	"Utilisations limitées"
+	}
+	"Mode 4"
+	{
+		"fr"	"Utilisations limitées avec temps de recharge"
+	}
+	"Mode 5"
+	{
+		"fr"	"Temps de recharge après utilisations multiples"
+	}
+	"Minutes"
+	{
+		"fr"	"Minutes"
+	}
+	"Hour"
+	{
+		"fr"	"Heure"
+	}
+	"Day"
+	{
+		"fr"	"Jour"
+	}
+	"Week"
+	{
+		"fr"	"Semaine"
+	}
+	"Month"
+	{
+		"fr"	"Mois"
+	}
+	"Item misuse"
+	{
+		"fr"	"Mauvaise utilisation de l'item"
+	}
+	"Trolling on purpose"
+	{
+		"fr"	"Trolling intentionnel"
+	}
+	"Throwing item away"
+	{
+		"fr"	"Jeter l'item"
+	}
+	"Not using an item"
+	{
+		"fr"	"Ne pas utiliser un item"
+	}
+	"Trimming team"
+	{
+		"fr"	"Tuage d'équipe"
+	}
+	"Spamming an item"
+	{
+		"fr"	"Spamming d'un item"
+	}
+	"Not listening to leader"
+	{
+		"fr"	"Ne pas écouter le leader"
+	}
+	"Wrong target"
+	{
+		"fr"	"Mauvaise cible"
+	}
+	"Giving another chance"
+	{
+		"fr"	"Donner une autre chance"
+	}
+	"Bad duration"
+	{
+		"fr"	"Mauvaise durée"
+	}
+	"Was not on purpose"
+	{
+		"fr"	"N'était pas intentionnel"
+	}
+	"Other"
+	{
+		"fr"	"Autre"
+	}
+	"Expires"
+	{
+		"fr"	"Expire"
+	}
+	"On Map Change"
+	{
+		"fr"	"Sur changement de carte"
+	}
+	"Never"
+	{
+		"fr"	"Jamais"
+	}
+	"Spawn Item"
+	{
+		"fr"	"spawn item"
+	}
+	"On Player"
+	{
+		"fr"	"sur joueur"
+	}
+	"List to Spawn"
+	{
+		"fr"	"Liste à Spawn"
+	}
+	"Strip Weapon"
+	{
+		"fr"	"Enlever l'arme"
+	}
+	"Not Strip Weapon"
+	{
+		"fr"	"Ne pas enlever l'arme"
+	}
+	"Recipient of a New Item"
+	{
+		"fr"	"Receveur d'un nouvel item"
+	}
+	"No Items for Spawn"
+	{
+		"fr"	"Aucun item à Spawn"
+	}
+	"Is not restricted"
+	{
+		"fr"	"n'est pas restreint"
+	}
+	"Status restricted"
+	{
+		"fr"	"Vous êtes actuellement restreint"
+	}
+	"Status unrestricted"
+	{
+		"fr"	"Vous n'êtes actuellement pas restreint"
+	}
+	"Default"
+	{
+		"fr"	"Défaut"
+	}
+	"Modified"
+	{
+		"fr"	"Modifié"
+	}
+	"Status"
+	{
+		"fr"	"Statut"
+	}
+	"Hud Type"
+	{
+		"fr"	"Type"
+	}
+	"HUD"
+	{
+		"fr"	"HUD"
+	}
+	"KeyHintText"
+	{
+		"fr"	"KeyHintText"
+	}
+	"Hud Names"
+	{
+		"fr"	"Nom"
+	}
+	"Hud Item Number"
+	{
+		"fr"	"Items par page"
+	}
+	"Hud Rotation Time"
+	{
+		"fr"	"Temps de rotation"
+	}
+	"Offline EBan"
+	{
+		"fr"	"EBan Hors Ligne"
+	}
+	"Offline Restricted"
+	{
+		"fr"	"restreint hors ligne"
+	}
+	"List of Disconnected Players"
+	{
+		"fr"	"Liste des Joueurs Déconnectés"
+	}
+	"Minutes Ago"
+	{
+		"fr"	"minutes avant"
+	}
+	"Info Offline Player"
+	{
+		"fr"	"Informations du Joueur Hors Ligne"
+	}
+	"Came out"
+	{
+		"fr"	"Est sorti"
+	}
+	"Last Item"
+	{
+		"fr"	"Dernier Item"
+	}
+	"Not have permission pEBan"
+	{
+		"fr"	"Vous n'avez pas la permission d'EBan de manière permanente"
+	}
+	"Not have permission lEBan"
+	{
+		"#format"	"{1:i}"
+		"fr"	"Vous n'avez pas la permission d'EBan plus de {1} minutes"
+	}
+	"Not have permission rEBan"
+	{
+		"fr"	"Vous n'avez pas la permission de retirer des EBans permanents"
+	}
+	"Use Priority"
+	{
+		"fr"	"Forcer la fonction d'utilisation"
+	}
+	"Reload Configs"
+	{
+		"fr"	"Les configurations ont été rechargées.."
+	}
+	"Hud Items"
+	{
+		"fr"	"Items"
+	}
+	"Hud Top Left"
+	{
+		"fr"	"Haut Gauche"
+	}
+	"Hud Top Center"
+	{
+		"fr"	"Haut Centre"
+	}
+	"Hud Top Right"
+	{
+		"fr"	"Haut Droite"
+	}
+	"Hud Middle Left"
+	{
+		"fr"	"Milieu Gauche"
+	}
+	"Hud Middle Right"
+	{
+		"fr"	"Milieu Droite"
+	}
+	"Hud Bottom Left"
+	{
+		"fr"	"Bas Gauche"
+	}
+	"Hud Bottom Center"
+	{
+		"fr"	"Bas Centre"
+	}
+	"Hud Bottom Right"
+	{
+		"fr"	"Bas Droite"
+	}
+}

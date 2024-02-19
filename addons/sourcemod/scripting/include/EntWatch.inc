@@ -51,6 +51,16 @@ native bool EntWatch_BanClient(int iClient, int iAdmin = 0, int iDuration = 0, c
 native bool EntWatch_UnbanClient(int iClient, int iAdmin = 0, const char[] sReason = "No Reason");
 
 /**
+* Gets client Ebans Number
+*
+* @param iClient		Client index to get
+* @return				Client's Ebans number
+*
+* On error/errors:		Invalid client index
+*/
+native int EntWatch_GetClientEbansNumber(int iCient);
+
+/**
  * Gets client HUD settings
  *
  * @param iClient		Client index to get

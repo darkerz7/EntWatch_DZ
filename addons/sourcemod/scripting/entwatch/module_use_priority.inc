@@ -28,7 +28,7 @@ stock void EWM_Use_Priority_OnClientCookiesCached(int iClient)
 {
 	char sBuffer_cookie[4];
 	GetClientCookie(iClient, g_hCookie_UP, sBuffer_cookie, sizeof(sBuffer_cookie));
-	if (StrEqual(sBuffer_cookie,""))
+	if (strcmp(sBuffer_cookie,"", false) == 0)
 	{
 		SetClientCookie(iClient, g_hCookie_UP, "1");
 		strcopy(sBuffer_cookie, sizeof(sBuffer_cookie), "1");
