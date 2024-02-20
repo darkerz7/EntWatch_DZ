@@ -21,6 +21,7 @@ stock void EWM_OfflineEban_OnPluginStart()
 	g_hCvar_Admin_OfflineLong		= CreateConVar("entwatch_offline_long", "720", "Maximum time in minutes that an admin is able to offline eban.", _, true, 1.0);
 
 	HookConVarChange(g_hCvar_OfflineClearRecords, Cvar_OfflineEBAN_Changed);
+	HookConVarChange(g_hCvar_Admin_OfflineLong, Cvar_OfflineEBAN_Changed);
 
 	RegAdminCmd("sm_eoban", EWM_OfflineEban_Command_Restrict, ADMFLAG_RCON);
 
@@ -30,7 +31,10 @@ stock void EWM_OfflineEban_OnPluginStart()
 
 void Cvar_OfflineEBAN_Changed(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	g_iOfflineTimeClear = GetConVarInt(convar);
+	if(convar==g_hCvar_Admin_OfflineLong)
+		g_iOfflineTimeClear = GetConVarInt(convar);
+	else if(convar==g_hCvar_OfflineClearRecords)
+		g_iOfflineTimeClear = GetConVarInt(convar);
 }
 
 Action EWM_OfflineEban_Timer_Checker(Handle timer)
@@ -57,7 +61,7 @@ public void EWM_OfflineEban_OnClientPostAdminCheck(int iClient)
 	{
 		class_Offline_Eban OfflinePlayerTest;
 		g_OfflineArray.GetArray(i, OfflinePlayerTest, sizeof(OfflinePlayerTest));
-		if(StrEqual(OfflinePlayerTest.Player_SteamID, g_sSteamIDs[iClient], false))
+		if(strcmp(OfflinePlayerTest.Player_SteamID, g_sSteamIDs[iClient]) == 0)
 		{
 			bNotFound = false;
 			OfflinePlayerTest.UserID = g_iUserIDs[iClient];
@@ -94,7 +98,7 @@ public void EWM_OfflineEban_OnClientDisconnect(int iClient)
 	{
 		class_Offline_Eban OfflinePlayerTest;
 		g_OfflineArray.GetArray(i, OfflinePlayerTest, sizeof(OfflinePlayerTest));
-		if(StrEqual(OfflinePlayerTest.Player_SteamID, g_sSteamIDs[iClient], false))
+		if(strcmp(OfflinePlayerTest.Player_SteamID, g_sSteamIDs[iClient]) == 0)
 		{
 			bNotFound = false;
 			FormatEx(OfflinePlayerTest.PlayerName, sizeof(OfflinePlayerTest.PlayerName), "%s", sClient_Name);
@@ -129,7 +133,7 @@ public void EWM_OfflineEban_UpdateItemName(int iClient, const char[] sNameItem)
 	{
 		class_Offline_Eban OfflinePlayerTest;
 		g_OfflineArray.GetArray(i, OfflinePlayerTest, sizeof(OfflinePlayerTest));
-		if(StrEqual(OfflinePlayerTest.Player_SteamID, g_sSteamIDs[iClient], false))
+		if(strcmp(OfflinePlayerTest.Player_SteamID, g_sSteamIDs[iClient]) == 0)
 		{
 			bNotFound = false;
 			FormatEx(OfflinePlayerTest.PlayerName, sizeof(OfflinePlayerTest.PlayerName), "%s", sClient_Name);

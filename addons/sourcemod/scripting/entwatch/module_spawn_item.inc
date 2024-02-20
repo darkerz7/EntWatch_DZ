@@ -121,7 +121,7 @@ public Action EWM_Spawn_Command_Spawn(int iClient, int iArgs)
 		GetCmdArg(1, sTarget, sizeof(sTarget));
 		GetCmdArg(2, sItemName, sizeof(sItemName));
 		
-		if((iTarget = FindTarget(iClient, sTarget, true)) == -1) return Plugin_Handled;
+		if((iTarget = FindTarget(iClient, sTarget, true, false)) == -1) return Plugin_Handled;
 		
 		#if defined EW_MODULE_EBAN
 		if(g_EbanClients[iTarget].Banned)

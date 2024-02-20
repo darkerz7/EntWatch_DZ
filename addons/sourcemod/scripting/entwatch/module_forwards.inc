@@ -66,3 +66,11 @@ stock void EWM_Forwards_OnPluginStart()
 	g_hOnAdminTransferedAllItems = CreateGlobalForward("EntWatch_OnAdminTransferedAllItems", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 	g_hOnAdminTransferedItem = CreateGlobalForward("EntWatch_OnAdminTransferedItem", ET_Ignore, Param_Cell, Param_String, Param_Cell);
 }
+
+stock void Forward_OnUseItem(char sItemName[32], int iActivator, int iAbility) {
+	Call_StartForward(g_hOnUseItem);
+	Call_PushString(sItemName);
+	Call_PushCell(iActivator);
+	Call_PushCell(iAbility);
+	Call_Finish();
+}

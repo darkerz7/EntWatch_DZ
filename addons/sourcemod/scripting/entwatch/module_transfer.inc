@@ -206,7 +206,7 @@ public Action EWM_Transfer_Command_Transfer(int iClient, int iArgs)
 			CReplyToCommand(iClient, "%s%t %s%t: sm_etransfer <owner>/$<itemname> <receiver>", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Usage");
 			return Plugin_Handled;
 		}
-		
+
 		int iTarget = -1,
 			iReceiver = -1;
 		
@@ -214,7 +214,7 @@ public Action EWM_Transfer_Command_Transfer(int iClient, int iArgs)
 		GetCmdArg(1, sTarget, sizeof(sTarget));
 		GetCmdArg(2, sReceiver, sizeof(sReceiver));
 		
-		if ((iReceiver = FindTarget(iClient, sReceiver, true)) == -1) return Plugin_Handled;
+		if ((iReceiver = FindTarget(iClient, sReceiver, true, false)) == -1) return Plugin_Handled;
 		
 		if(sTarget[0] == '$')
 		{
@@ -222,7 +222,7 @@ public Action EWM_Transfer_Command_Transfer(int iClient, int iArgs)
 			EWM_Transfer_ItemName(iClient, sTarget, iReceiver);
 		} else
 		{
-			if ((iTarget = FindTarget(iClient, sTarget, true)) == -1) return Plugin_Handled;
+			if ((iTarget = FindTarget(iClient, sTarget, true, false)) == -1) return Plugin_Handled;
 			EWM_Transfer_Client(iClient, iTarget, iReceiver);
 		}
 	}

@@ -12,6 +12,7 @@ public APLRes AskPluginLoad2(Handle hThis, bool bLate, char[] sError, int iErr_m
 	CreateNative("EntWatch_IsClientBanned", EWM_Natives_Native_IsClientBanned);
 	CreateNative("EntWatch_BanClient", EWM_Natives_Native_BanClient);
 	CreateNative("EntWatch_UnbanClient", EWM_Natives_Native_UnbanClient);
+	CreateNative("EntWatch_GetClientEbansNumber", EWM_Natives_Native_GetClientEbansNumber);
 	#endif
 	#if defined EW_MODULE_HUD
 	CreateNative("EntWatch_GetHudSettings", EWM_Natives_Native_GetHudSettings);
@@ -111,6 +112,14 @@ public int EWM_Natives_Native_UnbanClient(Handle hPlugin, int iArgC)
 
 	EWM_Eban_UnBanClient(iClient, iAdmin, sReason);
 	return true;
+}
+
+public int EWM_Natives_Native_GetClientEbansNumber(Handle hPlugin, int iArgC)
+{
+	int iClient = GetNativeCell(1);
+	if(!IsValidClient(iClient)) return 0;
+	
+	return g_iClientEbansNumber[iClient];
 }
 #endif
 

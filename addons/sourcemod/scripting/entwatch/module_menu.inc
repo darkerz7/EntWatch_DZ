@@ -413,7 +413,7 @@ void EWM_Menu_PM_SpawnItemList(int iClient)
 	{
 		class_ItemConfig ItemTest;
 		g_ItemConfig.GetArray(i, ItemTest, sizeof(ItemTest));
-		if(!StrEqual(ItemTest.Spawner, ""))
+		if(strcmp(ItemTest.Spawner, "") != 0)
 		{
 			bNotFound = false;
 			char sIndexItem[32];

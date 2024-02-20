@@ -65,7 +65,7 @@ public bool RegisterPhysbox(class_ItemList ItemInstance, int iEntity)
 		char Item_Weapon_Targetname[64], Item_Weapon_Parent[64];
 		Entity_GetTargetName(ItemInstance.WeaponID, Item_Weapon_Targetname, sizeof(Item_Weapon_Targetname));
 		Entity_GetParentName(iEntity, Item_Weapon_Parent, sizeof(Item_Weapon_Parent));
-		if (!StrEqual(Item_Weapon_Targetname,"") && StrEqual(Item_Weapon_Targetname, Item_Weapon_Parent))
+		if ((strcmp(Item_Weapon_Targetname,"", false) != 0) && strcmp(Item_Weapon_Targetname, Item_Weapon_Parent, false) == 0)
 		{
 			class_Physbox NewPhysbox;
 			NewPhysbox.Entity = iEntity;
