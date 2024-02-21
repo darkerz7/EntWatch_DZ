@@ -85,7 +85,7 @@ public Plugin myinfo =
 	name = "EntWatch",
 	author = "DarkerZ[RUS], AgentWesker, notkoen, sTc2201, maxime1907, Cmer, .Rushaway, Dolly",
 	description = "Notify players about entity interactions.",
-	version = "3.DZ.47",
+	version = "3.DZ.48",
 	url = "dark-skill.ru"
 };
  
@@ -634,8 +634,6 @@ stock void LoadConfig()
 		FormatEx(sBuffer_path_override, sizeof(sBuffer_path_override), "cfg/sourcemod/entwatch/maps/%s_override.cfg", g_sMap);
 	}
 
-	LogMessage(" config: %s", sBuffer_path_override);
-
 	// If there is an override config then load it
 	if(FileExists(sBuffer_path_override))
 	{
@@ -711,22 +709,22 @@ stock void LoadConfig()
 			FormatEx(NewItem.FilterName, sizeof(NewItem.FilterName), "%s", sBuffer_temp);
 
 			KvGetString(hKeyValues, "blockpickup", sBuffer_temp, sizeof(sBuffer_temp), "false");
-			NewItem.BlockPickup = (strcmp(sBuffer_temp, "true", false) == 0);
+			NewItem.BlockPickup = strcmp(sBuffer_temp, "true", false) == 0;
 			
 			KvGetString(hKeyValues, "allowtransfer", sBuffer_temp, sizeof(sBuffer_temp), "false");
-			NewItem.AllowTransfer = (strcmp(sBuffer_temp, "true", false) == 0);
+			NewItem.AllowTransfer = strcmp(sBuffer_temp, "true", false) == 0;
 			
 			KvGetString(hKeyValues, "forcedrop", sBuffer_temp, sizeof(sBuffer_temp), "false");
-			NewItem.ForceDrop = (strcmp(sBuffer_temp, "true", false) == 0);
+			NewItem.ForceDrop = strcmp(sBuffer_temp, "true", false) == 0;
 			
 			KvGetString(hKeyValues, "chat", sBuffer_temp, sizeof(sBuffer_temp), "false");
-			NewItem.Chat = (strcmp(sBuffer_temp, "true", false) == 0);
+			NewItem.Chat = strcmp(sBuffer_temp, "true", false) == 0;
 			
 			KvGetString(hKeyValues, "chat_uses", sBuffer_temp, sizeof(sBuffer_temp), "false");
-			NewItem.Chat_Uses = (strcmp(sBuffer_temp, "true", false) == 0);
+			NewItem.Chat_Uses = strcmp(sBuffer_temp, "true", false) == 0;
 			
 			KvGetString(hKeyValues, "hud", sBuffer_temp, sizeof(sBuffer_temp), "false");
-			NewItem.Hud = (strcmp(sBuffer_temp, "true", false) == 0);
+			NewItem.Hud = strcmp(sBuffer_temp, "true", false) == 0;
 			
 			KvGetString(hKeyValues, "hammerid", sBuffer_temp, sizeof(sBuffer_temp), "0");
 			NewItem.HammerID = StringToInt(sBuffer_temp);
@@ -759,10 +757,10 @@ stock void LoadConfig()
 			FormatEx(NewItem.Spawner, sizeof(NewItem.Spawner), "%s", sBuffer_temp);
 
 			KvGetString(hKeyValues, "physbox", sBuffer_temp, sizeof(sBuffer_temp), "false");
-			NewItem.PhysBox = (strcmp(sBuffer_temp, "true", false) == 0);
+			NewItem.PhysBox = strcmp(sBuffer_temp, "true", false) == 0;
 			
 			KvGetString(hKeyValues, "use_priority", sBuffer_temp, sizeof(sBuffer_temp), "true");
-			NewItem.UsePriority = (strcmp(sBuffer_temp, "true", false) == 0);
+			NewItem.UsePriority = strcmp(sBuffer_temp, "true", false) == 0;
 			
 			//Second Button
 			KvGetString(hKeyValues, "buttonclass2", sBuffer_temp, sizeof(sBuffer_temp), "");
@@ -1000,10 +998,18 @@ public bool RegisterButton(class_ItemList ItemInstance, int iEntity)
 		Entity_GetParentName(iEntity, Item_Weapon_Parent, sizeof(Item_Weapon_Parent));
 		if(strcmp(Item_Weapon_Targetname, "", false) != 0 && strcmp(Item_Weapon_Targetname, Item_Weapon_Parent, false) == 0)
 		{
-			if(ItemInstance.ButtonID == INVALID_ENT_REFERENCE) ItemInstance.ButtonID = Entity_GetHammerID(iEntity); //Default the first button spawned will be the main button. Need to module use_priority
-			else if(ItemInstance.ButtonID2 == INVALID_ENT_REFERENCE) ItemInstance.ButtonID2 = Entity_GetHammerID(iEntity); //May be Second Button?
+			// Check if the entity is already registered as a button
+			if (ItemInstance.IsRegisterButton) return false;
+
+			int iHammerID = Entity_GetHammerID(iEntity);
+			// Update the ButtonID or ButtonID2 if they are invalid
+			if(ItemInstance.ButtonID == INVALID_ENT_REFERENCE) ItemInstance.ButtonID = iHammerID; //Default the first button spawned will be the main button. Need to module use_priority
+			else if(ItemInstance.ButtonID2 == INVALID_ENT_REFERENCE) ItemInstance.ButtonID2 = iHammerID; //May be Second Button?
+
+			// Register the entity as a button and push it into the array
 			SDKHookEx(iEntity, SDKHook_Use, OnButtonUse);
 			ItemInstance.ButtonsArray.Push(iEntity);
+			ItemInstance.IsRegisterButton = true;
 			return true;
 		}
 	}
@@ -1014,7 +1020,8 @@ public bool RegisterMath(class_ItemList ItemInstance, int iEntity)
 {
 	if (IsValidEntity(ItemInstance.WeaponID))
 	{
-		if (ItemInstance.EnergyID == Entity_GetHammerID(iEntity))
+		int iHammerID = Entity_GetHammerID(iEntity);
+		if (ItemInstance.EnergyID == iHammerID)
 		{
 			char Item_Counter_Targetname[64];
 			Entity_GetTargetName(iEntity, Item_Counter_Targetname, sizeof(Item_Counter_Targetname));
@@ -1045,7 +1052,7 @@ public bool RegisterMath(class_ItemList ItemInstance, int iEntity)
 					return true;
 				}
 			}
-		}else if (ItemInstance.EnergyID2 == Entity_GetHammerID(iEntity))
+		}else if (ItemInstance.EnergyID2 == iHammerID)
 		{
 			char Item_Counter_Targetname[64];
 			Entity_GetTargetName(iEntity, Item_Counter_Targetname, sizeof(Item_Counter_Targetname));
@@ -1083,7 +1090,7 @@ public bool RegisterMath(class_ItemList ItemInstance, int iEntity)
 
 public void OnEntityCreated(int iEntity, const char[] sClassname)
 {
-	if(IsValidEntity(iEntity) && IsValidEdict(iEntity))
+	if(g_bConfigLoaded && IsValidEntity(iEntity) && IsValidEdict(iEntity))
 	{
 		if(StrContains(sClassname, "weapon_", false) != -1) SDKHook(iEntity, SDKHook_SpawnPost, OnItemSpawned);
 		else if (strcmp(sClassname,"func_button", false) || strcmp(sClassname,"func_rot_button", false) || strcmp(sClassname,"func_physbox_multiplayer", false) ||
@@ -1170,8 +1177,8 @@ public Action Timer_OnMathSpawned(Handle timer, int iEntity)
 
 public void OnButtonSpawned(int iEntity) //Button with parent spawns after weapon entity. With timer button don't register if item spawns with module items_spawn
 {
-	if(!IsValidEntity(iEntity) || !g_bConfigLoaded) return;
-	
+	if(!IsValidEntity(iEntity) || !g_bConfigLoaded || !IsValidEdict(iEntity)) return;
+
 	char sClassname[32];
 	GetEdictClassname(iEntity, sClassname, sizeof(sClassname));
 	if (strcmp(sClassname,"func_door", false) == 0 || strcmp(sClassname,"func_door_rotating", false) == 0)
@@ -1243,7 +1250,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 		//char edebug[32];
 		//Entity_GetTargetName(iButton, edebug, sizeof(edebug));
 		//PrintToConsoleAll("[EntWatch] PRESS Button %s by %N - ID %i", edebug, iActivator, iActivator);
-		
+
 		int iOffset = FindDataMapInfo(iButton, "m_bLocked");
 		if (iOffset != -1 && GetEntData(iButton, iOffset, 1)) return Plugin_Handled;
 
@@ -1257,6 +1264,8 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 				{
 					if(ItemTest.ButtonsArray.Get(j) == iButton)
 					{
+						int iHammerID = Entity_GetHammerID(iButton);
+
 						//DEBUG SHIT ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 						//PrintToConsoleAll("[EntWatch] DEBUG: Name - %s, WeaponID - %i", ItemTest.Name, ItemTest.WeaponID);
 						//PrintToConsoleAll("[EntWatch] DEBUG: Uses - %i", ItemTest.Uses);
@@ -1271,8 +1280,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 						//PrintToConsoleAll("[EntWatch] DEBUG: Delay - %i", ItemTest.Delay);
 						//PrintToConsoleAll("[EntWatch] DEBUG: ButtonID - %i", ItemTest.ButtonID);
 						//PrintToConsoleAll("[EntWatch] DEBUG: iButton - %i", iButton);
-						//PrintToConsoleAll("[EntWatch] DEBUG: HammerID of iButton - %i", Entity_GetHammerID(iButton));
-						
+						//PrintToConsoleAll("[EntWatch] DEBUG: HammerID of iButton - %i", iHammerID);
 						
 						if(ItemTest.OwnerID != iActivator && ItemTest.OwnerID != iCaller) return Plugin_Handled;
 						else if(strcmp(ItemTest.FilterName,"") != 0) DispatchKeyValue(iActivator, "targetname", ItemTest.FilterName);
@@ -1282,16 +1290,18 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 						
 						int iAbility = 0; //0 - once button, 1 - first button, 2 - second button
 						
-						if(ItemTest.ButtonID != INVALID_ENT_REFERENCE && ItemTest.ButtonID == Entity_GetHammerID(iButton))
+						if(ItemTest.ButtonID != INVALID_ENT_REFERENCE && ItemTest.ButtonID == iHammerID)
 						{
 							if(ItemTest.LockButton) return Plugin_Handled;
 							if(ItemTest.CheckWaitTime() > 0 ) return Plugin_Handled;
+
 							iAbility = 1;
 						}
-						else if (ItemTest.ButtonID2 != INVALID_ENT_REFERENCE && ItemTest.ButtonID2 == Entity_GetHammerID(iButton))
+						else if (ItemTest.ButtonID2 != INVALID_ENT_REFERENCE && ItemTest.ButtonID2 == iHammerID)
 						{
 							if(ItemTest.LockButton2) return Plugin_Handled;
 							if(ItemTest.CheckWaitTime2() > 0 ) return Plugin_Handled;
+
 							iAbility = 2;
 						}
 						else return Plugin_Changed;
