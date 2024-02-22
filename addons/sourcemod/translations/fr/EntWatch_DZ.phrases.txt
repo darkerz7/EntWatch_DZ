@@ -417,17 +417,14 @@
 	{
 		"fr"	"Aucun item à Spawn"
 	}
+	"Client Eban numbers"
+	{
+		"#format"	"{1:d}"
+		"en" 	"a été Eban {1} fois"
+	}
 	"Is not restricted"
 	{
 		"fr"	"n'est pas restreint"
-	}
-	"Status restricted"
-	{
-		"fr"	"Vous êtes actuellement restreint"
-	}
-	"Status unrestricted"
-	{
-		"fr"	"Vous n'êtes actuellement pas restreint"
 	}
 	"Default"
 	{

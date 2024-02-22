@@ -417,17 +417,14 @@
 	{
 		"ru" 	"Нет предметов для спавна"
 	}
+	"Client Eban numbers"
+	{
+		"#format"	"{1:d}"
+		"ru" 	"был ЕБанов {1} раз"
+	}
 	"Is not restricted"
 	{
 		"ru" 	"может использовать предметы"
-	}
-	"Status restricted"
-	{
-		"ru" 	"Вам запрещено использовать предметы"
-	}
-	"Status unrestricted"
-	{
-		"ru" 	"Вам разрешено использовать предметы"
 	}
 	"Default"
 	{
