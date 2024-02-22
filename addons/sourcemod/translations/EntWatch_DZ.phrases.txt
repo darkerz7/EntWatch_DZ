@@ -417,17 +417,14 @@
 	{
 		"en" 	"No Items for Spawn"
 	}
+	"Client Eban numbers"
+	{
+		"#format"	"{1:d}"
+		"en" 	"has been e-banned {1} times"
+	}
 	"Is not restricted"
 	{
 		"en" 	"is not restricted"
-	}
-	"Status restricted"
-	{
-		"en" 	"You are currently restricted"
-	}
-	"Status unrestricted"
-	{
-		"en" 	"You are currently unrestricted"
 	}
 	"Default"
 	{
