@@ -7,7 +7,8 @@
 ConVar	g_hCvar_OfflineClearRecords,
 		g_hCvar_Admin_OfflineLong;
 
-int g_iOfflineTimeClear = 30;
+int g_iOfflineTimeClear = 30,
+	g_iOfflineTimeLong = 720;
 
 ArrayList g_OfflineArray;
 
@@ -20,6 +21,11 @@ stock void EWM_OfflineEban_OnPluginStart()
 	g_hCvar_OfflineClearRecords		= CreateConVar("entwatch_offline_clear_time", "30", "Time during which data is stored (1-240)", _, true, 1.0, true, 240.0);
 	g_hCvar_Admin_OfflineLong		= CreateConVar("entwatch_offline_long", "720", "Maximum time in minutes that an admin is able to offline eban.", _, true, 1.0);
 
+	//Initialize values
+	g_iOfflineTimeClear = GetConVarInt(g_hCvar_OfflineClearRecords);
+	g_iOfflineTimeLong = GetConVarInt(g_hCvar_Admin_OfflineLong);
+
+	//Hook CVARs
 	HookConVarChange(g_hCvar_OfflineClearRecords, Cvar_OfflineEBAN_Changed);
 	HookConVarChange(g_hCvar_Admin_OfflineLong, Cvar_OfflineEBAN_Changed);
 
@@ -32,7 +38,7 @@ stock void EWM_OfflineEban_OnPluginStart()
 void Cvar_OfflineEBAN_Changed(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	if(convar==g_hCvar_Admin_OfflineLong)
-		g_iOfflineTimeClear = GetConVarInt(convar);
+		g_iOfflineTimeLong = GetConVarInt(convar);
 	else if(convar==g_hCvar_OfflineClearRecords)
 		g_iOfflineTimeClear = GetConVarInt(convar);
 }
@@ -420,24 +426,14 @@ public int EWM_OfflineEban_Duration_Handler(Menu hMenu, MenuAction hAction, int 
 			char sSelected[64];
 			hMenu.GetItem(iParam2, sSelected, sizeof(sSelected));
 			int iDuration = StringToInt(sSelected);
-			bool bAccessDuration = true;
-			if (iDuration == 0)
-			{
-				//Check if admin has permission
-				if (!CheckCommandAccess(iClient, "sm_eban_perm", ADMFLAG_ROOT))
-				{
-					CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Not have permission rEBan");
-					bAccessDuration = false;
-				}
-			}else if(iDuration >= GetConVarInt(g_hCvar_Admin_OfflineLong))
-			{
-				//Check if admin has permission
-				if (!CheckCommandAccess(iClient, "sm_eban_long", ADMFLAG_ROOT))
-				{
-					CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Not have permission lEBan");
-					bAccessDuration = false;
-				}
-			}
+			bool bAccessDuration = false;
+
+			if (iDuration == 0 && !CheckCommandAccess(iClient, "sm_eban_perm", ADMFLAG_ROOT))
+				CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Not have permission rEBan");
+			else if(iDuration >= g_iOfflineTimeLong && !CheckCommandAccess(iClient, "sm_eban_long", ADMFLAG_ROOT))
+				CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Not have permission lEBan", g_iOfflineTimeLong);
+			else bAccessDuration = true;
+
 			if(bAccessDuration) EWM_OfflineEban_Reason(iClient, iDuration);
 		}
 	}
