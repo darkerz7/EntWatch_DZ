@@ -15,7 +15,11 @@ stock void EWM_Blink_OnPluginStart()
 	if(g_evGameEngine != Engine_CSGO)
 	{
 		g_hCvar_Blink	= CreateConVar("entwatch_blink", "0", "Enable/Disable the Blink Global.", _, true, 0.0, true, 1.0);
+
+		//Initialize values
 		g_bBlink = GetConVarBool(g_hCvar_Blink);
+
+		//Hook CVARs
 		HookConVarChange(g_hCvar_Blink, Cvar_BLINK_Changed);
 	}
 }
