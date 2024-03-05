@@ -90,30 +90,23 @@ enum struct class_ItemList
 	float		WaitTime2;
 	
 	//Purpose: Base cooldowns on GameTime rather than Timer
-	void SetCoolDown(int time)
+	// bSecond - if true, then the second ability is used
+	void SetCoolDown(int time, bool bSecond = false)
 	{
-		this.CoolDownTime = g_fGameTime + time;
+		if(!bSecond) this.CoolDownTime = g_fGameTime + time;
+		else this.CoolDownTime2 = g_fGameTime + time;
 	}
-	float CheckCoolDown()
+	float CheckCoolDown(bool bSecond = false)
 	{
-		return this.CoolDownTime - g_fGameTime;
+		if(!bSecond) return this.CoolDownTime - g_fGameTime;
+		else return this.CoolDownTime2 - g_fGameTime;
 	}
-	int RoundCoolDown()
+	int RoundCoolDown(bool bSecond = false)
 	{
-		return RoundToCeil(this.CoolDownTime - g_fGameTime);
+		if(!bSecond) return RoundToCeil(this.CoolDownTime - g_fGameTime);
+		else return RoundToCeil(this.CoolDownTime2 - g_fGameTime);
 	}
-	void SetCoolDown2(int time)
-	{
-		this.CoolDownTime2 = g_fGameTime + time;
-	}
-	float CheckCoolDown2()
-	{
-		return this.CoolDownTime2 - g_fGameTime;
-	}
-	int RoundCoolDown2()
-	{
-		return RoundToCeil(this.CoolDownTime2 - g_fGameTime);
-	}
+
 	//Purpose: Cooldown when item is picked up
 	void SetDelay(float time)
 	{
@@ -128,6 +121,7 @@ enum struct class_ItemList
 	{
 		return RoundToCeil(this.Delay - g_fGameTime);
 	}
+
 	//Purpose: Correct deletion of handles. Memory leak fix
 	void ClearHandles()
 	{
@@ -137,33 +131,24 @@ enum struct class_ItemList
 			this.ButtonsArray = null;
 		}
 	}
-	//WaitTime for first button
-	void SetWaitTime(int time)
+
+	//WaitTime for buttons
+	void SetWaitTime(int time, bool bSecond = false)
 	{
 		if(time<1) time = 1;
-		this.WaitTime = g_fGameTime + time;
+
+		if(!bSecond) this.WaitTime = g_fGameTime + time;
+		else this.WaitTime2 = g_fGameTime + time;
 	}
-	float CheckWaitTime()
+	float CheckWaitTime(bool bSecond = false)
 	{
-		return this.WaitTime - g_fGameTime;
+		if(!bSecond) return this.WaitTime - g_fGameTime;
+		else return this.WaitTime2 - g_fGameTime;
 	}
-	int RoundWaitTime()
+	int RoundWaitTime(bool bSecond = false)
 	{
-		return RoundToCeil(this.WaitTime - g_fGameTime);
-	}
-	//WaitTime for second button
-	void SetWaitTime2(int time)
-	{
-		if(time<1) time = 1;
-		this.WaitTime2 = g_fGameTime + time;
-	}
-	float CheckWaitTime2()
-	{
-		return this.WaitTime2 - g_fGameTime;
-	}
-	int RoundWaitTime2()
-	{
-		return RoundToCeil(this.WaitTime2 - g_fGameTime);
+		if(!bSecond) return RoundToCeil(this.WaitTime - g_fGameTime);
+		else return RoundToCeil(this.WaitTime2 - g_fGameTime);
 	}
 }
 
@@ -197,13 +182,13 @@ enum struct class_Scheme
 enum struct class_ClientSettings_Hud
 {
 	bool		Display;		// Bool:	Show HUD on client
-	int 		Type;			// Integer:	Type of HUD 0 = KeyHintText, 1 = HUD
-	int 		Color[4];		// Array:	Color of HUD on client
+	int			Type;			// Integer:	Type of HUD 0 = KeyHintText, 1 = HUD
+	int			Color[4];		// Array:	Color of HUD on client
 	float		Pos_X;			// Float:	HUD position in X on client
 	float		Pos_Y;			// Float:	HUD position in Y on client
 	bool		Name;			// Bool:	Show player nicknames on items
-	int 		ItemsCount;		// Integer: Number of items to show in HUD
-	int 		RotationTime;		// Integer: Time in seconds to switch HUD page
+	int 		ItemsCount; 	// Integer: Number of items to show in HUD
+	int			RotationTime;	// Integer: Time in seconds to switch HUD page
 }
 
 // Structure for player e-ban information

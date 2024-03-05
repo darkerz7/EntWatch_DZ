@@ -8,6 +8,10 @@
 	{
 		"en" 	"The current map is supported by this plugin."
 	}
+	"No Config"
+	{
+		"en" 	"No configuration file loaded for the current map."
+	}
 	"Use"
 	{
 		"en" 	"used"
@@ -285,6 +289,18 @@
 	{
 		"en" 	"CoolDown"
 	}
+	"Name"
+	{
+		"en" 	"Name"
+	}
+	"Short Name"
+	{
+		"en" 	"Short Name"
+	}
+	"Block Item"
+	{
+		"en" 	"Block Item"
+	}
 	"Max Uses"
 	{
 		"en" 	"Max Uses"
@@ -419,7 +435,7 @@
 	}
 	"Client Eban numbers"
 	{
-		"#format"	"{1:d}"
+		"#format"	"{1:i}"
 		"en" 	"has been e-banned {1} times"
 	}
 	"Is not restricted"
@@ -514,6 +530,20 @@
 	"Hud Items"
 	{
 		"en"	"Items"
+	}
+	"X axis"
+	{
+		"#format"	"{1:0.2f}"
+		"en"	"X: {1} (left to right)"
+	}
+	"Y axis"
+	{
+		"#format"	"{1:0.2f}"
+		"en"	"Y: {1} (top to bottom)"
+	}
+	"HUD Presets"
+	{
+		"en"	"HUD Presets"
 	}
 	"Hud Top Left"
 	{

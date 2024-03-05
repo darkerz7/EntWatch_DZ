@@ -1,10 +1,11 @@
 #define EW_MODULE_HUD
 
 // Purpose: Displays items information in HUD or KeyHint
-
 #define MAXSHOWHUDITEMS 12
 #define MAXSIZESTRINGFORITEM 40
 #define TIMEROTATIONHUD 3
+#define MINPOS_HUD -1.0
+#define MAXPOS_HUD 1.0
 
 // Include to display more items information in the HUD
 #include <bighud>
@@ -178,7 +179,7 @@ stock void EWM_Hud_OnClientCookiesCached(int iClient)
 	GetClientCookie(iClient, g_hCookie_HudColor, sBuffer_cookie, sizeof(sBuffer_cookie));
 	if (strcmp(sBuffer_cookie, "") == 0)
 	{
-		Format(sBuffer_cookie, sizeof(sBuffer_cookie), "%i/%i/%i/%i", g_SchemeConfig.Color_HUD[0], g_SchemeConfig.Color_HUD[1], g_SchemeConfig.Color_HUD[2], g_SchemeConfig.Color_HUD[3]);
+		FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%i/%i/%i/%i", g_SchemeConfig.Color_HUD[0], g_SchemeConfig.Color_HUD[1], g_SchemeConfig.Color_HUD[2], g_SchemeConfig.Color_HUD[3]);
 		SetClientCookie(iClient, g_hCookie_HudColor, sBuffer_cookie);
 		g_CSettings_Hud[iClient].Color[0] = g_SchemeConfig.Color_HUD[0];
 		g_CSettings_Hud[iClient].Color[1] = g_SchemeConfig.Color_HUD[1];
@@ -287,7 +288,8 @@ public void EWM_Hud_OnMapStart()
 public void EWM_Hud_DisplayCustomHUD(int client, int iHUDChannel, const char[] msg)
 {
 #if defined _DynamicChannels_included_
-	iHUDChannel = GetDynamicChannel(iHUDChannel);
+	if (CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "GetDynamicChannel") == FeatureStatus_Available)
+		iHUDChannel = GetDynamicChannel(iHUDChannel);
 #endif
 
 	// Display function in KeyHint
@@ -559,42 +561,42 @@ void EWM_Hud_Construct_String(int iClient, char[] sResult, int iSizeResult, char
 							default: FormatEx(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[+]", ItemTest.ShortName);
 						}
 					}
-					if(ItemTest.LockButton2) Format(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[L]", sBuf_woname[iIndex]);
-					else if(ItemTest.CheckWaitTime2() > 0) Format(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d]", sBuf_woname[iIndex], ItemTest.RoundWaitTime2());
+					if(ItemTest.LockButton2) FormatEx(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[L]", sBuf_woname[iIndex]);
+					else if(ItemTest.CheckWaitTime(true) > 0) FormatEx(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d]", sBuf_woname[iIndex], ItemTest.RoundWaitTime(true));
 					else
 					{
 						switch(ItemTest.Mode2)
 						{
 							case 2:
 							{
-								if (ItemTest.CheckCoolDown2() > 0) Format(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d]", sBuf_woname[iIndex], ItemTest.RoundCoolDown2());
-								else Format(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[R]", sBuf_woname[iIndex]);
+								if (ItemTest.CheckCoolDown(true) > 0) FormatEx(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d]", sBuf_woname[iIndex], ItemTest.RoundCoolDown(true));
+								else FormatEx(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[R]", sBuf_woname[iIndex]);
 							}
 							case 3:
 							{
-								if (ItemTest.Uses2 < ItemTest.MaxUses2) Format(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d/%d]", sBuf_woname[iIndex], ItemTest.Uses2, ItemTest.MaxUses2);
-								else Format(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[E]", sBuf_woname[iIndex]);
+								if (ItemTest.Uses2 < ItemTest.MaxUses2) FormatEx(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d/%d]", sBuf_woname[iIndex], ItemTest.Uses2, ItemTest.MaxUses2);
+								else FormatEx(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[E]", sBuf_woname[iIndex]);
 							}
 							case 4:
 							{
-								if (ItemTest.CheckCoolDown2() > 0) Format(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d]", sBuf_woname[iIndex], ItemTest.RoundCoolDown2());
+								if (ItemTest.CheckCoolDown(true) > 0) FormatEx(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d]", sBuf_woname[iIndex], ItemTest.RoundCoolDown(true));
 								else
-									if (ItemTest.Uses < ItemTest.MaxUses) Format(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d/%d]", sBuf_woname[iIndex], ItemTest.Uses2, ItemTest.MaxUses2);
-									else Format(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[E]", sBuf_woname[iIndex]);
+									if (ItemTest.Uses < ItemTest.MaxUses) FormatEx(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d/%d]", sBuf_woname[iIndex], ItemTest.Uses2, ItemTest.MaxUses2);
+									else FormatEx(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[E]", sBuf_woname[iIndex]);
 							}
 							case 5:
 							{
-								if (ItemTest.CheckCoolDown2() > 0) Format(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d]", sBuf_woname[iIndex], ItemTest.RoundCoolDown2());
-								else Format(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d/%d]", sBuf_woname[iIndex], ItemTest.Uses2, ItemTest.MaxUses2);
+								if (ItemTest.CheckCoolDown(true) > 0) FormatEx(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d]", sBuf_woname[iIndex], ItemTest.RoundCoolDown(true));
+								else FormatEx(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d/%d]", sBuf_woname[iIndex], ItemTest.Uses2, ItemTest.MaxUses2);
 							}
 							case 6, 7:
 							{
 								if (ItemTest.MathValue2 > 0)
 								{
-									if(ItemTest.CoolDown2 > 0 && ItemTest.CheckCoolDown2() > 0) Format(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d]", sBuf_woname[iIndex], ItemTest.RoundCoolDown2());
-									else Format(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d/%d]", sBuf_woname[iIndex], ItemTest.MathValue2, ItemTest.MathValueMax2);
+									if(ItemTest.CoolDown2 > 0 && ItemTest.CheckCoolDown(true) > 0) FormatEx(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d]", sBuf_woname[iIndex], ItemTest.RoundCoolDown(true));
+									else FormatEx(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d/%d]", sBuf_woname[iIndex], ItemTest.MathValue2, ItemTest.MathValueMax2);
 								}
-								else Format(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[E]", sBuf_woname[iIndex]);
+								else FormatEx(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[E]", sBuf_woname[iIndex]);
 							}
 					}
 					}
@@ -634,18 +636,13 @@ public Action EWM_Hud_Command_ToggleHUD(int iClient, int iArgs)
 {
 	if((IsClientConnected(iClient) && IsClientInGame(iClient)))
 	{
-		if (g_CSettings_Hud[iClient].Display)
-		{
-			CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud", g_SchemeConfig.Color_Disabled, "Disabled");
-			g_CSettings_Hud[iClient].Display = false;
-			SetClientCookie(iClient, g_hCookie_Display, "0");
-		}
-		else
-		{
-			CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud", g_SchemeConfig.Color_Enabled, "Enabled");
-			g_CSettings_Hud[iClient].Display = true;
-			SetClientCookie(iClient, g_hCookie_Display, "1");
-		}
+		char sStatus[32], sColor[32];
+		g_CSettings_Hud[iClient].Display = !g_CSettings_Hud[iClient].Display;
+		SetClientCookie(iClient, g_hCookie_Display, g_CSettings_Hud[iClient].Display ? "1" : "0");
+
+		sStatus = g_CSettings_Hud[iClient].Display ? "Enabled" : "Disabled";
+		sColor = g_CSettings_Hud[iClient].Display ? g_SchemeConfig.Color_Enabled : g_SchemeConfig.Color_Disabled;        
+		CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud", sColor, sStatus);
 	}
 	return Plugin_Handled;
 }
@@ -654,18 +651,9 @@ public Action EWM_Hud_Command_ToggleHUDType(int iClient, int iArgs)
 {
 	if((IsClientConnected(iClient) && IsClientInGame(iClient)))
 	{
-		if (g_CSettings_Hud[iClient].Type)
-		{
-			g_CSettings_Hud[iClient].Type = false;
-			SetClientCookie(iClient, g_hCookie_HudType, "0");
-			CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Type", g_SchemeConfig.Color_Enabled, "KeyHintText");
-		}
-		else
-		{
-			g_CSettings_Hud[iClient].Type = true;
-			SetClientCookie(iClient, g_hCookie_HudType, "1");
-			CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Type", g_SchemeConfig.Color_Enabled, "HUD");
-		}
+		g_CSettings_Hud[iClient].Type = !g_CSettings_Hud[iClient].Type;
+		SetClientCookie(iClient, g_hCookie_HudType, g_CSettings_Hud[iClient].Type ? "1" : "0");
+		CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Type", g_SchemeConfig.Color_Enabled, g_CSettings_Hud[iClient].Type ? "HUD" : "KeyHintText");
 	}
 	return Plugin_Handled;
 }
@@ -674,18 +662,13 @@ public Action EWM_Hud_Command_ToggleHUDName(int iClient, int iArgs)
 {
 	if((IsClientConnected(iClient) && IsClientInGame(iClient)))
 	{
-		if (g_CSettings_Hud[iClient].Name)
-		{
-			CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Names", g_SchemeConfig.Color_Disabled, "Disabled");
-			g_CSettings_Hud[iClient].Name = false;
-			SetClientCookie(iClient, g_hCookie_HudName, "0");
-		}
-		else
-		{
-			CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Names", g_SchemeConfig.Color_Enabled, "Enabled");
-			g_CSettings_Hud[iClient].Name = true;
-			SetClientCookie(iClient, g_hCookie_HudName, "1");
-		}
+		char sStatus[32], sColor[32];
+		g_CSettings_Hud[iClient].Name = !g_CSettings_Hud[iClient].Name;
+		SetClientCookie(iClient, g_hCookie_HudName, g_CSettings_Hud[iClient].Name ? "1" : "0");
+
+		sStatus = g_CSettings_Hud[iClient].Name ? "Enabled" : "Disabled";
+		sColor = g_CSettings_Hud[iClient].Name ? g_SchemeConfig.Color_Enabled : g_SchemeConfig.Color_Disabled;
+		CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Names", sColor, sStatus);
 	}
 	return Plugin_Handled;
 }
@@ -694,42 +677,35 @@ public Action EWM_Hud_Command_Hudpos(int iClient, int iArgs)
 {
 	if((IsClientConnected(iClient) && IsClientInGame(iClient)))
 	{
-		switch (g_evGameEngine)
+		if (GetCmdArgs() < 2)
 		{
-			case Engine_CSGO:
-			{
-				if (GetCmdArgs() < 2)
-				{
-					CReplyToCommand(iClient, "%s%t %s%t: sm_hudpos <x> <y>. %t: %.3f %.3f", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Usage", "Default", g_SchemeConfig.Pos_HUD_X, g_SchemeConfig.Pos_HUD_Y);
-					return Plugin_Handled;
-				}
-				char sBuffer[128];
-				float HudPosX_validate;
-				float HudPosY_validate;
-				GetCmdArg(1, sBuffer, sizeof(sBuffer));
-				HudPosX_validate = StringToFloat(sBuffer);
-				
-				GetCmdArg(2, sBuffer, sizeof(sBuffer));
-				HudPosY_validate = StringToFloat(sBuffer);
-				
-				if(((HudPosX_validate >= 0.0 && HudPosX_validate <= 1.0) || HudPosX_validate == -1.0) && ((HudPosY_validate >= 0.0 && HudPosY_validate <= 1.0) || HudPosY_validate == -1.0))
-				{
-					g_CSettings_Hud[iClient].Pos_X = HudPosX_validate;
-					g_CSettings_Hud[iClient].Pos_Y = HudPosY_validate;
-					
-					char sBuffer_cookie[32];
-					FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%f/%f", HudPosX_validate, HudPosY_validate);
-					SetClientCookie(iClient, g_hCookie_HudPos, sBuffer_cookie);
-				} else 
-				{
-					CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Position", g_SchemeConfig.Color_Disabled, "Wrong");
-					return Plugin_Handled;
-				}
-				
-				CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Position", g_SchemeConfig.Color_Enabled, "Saved");
-			}
-			default: CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Not available in this game");
+			CReplyToCommand(iClient, "%s%t %s%t: sm_hudpos <x> <y>. %t: %.3f %.3f", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Usage", "Default", g_SchemeConfig.Pos_HUD_X, g_SchemeConfig.Pos_HUD_Y);
+			return Plugin_Handled;
 		}
+		char sBuffer[128];
+		float HudPosX_validate;
+		float HudPosY_validate;
+		GetCmdArg(1, sBuffer, sizeof(sBuffer));
+		HudPosX_validate = StringToFloat(sBuffer);
+		
+		GetCmdArg(2, sBuffer, sizeof(sBuffer));
+		HudPosY_validate = StringToFloat(sBuffer);
+		
+		if(((HudPosX_validate >= 0.0 && HudPosX_validate <= 1.0) || HudPosX_validate == -1.0) && ((HudPosY_validate >= 0.0 && HudPosY_validate <= 1.0) || HudPosY_validate == -1.0))
+		{
+			g_CSettings_Hud[iClient].Pos_X = HudPosX_validate;
+			g_CSettings_Hud[iClient].Pos_Y = HudPosY_validate;
+			
+			char sBuffer_cookie[32];
+			FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%f/%f", HudPosX_validate, HudPosY_validate);
+			SetClientCookie(iClient, g_hCookie_HudPos, sBuffer_cookie);
+		} else 
+		{
+			CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Position", g_SchemeConfig.Color_Disabled, "Wrong");
+			return Plugin_Handled;
+		}
+		
+		CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Position", g_SchemeConfig.Color_Enabled, "Saved");
 	}
 	return Plugin_Handled;
 }
@@ -738,52 +714,45 @@ public Action EWM_Hud_Command_HudColor(int iClient, int iArgs)
 {
 	if((IsClientConnected(iClient) && IsClientInGame(iClient)))
 	{
-		switch (g_evGameEngine)
+		if (GetCmdArgs() < 4)
 		{
-			case Engine_CSGO:
-			{
-				if (GetCmdArgs() < 4)
-				{
-					DisplayMenuColorHUD(iClient);
-					CReplyToCommand(iClient, "%s%t %s%t: sm_hudcolor <R> <G> <B> <A>. %t: %i %i %i %i", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Usage", "Default", g_SchemeConfig.Color_HUD[0], g_SchemeConfig.Color_HUD[1], g_SchemeConfig.Color_HUD[2], g_SchemeConfig.Color_HUD[3]);
-					return Plugin_Handled;
-				}
-				char sBuffer[128];
-				int iColor_validate[4];
-				GetCmdArg(1, sBuffer, sizeof(sBuffer));
-				iColor_validate[0] = StringToInt(sBuffer);
-				
-				GetCmdArg(2, sBuffer, sizeof(sBuffer));
-				iColor_validate[1] = StringToInt(sBuffer);
-				
-				GetCmdArg(3, sBuffer, sizeof(sBuffer));
-				iColor_validate[2] = StringToInt(sBuffer);
-				
-				GetCmdArg(4, sBuffer, sizeof(sBuffer));
-				iColor_validate[3] = StringToInt(sBuffer);
-				
-				if(iColor_validate[0] >= 0 && iColor_validate[0] <= 255 && 
-					iColor_validate[1] >= 0 && iColor_validate[1] <= 255 && 
-					iColor_validate[2] >= 0 && iColor_validate[2] <= 255 && 
-					iColor_validate[3] >= 0 && iColor_validate[3] <= 255)
-				{
-					g_CSettings_Hud[iClient].Color[0] = iColor_validate[0];
-					g_CSettings_Hud[iClient].Color[1] = iColor_validate[1];
-					g_CSettings_Hud[iClient].Color[2] = iColor_validate[2];
-					g_CSettings_Hud[iClient].Color[3] = iColor_validate[3];
-					char sBuffer_cookie[32];
-					Format(sBuffer_cookie, sizeof(sBuffer_cookie), "%i/%i/%i/%i", iColor_validate[0], iColor_validate[1], iColor_validate[2], iColor_validate[3]);
-					SetClientCookie(iClient, g_hCookie_HudColor, sBuffer_cookie);
-				} else 
-				{
-					CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Color", g_SchemeConfig.Color_Disabled, "Wrong");
-					return Plugin_Handled;
-				}
-				
-				CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Color", g_SchemeConfig.Color_Enabled, "Saved");
-			}
-			default: CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Not available in this game");
+			DisplayMenuColorHUD(iClient);
+			CReplyToCommand(iClient, "%s%t %s%t: sm_hudcolor <R> <G> <B> <A>. %t: %i %i %i %i", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Usage", "Default", g_SchemeConfig.Color_HUD[0], g_SchemeConfig.Color_HUD[1], g_SchemeConfig.Color_HUD[2], g_SchemeConfig.Color_HUD[3]);
+			return Plugin_Handled;
 		}
+		char sBuffer[128];
+		int iColor_validate[4];
+		GetCmdArg(1, sBuffer, sizeof(sBuffer));
+		iColor_validate[0] = StringToInt(sBuffer);
+		
+		GetCmdArg(2, sBuffer, sizeof(sBuffer));
+		iColor_validate[1] = StringToInt(sBuffer);
+		
+		GetCmdArg(3, sBuffer, sizeof(sBuffer));
+		iColor_validate[2] = StringToInt(sBuffer);
+		
+		GetCmdArg(4, sBuffer, sizeof(sBuffer));
+		iColor_validate[3] = StringToInt(sBuffer);
+		
+		if(iColor_validate[0] >= 0 && iColor_validate[0] <= 255 && 
+			iColor_validate[1] >= 0 && iColor_validate[1] <= 255 && 
+			iColor_validate[2] >= 0 && iColor_validate[2] <= 255 && 
+			iColor_validate[3] >= 0 && iColor_validate[3] <= 255)
+		{
+			g_CSettings_Hud[iClient].Color[0] = iColor_validate[0];
+			g_CSettings_Hud[iClient].Color[1] = iColor_validate[1];
+			g_CSettings_Hud[iClient].Color[2] = iColor_validate[2];
+			g_CSettings_Hud[iClient].Color[3] = iColor_validate[3];
+			char sBuffer_cookie[32];
+			FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%i/%i/%i/%i", iColor_validate[0], iColor_validate[1], iColor_validate[2], iColor_validate[3]);
+			SetClientCookie(iClient, g_hCookie_HudColor, sBuffer_cookie);
+		} else 
+		{
+			CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Color", g_SchemeConfig.Color_Disabled, "Wrong");
+			return Plugin_Handled;
+		}
+		
+		CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Color", g_SchemeConfig.Color_Enabled, "Saved");
 	}
 	return Plugin_Handled;
 }
@@ -880,13 +849,13 @@ public void DisplayCookieMenu(int iClient)
 	menu.SetTitle("%T %T %T", "EW_Tag", iClient, "HUD", iClient, "Client Settings", iClient);
 
 	char hudisplay[64], hudtype[64], hudname[64], hudcolor[64], hudpos[64], huditems[64], hudtime[64];
-	Format(hudisplay, 64, "%T", "Status", iClient);
-	Format(hudtype, 64, "%T", "Hud Type", iClient);
-	Format(hudname, 64, "%T", "Hud Names", iClient);
-	Format(hudcolor, 64, "%T", "Hud Color", iClient);
-	Format(hudpos, 64, "%T", "Hud Position", iClient);
-	Format(huditems, 64, "%T", "Hud Item Number", iClient);
-	Format(hudtime, 64, "%T", "Hud Rotation Time", iClient); 
+	FormatEx(hudisplay, sizeof(hudisplay), "%T", "Status", iClient);
+	FormatEx(hudtype, sizeof(hudtype), "%T", "Hud Type", iClient);
+	FormatEx(hudname, sizeof(hudname), "%T", "Hud Names", iClient);
+	FormatEx(hudcolor, sizeof(hudcolor), "%T", "Hud Color", iClient);
+	FormatEx(hudpos, sizeof(hudpos), "%T", "Hud Position", iClient);
+	FormatEx(huditems, sizeof(huditems), "%T", "Hud Item Number", iClient);
+	FormatEx(hudtime, sizeof(hudtime), "%T", "Hud Rotation Time", iClient); 
 
 	menu.AddItem("display", hudisplay);
 	menu.AddItem("type", hudtype);
@@ -914,9 +883,9 @@ public int CookieMenuHandler(Menu menu, MenuAction action, int param1, int param
 			if (strcmp(info, "display", false) == 0)
 			{
 				if (g_CSettings_Hud[param1].Display)
-					Format(display, sizeof(display), "%T: %T", "Status", param1, "Enabled", param1);
+					FormatEx(display, sizeof(display), "%T: %T", "Status", param1, "Enabled", param1);
 				else
-					Format(display, sizeof(display), "%T: %T", "Status", param1, "Disabled", param1);
+					FormatEx(display, sizeof(display), "%T: %T", "Status", param1, "Disabled", param1);
 
 				return RedrawMenuItem(display);
 			}
@@ -924,19 +893,19 @@ public int CookieMenuHandler(Menu menu, MenuAction action, int param1, int param
 			{
 				char Type[32];
 				if (g_CSettings_Hud[param1].Type)
-					Format(Type, sizeof(Type), "%T", "HUD", param1);
+					FormatEx(Type, sizeof(Type), "%T", "HUD", param1);
 				else
-					Format(Type, sizeof(Type), "%T", "KeyHintText", param1);
+					FormatEx(Type, sizeof(Type), "%T", "KeyHintText", param1);
 
-				Format(display, sizeof(display), "%T: %s", "Hud Type", param1, Type);
+				FormatEx(display, sizeof(display), "%T: %s", "Hud Type", param1, Type);
 				return RedrawMenuItem(display);
 			}
 			else if (strcmp(info, "name", false) == 0)
 			{
 				if (g_CSettings_Hud[param1].Name)
-					Format(display, sizeof(display), "%T: %T", "Hud Names", param1, "Enabled", param1);
+					FormatEx(display, sizeof(display), "%T: %T", "Hud Names", param1, "Enabled", param1);
 				else
-					Format(display, sizeof(display), "%T: %T", "Hud Names", param1, "Disabled", param1);
+					FormatEx(display, sizeof(display), "%T: %T", "Hud Names", param1, "Disabled", param1);
 
 				return RedrawMenuItem(display);
 			}
@@ -944,57 +913,37 @@ public int CookieMenuHandler(Menu menu, MenuAction action, int param1, int param
 
 		case MenuAction_Select:
 		{
-			char info[64], status[32];
+			char info[64], status[32], color[32];
 			menu.GetItem(param2, info, sizeof(info));
 			if (strcmp(info, "display", false) == 0)
 			{
-				if (g_CSettings_Hud[param1].Display)
-				{
-					g_CSettings_Hud[param1].Display = false;
-					SetClientCookie(param1, g_hCookie_Display, "0");
-					Format(status, 64, "%s%t", g_SchemeConfig.Color_Disabled, "Disabled");
-				} else
-				{
-					g_CSettings_Hud[param1].Display = true;
-					SetClientCookie(param1, g_hCookie_Display, "1");
-					Format(status, 64, "%s%t", g_SchemeConfig.Color_Enabled, "Enabled");
-				}
+				g_CSettings_Hud[param1].Display = !g_CSettings_Hud[param1].Display;
+				SetClientCookie(param1, g_hCookie_Display, g_CSettings_Hud[param1].Display ? "1" : "0");
 
-				CPrintToChat(param1, "%s%t %s%t %s", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud", status);
+				color = g_CSettings_Hud[param1].Display ? g_SchemeConfig.Color_Enabled : g_SchemeConfig.Color_Disabled;
+				status = g_CSettings_Hud[param1].Display ? "Enabled" : "Disabled";
+
+				CPrintToChat(param1, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud", color, status);
 				DisplayCookieMenu(param1);
 			}
 			else if (strcmp(info, "type", false) == 0)
 			{
-				if (g_CSettings_Hud[param1].Type)
-				{
-					g_CSettings_Hud[param1].Type = false;
-					SetClientCookie(param1, g_hCookie_HudType, "0");
-					Format(status, 64, "%t", "KeyHintText");
-				} else
-				{
-					g_CSettings_Hud[param1].Type = true;
-					SetClientCookie(param1, g_hCookie_HudType, "1");
-					Format(status, 64, "%t", "HUD");
-				}
+				g_CSettings_Hud[param1].Type = !g_CSettings_Hud[param1].Type;
+				SetClientCookie(param1, g_hCookie_HudType, g_CSettings_Hud[param1].Type ? "1" : "0");
+				status = g_CSettings_Hud[param1].Type ? "KeyHintText" : "HUD";
 
 				CPrintToChat(param1, "%s%t %s%t %t: %s%s", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "HUD", "Hud Type", g_SchemeConfig.Color_Enabled, status);
 				DisplayCookieMenu(param1);
 			}
 			else if (strcmp(info, "name", false) == 0)
 			{
-				if (g_CSettings_Hud[param1].Name)
-				{
-					g_CSettings_Hud[param1].Name = false;
-					SetClientCookie(param1, g_hCookie_HudName, "0");
-					Format(status, 64, "%s%t", g_SchemeConfig.Color_Disabled, "Disabled");
-				} else
-				{
-					g_CSettings_Hud[param1].Name = true;
-					SetClientCookie(param1, g_hCookie_HudName, "1");
-					Format(status, 64, "%s%t", g_SchemeConfig.Color_Enabled, "Enabled");
-				}
+				g_CSettings_Hud[param1].Name = !g_CSettings_Hud[param1].Name;
+				SetClientCookie(param1, g_hCookie_HudName, g_CSettings_Hud[param1].Name ? "1" : "0");
 
-				CPrintToChat(param1, "%s%t %s%t %t: %s", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "HUD", "Hud Names", status);
+				color = g_CSettings_Hud[param1].Name ? g_SchemeConfig.Color_Enabled : g_SchemeConfig.Color_Disabled;
+				status = g_CSettings_Hud[param1].Name ? "Enabled" : "Disabled";
+
+				CPrintToChat(param1, "%s%t %s%t %t: %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "HUD", "Hud Names", color, status);
 				DisplayCookieMenu(param1);
 			}
 			else if (strcmp(info, "color", false) == 0)
@@ -1003,7 +952,7 @@ public int CookieMenuHandler(Menu menu, MenuAction action, int param1, int param
 			}
 			else if (strcmp(info, "pos", false) == 0)
 			{
-				HudPositionMenu(param1);
+				DisplayMenuPositionMenu(param1);
 			}
 			else if (strcmp(info, "items", false) == 0)
 			{
@@ -1033,7 +982,7 @@ public void DisplayMenuColorHUD(int iClient)
 {
 	Menu menu = new Menu(DisplayMenuColorHUDMenuHandler);
 
-	menu.SetTitle("%T Choose a color for your HUD", "EW_Tag", iClient);
+	menu.SetTitle("%T %t", "EW_Tag", iClient, "Hud Color");
 
 	char sColor[20];
 	Format(sColor, sizeof(sColor), "%i %i %i %i", g_SchemeConfig.Color_HUD[0], g_SchemeConfig.Color_HUD[1], g_SchemeConfig.Color_HUD[2], g_SchemeConfig.Color_HUD[3]);
@@ -1085,7 +1034,7 @@ public int DisplayMenuColorHUDMenuHandler(Menu menu, MenuAction action, int para
 			g_CSettings_Hud[param1].Color[2] = b;
 			g_CSettings_Hud[param1].Color[3] = a;
 	
-			Format(sBuffer_cookie, sizeof(sBuffer_cookie), "%i/%i/%i/%i", 
+			FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%i/%i/%i/%i", 
 				g_CSettings_Hud[param1].Color[0], g_CSettings_Hud[param1].Color[1], g_CSettings_Hud[param1].Color[2], g_CSettings_Hud[param1].Color[3]);
 
 			SetClientCookie(param1, g_hCookie_HudColor, sBuffer_cookie);
@@ -1211,33 +1160,43 @@ public int DisplayMenuRotationTimeHUDMenuHandler(Menu menu, MenuAction action, i
 	return 0;
 }
 
-public void HudPositionMenu(int iClient)
+stock bool IsValidHudPos(float position, float MaxValue)
+{
+	switch (MaxValue)
+	{
+		case MAXPOS_HUD:
+			if (position < MAXPOS_HUD) return true;
+		case MINPOS_HUD:
+			if (position > MINPOS_HUD) return true;
+		default:
+			return false;
+	}
+	return false;
+}
+
+public void DisplayMenuPositionMenu(int iClient)
 {
 	Menu menu = new Menu(Hud_Position_Handler);
 
 	menu.SetTitle("%T %T", "EW_Tag", iClient, "Hud Position", iClient);
 
-	char TopLeft[64], TopCenter[64], TopRight[64], MiddleLeft[64], MiddleRight[64], BottomLeft[64], BottomCenter[64], BottomRight[64];
-	Format(TopLeft, 64, "%T", "Hud Top Left", iClient);
-	Format(TopCenter, 64, "%T", "Hud Top Center", iClient);
-	Format(TopRight, 64, "%T", "Hud Top Right", iClient);
-	Format(MiddleLeft, 64, "%T", "Hud Middle Left", iClient);
-	Format(MiddleRight, 64, "%T", "Hud Middle Right", iClient);
-	Format(BottomLeft, 64, "%T", "Hud Bottom Left", iClient);
-	Format(BottomCenter, 64, "%T", "Hud Bottom Center", iClient);
-	Format(BottomRight, 64, "%T", "Hud Bottom Right", iClient);
+	char Y[64], X[64], Top[64], Bottom[64], Preset[64];
+	FormatEx(Y, sizeof(Y), "%T", "Y axis", iClient, g_CSettings_Hud[iClient].Pos_Y);
+	FormatEx(X, sizeof(X), "%T", "X axis", iClient, g_CSettings_Hud[iClient].Pos_X);
+	FormatEx(Top, sizeof(Top), "+0.05");
+	FormatEx(Bottom, sizeof(Bottom), "-0.05");
+	FormatEx(Preset, sizeof(Preset), "%T", "HUD Presets", iClient);
 
-	float iClientX = g_CSettings_Hud[iClient].Pos_X;
-	float iClientY = g_CSettings_Hud[iClient].Pos_Y;
+	float fClientX = g_CSettings_Hud[iClient].Pos_X;
+	float fClientY = g_CSettings_Hud[iClient].Pos_Y;
 
-	menu.AddItem("TopLeft", TopLeft, (iClientX == 0.0 && iClientY == 0.225) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
-	menu.AddItem("TopCenter", TopCenter, (iClientX == 0.435 && iClientY == 0.0) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
-	menu.AddItem("TopRight", TopRight, (iClientX == 0.890 && iClientY == 0.0) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
-	menu.AddItem("MiddleLeft", MiddleLeft, (iClientX == 0.4 && iClientY == 0.890) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
-	menu.AddItem("MiddleRight", MiddleRight, (iClientX == 0.890 && iClientY == 0.4) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
-	menu.AddItem("BottomLeft", BottomLeft, (iClientX == 0.0 && iClientY == 1.0) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
-	menu.AddItem("BottomCenter", BottomCenter, (iClientX == 0.435 && iClientY == 1.0) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
-	menu.AddItem("BottomRight", BottomRight, (iClientX == 0.890 && iClientY == 1.0) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+	menu.AddItem("preset", Preset);
+	menu.AddItem("", Y, ITEMDRAW_DISABLED);
+	menu.AddItem("Y++", Top, IsValidHudPos(fClientY, MAXPOS_HUD) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+	menu.AddItem("Y--", Bottom, IsValidHudPos(fClientY, MINPOS_HUD) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+	menu.AddItem("", X, ITEMDRAW_DISABLED);
+	menu.AddItem("X++", Top, IsValidHudPos(fClientX, MAXPOS_HUD) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+	menu.AddItem("X--", Bottom, IsValidHudPos(fClientX, MINPOS_HUD) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 
 	menu.ExitBackButton = true;
 	menu.ExitButton = true;
@@ -1250,80 +1209,151 @@ public int Hud_Position_Handler(Menu menu, MenuAction action, int param1, int pa
 	{
 		case MenuAction_Select:
 		{
+			char info[64];
+			float fBufferY = g_CSettings_Hud[param1].Pos_Y;
+			float fBufferX = g_CSettings_Hud[param1].Pos_X;
+
+			menu.GetItem(param2, info, sizeof(info));
+			if (strcmp(info, "preset", false) == 0)
+			{
+				DisplayMenuPresetPositionMenu(param1);
+				return 0;
+			}
+			else if (strcmp(info, "Y++", false) == 0)
+				fBufferY += 0.05;
+			else if (strcmp(info, "Y--", false) == 0)
+				fBufferY -= 0.05;
+			else if (strcmp(info, "X++", false) == 0)
+				fBufferX += 0.05;
+			else if (strcmp(info, "X--", false) == 0)
+				fBufferX -= 0.05;
+
+			// Clamp the position to the valid range
+			if (fBufferY > MAXPOS_HUD) fBufferY = MAXPOS_HUD;
+			if (fBufferY < MINPOS_HUD) fBufferY = MINPOS_HUD;
+			if (fBufferX > MAXPOS_HUD) fBufferX = MAXPOS_HUD;
+			if (fBufferX < MINPOS_HUD) fBufferX = MINPOS_HUD;
+
+			g_CSettings_Hud[param1].Pos_Y = fBufferY;
+			g_CSettings_Hud[param1].Pos_X = fBufferX;
+
+			char sBuffer_cookie[32];
+			FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%f/%f", g_CSettings_Hud[param1].Pos_X, g_CSettings_Hud[param1].Pos_Y);
+			SetClientCookie(param1, g_hCookie_HudPos, sBuffer_cookie);
+			CPrintToChat(param1, "%s%t %s%t %t: %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "HUD", "Hud Position", g_SchemeConfig.Color_Enabled, "Saved");
+
+			// Refresh the menu
+			DisplayMenuPositionMenu(param1);
+		}
+		case MenuAction_Cancel:
+		{
+			if(param2 == MenuCancel_ExitBack)
+			{
+				DisplayCookieMenu(param1);
+				return 0;
+			}
+		}
+		case MenuAction_End:
+		{
+			delete menu;
+		}	
+	}
+	
+	return 0;
+}
+
+public void DisplayMenuPresetPositionMenu(int iClient)
+{
+	Menu menu = new Menu(Hud_Preset_Position_Handler);
+
+	menu.SetTitle("%T %T", "EW_Tag", iClient, "Hud Position", iClient);
+
+	char TopLeft[64], TopCenter[64], TopRight[64], MiddleLeft[64], MiddleRight[64], BottomLeft[64], BottomCenter[64], BottomRight[64];
+	FormatEx(TopLeft, sizeof(TopLeft), "%T", "Hud Top Left", iClient);
+	FormatEx(TopCenter, sizeof(TopCenter), "%T", "Hud Top Center", iClient);
+	FormatEx(TopRight, sizeof(TopRight), "%T", "Hud Top Right", iClient);
+	FormatEx(MiddleLeft, sizeof(MiddleLeft), "%T", "Hud Middle Left", iClient);
+	FormatEx(MiddleRight, sizeof(MiddleRight), "%T", "Hud Middle Right", iClient);
+	FormatEx(BottomLeft, sizeof(BottomLeft), "%T", "Hud Bottom Left", iClient);
+	FormatEx(BottomCenter, sizeof(BottomCenter), "%T", "Hud Bottom Center", iClient);
+	FormatEx(BottomRight, sizeof(BottomRight), "%T", "Hud Bottom Right", iClient);
+
+	float fClientX = g_CSettings_Hud[iClient].Pos_X;
+	float fClientY = g_CSettings_Hud[iClient].Pos_Y;
+
+	menu.AddItem("TopLeft", TopLeft, (fClientX == 0.0 && fClientY == 0.225) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+	menu.AddItem("TopCenter", TopCenter, (fClientX == 0.435 && fClientY == 0.0) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+	menu.AddItem("TopRight", TopRight, (fClientX == 0.890 && fClientY == 0.0) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+	menu.AddItem("MiddleLeft", MiddleLeft, (fClientX == 0.4 && fClientY == 0.890) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+	menu.AddItem("MiddleRight", MiddleRight, (fClientX == 0.890 && fClientY == 0.4) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+	menu.AddItem("BottomLeft", BottomLeft, (fClientX == 0.0 && fClientY == 1.0) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+	menu.AddItem("BottomCenter", BottomCenter, (fClientX == 0.435 && fClientY == 1.0) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+	menu.AddItem("BottomRight", BottomRight, (fClientX == 0.890 && fClientY == 1.0) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+
+	menu.ExitBackButton = true;
+	menu.ExitButton = true;
+	menu.Display(iClient, MENU_TIME_FOREVER);
+}
+
+public int Hud_Preset_Position_Handler(Menu menu, MenuAction action, int param1, int param2)
+{
+	switch(action)
+	{
+		case MenuAction_Select:
+		{
 			char info[64], sBuffer_cookie[32];
 			menu.GetItem(param2, info, sizeof(info));
 			if (strcmp(info, "TopLeft", false) == 0)
 			{
 				g_CSettings_Hud[param1].Pos_X = 0.0;
 				g_CSettings_Hud[param1].Pos_Y = 0.225;
-				FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%f/%f", g_CSettings_Hud[param1].Pos_X, g_CSettings_Hud[param1].Pos_Y);
-				SetClientCookie(param1, g_hCookie_HudPos, sBuffer_cookie);
-
 				CPrintToChat(param1, "%s%t %s%t %t: %s%t (%t)", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "HUD", "Hud Position", g_SchemeConfig.Color_Enabled, "Saved", "Hud Top Left");
 			}
 			else if (strcmp(info, "TopCenter", false) == 0)
 			{
 				g_CSettings_Hud[param1].Pos_X = 0.435;
 				g_CSettings_Hud[param1].Pos_Y = 0.0;
-				FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%f/%f", g_CSettings_Hud[param1].Pos_X, g_CSettings_Hud[param1].Pos_Y);
-				SetClientCookie(param1, g_hCookie_HudPos, sBuffer_cookie);
-
 				CPrintToChat(param1, "%s%t %s%t %t: %s%t (%t)", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "HUD", "Hud Position", g_SchemeConfig.Color_Enabled, "Saved", "Hud Top Center");
 			}
 			else if (strcmp(info, "TopRight", false) == 0)
 			{
 				g_CSettings_Hud[param1].Pos_X = 0.890;
 				g_CSettings_Hud[param1].Pos_Y = 0.0;
-				FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%f/%f", g_CSettings_Hud[param1].Pos_X, g_CSettings_Hud[param1].Pos_Y);
-				SetClientCookie(param1, g_hCookie_HudPos, sBuffer_cookie);
-
 				CPrintToChat(param1, "%s%t %s%t %t: %s%t (%t)", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "HUD", "Hud Position", g_SchemeConfig.Color_Enabled, "Saved", "Hud Top Right");
 			}
 			else if (strcmp(info, "MiddleLeft", false) == 0)
 			{
 				g_CSettings_Hud[param1].Pos_X = 0.4;
 				g_CSettings_Hud[param1].Pos_Y = 0.890;
-				FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%f/%f", g_CSettings_Hud[param1].Pos_X, g_CSettings_Hud[param1].Pos_Y);
-				SetClientCookie(param1, g_hCookie_HudPos, sBuffer_cookie);
-
 				CPrintToChat(param1, "%s%t %s%t %t: %s%t (%t)", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "HUD", "Hud Position", g_SchemeConfig.Color_Enabled, "Saved", "Hud Middle Left");
 			}
 			else if (strcmp(info, "MiddleRight", false) == 0)
 			{
 				g_CSettings_Hud[param1].Pos_X = 0.890;
 				g_CSettings_Hud[param1].Pos_Y = 0.4;
-				FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%f/%f", g_CSettings_Hud[param1].Pos_X, g_CSettings_Hud[param1].Pos_Y);
-				SetClientCookie(param1, g_hCookie_HudPos, sBuffer_cookie);
-
 				CPrintToChat(param1, "%s%t %s%t %t: %s%t (%t)", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "HUD", "Hud Position", g_SchemeConfig.Color_Enabled, "Saved", "Hud Middle Right");
 			}
 			else if (strcmp(info, "BottomLeft", false) == 0)
 			{
 				g_CSettings_Hud[param1].Pos_X = 0.0;
 				g_CSettings_Hud[param1].Pos_Y = 1.0;
-				FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%f/%f", g_CSettings_Hud[param1].Pos_X, g_CSettings_Hud[param1].Pos_Y);
-				SetClientCookie(param1, g_hCookie_HudPos, sBuffer_cookie);
-
 				CPrintToChat(param1, "%s%t %s%t %t: %s%t (%t)", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "HUD", "Hud Position", g_SchemeConfig.Color_Enabled, "Saved", "Hud Bottom Left");
 			}
 			else if (strcmp(info, "BottomCenter", false) == 0)
 			{
 				g_CSettings_Hud[param1].Pos_X = 0.435;
 				g_CSettings_Hud[param1].Pos_Y = 1.0;
-				FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%f/%f", g_CSettings_Hud[param1].Pos_X, g_CSettings_Hud[param1].Pos_Y);
-				SetClientCookie(param1, g_hCookie_HudPos, sBuffer_cookie);
-
 				CPrintToChat(param1, "%s%t %s%t %t: %s%t (%t)", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "HUD", "Hud Position", g_SchemeConfig.Color_Enabled, "Saved", "Hud Bottom Center");
 			}
 			else if (strcmp(info, "BottomRight", false) == 0)
 			{
 				g_CSettings_Hud[param1].Pos_X = 0.890;
 				g_CSettings_Hud[param1].Pos_Y = 1.0;
-				FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%f/%f", g_CSettings_Hud[param1].Pos_X, g_CSettings_Hud[param1].Pos_Y);
-				SetClientCookie(param1, g_hCookie_HudPos, sBuffer_cookie);
-
 				CPrintToChat(param1, "%s%t %s%t %t: %s%t (%t)", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "HUD", "Hud Position", g_SchemeConfig.Color_Enabled, "Saved", "Hud Bottom Right");
 			}
+
+			FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%f/%f", g_CSettings_Hud[param1].Pos_X, g_CSettings_Hud[param1].Pos_Y);
+			SetClientCookie(param1, g_hCookie_HudPos, sBuffer_cookie);
 
 			// Always return to EntWatch settings menu after a selection
 			DisplayCookieMenu(param1);

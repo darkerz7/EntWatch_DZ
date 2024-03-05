@@ -291,9 +291,9 @@ public void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, const cha
 
 	switch (iBanDuration)
 	{
-		case -1:
-			CPrintToChatAll("%s%t %s%s %s%t %s%N %s%t.", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, sAdmin_Name, g_SchemeConfig.Color_Disabled, "Restricted", g_SchemeConfig.Color_Name, iClient, g_SchemeConfig.Color_Disabled, "Permanent");
 		case 0:
+			CPrintToChatAll("%s%t %s%s %s%t %s%N %s%t.", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, sAdmin_Name, g_SchemeConfig.Color_Disabled, "Restricted", g_SchemeConfig.Color_Name, iClient, g_SchemeConfig.Color_Disabled, "Permanently");
+		case -1:
 			CPrintToChatAll("%s%t %s%s %s%t %s%N %s%t.", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, sAdmin_Name, g_SchemeConfig.Color_Disabled, "Restricted", g_SchemeConfig.Color_Name, iClient, g_SchemeConfig.Color_Disabled, "Temporary");
 		default: {
 			CPrintToChatAll("%s%t %s%s %s%t %s%N %s%t.", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, sAdmin_Name, g_SchemeConfig.Color_Disabled, "Restricted", g_SchemeConfig.Color_Name, iClient, g_SchemeConfig.Color_Enabled, "For Minutes", iBanDuration);
@@ -486,44 +486,34 @@ void EWM_Eban_SQLTCallBackUpdate(Handle hDatabase, Handle hResults, const char[]
 		Call_PushString(sError);
 		Call_Finish();
 		#endif
+		return;
 	}
-	else
+	
+	int iClient = GetClientOfUserId(iUserID);
+	if(iClient && IsClientInGame(iClient))
 	{
-		int iClient = GetClientOfUserId(iUserID);
-		if(iClient && IsClientInGame(iClient))
+		class_ClientSettings_EBan ClientSet;
+		bool bBanFound = false;
+
+		while(SQL_FetchRow(hResults))
 		{
-			bool bBanFound = false;
-			class_ClientSettings_EBan ClientSet;
-			while(SQL_FetchRow(hResults))
-			{
-				bBanFound = true;
-				SQL_FetchString(hResults, 0, ClientSet.Admin_Name, sizeof(ClientSet.Admin_Name));
-				SQL_FetchString(hResults, 1, ClientSet.Admin_SteamID, sizeof(ClientSet.Admin_SteamID));
-				ClientSet.Duration = SQL_FetchInt(hResults, 2);
-				ClientSet.TimeStamp_Issued = SQL_FetchInt(hResults, 3);
-				SQL_FetchString(hResults, 4, ClientSet.Reason, sizeof(ClientSet.Reason));
-				
-				if(ClientSet.Duration == 0 || (ClientSet.Duration > 0 && ClientSet.Duration < ClientSet.Duration))
-				{
-					// Found Permanent or Longer Duration Ban
-					g_EbanClients[iClient].Banned = true;
-					FormatEx(g_EbanClients[iClient].Admin_Name, 32, "%s", ClientSet.Admin_Name);
-					FormatEx(g_EbanClients[iClient].Admin_SteamID, 64, "%s", ClientSet.Admin_SteamID);
-					g_EbanClients[iClient].Duration = ClientSet.Duration;
-					g_EbanClients[iClient].TimeStamp_Issued = ClientSet.TimeStamp_Issued;
-					FormatEx(g_EbanClients[iClient].Reason, 64, "%s", ClientSet.Reason);
-				}
-			}
-			
-			if (!bBanFound) {
-				g_EbanClients[iClient].Banned = false;
-				FormatEx(g_EbanClients[iClient].Admin_Name, 32, "");
-				FormatEx(g_EbanClients[iClient].Admin_SteamID, 64, "");
-				g_EbanClients[iClient].Duration = 0;
-				g_EbanClients[iClient].TimeStamp_Issued = 0;
-				FormatEx(g_EbanClients[iClient].Reason, 64, "");
-			}
+			bBanFound = true;
+			class_ClientSettings_EBan ClientBuffer;
+			SQL_FetchString(hResults, 0, ClientBuffer.Admin_Name, sizeof(ClientBuffer.Admin_Name));
+			SQL_FetchString(hResults, 1, ClientBuffer.Admin_SteamID, sizeof(ClientBuffer.Admin_SteamID));
+			ClientBuffer.Duration = SQL_FetchInt(hResults, 2);
+			ClientBuffer.TimeStamp_Issued = SQL_FetchInt(hResults, 3);
+			SQL_FetchString(hResults, 4, ClientBuffer.Reason, sizeof(ClientBuffer.Reason));
+
+			ClientSet = ClientBuffer;
 		}
+
+		g_EbanClients[iClient].Banned = bBanFound;
+		FormatEx(g_EbanClients[iClient].Admin_Name, 32, "%s", bBanFound ? ClientSet.Admin_Name : "");
+		FormatEx(g_EbanClients[iClient].Admin_SteamID, 64, "%s", bBanFound ? ClientSet.Admin_SteamID : "");
+		g_EbanClients[iClient].Duration = bBanFound ? ClientSet.Duration : 0;
+		g_EbanClients[iClient].TimeStamp_Issued = bBanFound ? ClientSet.TimeStamp_Issued : 0;
+		FormatEx(g_EbanClients[iClient].Reason, 64, "%s", bBanFound ? ClientSet.Reason : "");
 	}
 }
 
@@ -805,7 +795,7 @@ public Action EWM_Eban_Command_Status(int iClient, int iArgs)
 	int iClientEbans = g_iClientEbansNumber[iTarget];
 
 	if (iClientEbans > 0)
-		CReplyToCommand(iClient, "%s%t %s%N %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, iTarget, g_SchemeConfig.Color_Warning, "Client Eban numbers", iTarget, iClientEbans);
+		CReplyToCommand(iClient, "%s%t %s%N %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, iTarget, g_SchemeConfig.Color_Warning, "Client Eban numbers", iClientEbans);
 
 	if(g_EbanClients[iTarget].Banned)
 	{
