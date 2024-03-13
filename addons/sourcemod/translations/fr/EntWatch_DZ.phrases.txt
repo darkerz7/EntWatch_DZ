@@ -289,6 +289,10 @@
 	{
 		"fr"	"Utilisations Max"
 	}
+	"Button"
+	{
+		"fr" 	"Bouton"
+	}
 	"Mode Default"
 	{
 		"fr"	"Protection contre le spam seulement"
