@@ -305,6 +305,10 @@
 	{
 		"en" 	"Max Uses"
 	}
+	"Button"
+	{
+		"en" 	"Button"
+	}
 	"Mode Default"
 	{
 		"en" 	"Spam protection only"
