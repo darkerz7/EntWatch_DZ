@@ -777,7 +777,7 @@ public Action EWM_Eban_Command_Status(int iClient, int iArgs)
 {
 	int iTarget = -1;
 
-	if (iArgs > 1)
+	if (iArgs != 0)
 	{
 		char sArg[MAX_NAME_LENGTH];
 		GetCmdArg(1, sArg, sizeof(sArg));
