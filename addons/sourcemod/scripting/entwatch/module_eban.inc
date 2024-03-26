@@ -304,7 +304,7 @@ public void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, const cha
 	CPrintToChatAll("%s%t %s%t: %s", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Reason", g_EbanClients[iClient].Reason);
 
 	// Save to DB
-	if (g_iDBStatus == 4)
+	if (g_iDBStatus == 4 && iBanDuration >= 0)
 	{
 		char szAdmin_Name[32], sClient_Name[32], szClient_Name[32], szReason[64];
 		g_hEbanDB.Escape(sAdmin_Name, szAdmin_Name, sizeof(szAdmin_Name)); // Admin Name to DB
