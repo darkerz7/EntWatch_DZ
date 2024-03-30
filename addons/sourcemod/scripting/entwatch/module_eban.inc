@@ -373,6 +373,12 @@ void EWM_Eban_SQLTCallBackBan(Handle hDatabase, Handle hResults, const char[] sE
 // Main function of player e-unban
 public void EWM_Eban_UnBanClient(int iClient, int iAdmin, const char[] sReason)
 {
+	if (!g_EbanClients[iClient].Banned)
+	{
+		CReplyToCommand(iClient, "%s%t %s%t %s%N %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Player", g_SchemeConfig.Color_Name, iClient, g_SchemeConfig.Color_Warning, "Is not restricted");
+		return;
+	}
+
 	char sAdmin_Name[32];
 	char sAdmin_SteamID[64];
 	if (iAdmin != 0)
@@ -722,6 +728,12 @@ public Action EWM_Eban_Command_Unrestrict(int iClient, int iArgs)
 
 		int iTarget = -1;
 		if((iTarget = FindTarget(iClient, sArg, true)) == -1) return Plugin_Handled;
+
+		if (!g_EbanClients[iTarget].Banned)
+		{
+			CReplyToCommand(iClient, "%s%t %s%t %s%N %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Player", g_SchemeConfig.Color_Name, iTarget, g_SchemeConfig.Color_Warning, "Is not restricted");
+			return Plugin_Handled;
+		}
 
 		char sReason[64];
 		if(g_bUseReasonMenu)
