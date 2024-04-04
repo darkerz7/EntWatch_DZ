@@ -25,12 +25,15 @@ int g_iDBStatus = 0, // 0 - Def., 1 - Reconnect, 2 - Unknown Driver, 3 - Create 
 	g_iAdminBanLong,
 	g_iMaxBanTime;
 
+char g_sDefaultBanReason[64],
+	g_sDefaultUnBanReason[64];
+
 stock void EWM_Eban_OnPluginStart()
 {
 	g_hCvar_Default_BanTime			= CreateConVar("entwatch_bantime", "0", "Default ban time (0-43200)", _, true, 0.0, true, 43200.0);
-	g_hCvar_Default_BanReason		= CreateConVar("entwatch_banreason", "Item misuse", "Default ban reason.", _);
+	g_hCvar_Default_BanReason		= CreateConVar("entwatch_banreason", "Item misuse", "Default ban reason. (64 characters MAX)", _);
 	g_hCvar_Admin_BanLong			= CreateConVar("entwatch_ban_long", "720", "Maximum time in minutes that an admin is able to eban.", _, true, 1.0);
-	g_hCvar_Default_UnBanReason		= CreateConVar("entwatch_unbanreason", "Giving another chance", "Default Unban reason.", _);
+	g_hCvar_Default_UnBanReason		= CreateConVar("entwatch_unbanreason", "Giving another chance", "Default Unban reason. (64 characters MAX)", _);
 	g_hCvar_Keep_Expired_Bans		= CreateConVar("entwatch_keep_expired_ban", "1", "Enable/Disable keep expired bans.", _, true, 0.0, true, 1.0);
 	g_hCvar_Use_Reason_Menu			= CreateConVar("entwatch_use_reason_menu", "0", "Enable/Disable menu if the admin has not indicated a reason", _, true, 0.0, true, 1.0);
 	g_hCvar_MaxBanTime				= CreateConVar("entwatch_max_bantime", "0", "Maximum ban time allowed via console command (0 = disabled)", _, true, 0.0);
@@ -43,6 +46,8 @@ stock void EWM_Eban_OnPluginStart()
 	HookConVarChange(g_hCvar_Use_Reason_Menu, Cvar_EBAN_Changed);
 	HookConVarChange(g_hCvar_MaxBanTime, Cvar_EBAN_Changed);
 	HookConVarChange(g_hCvar_DropOnEBan, Cvar_EBAN_Changed);
+	HookConVarChange(g_hCvar_Default_BanReason, Cvar_EBAN_Changed);
+	HookConVarChange(g_hCvar_Default_UnBanReason, Cvar_EBAN_Changed);
 
 	//Initialize values
 	g_iDefaultBanTime = GetConVarInt(g_hCvar_Default_BanTime);
@@ -51,6 +56,8 @@ stock void EWM_Eban_OnPluginStart()
 	g_bUseReasonMenu = GetConVarBool(g_hCvar_Use_Reason_Menu);
 	g_iMaxBanTime = GetConVarInt(g_hCvar_MaxBanTime);
 	g_bDropItemOnEBan = GetConVarBool(g_hCvar_DropOnEBan);
+	GetConVarString(g_hCvar_Default_BanReason, g_sDefaultBanReason, sizeof(g_sDefaultBanReason));
+	GetConVarString(g_hCvar_Default_UnBanReason, g_sDefaultUnBanReason, sizeof(g_sDefaultUnBanReason));
 
 	RegConsoleCmd("sm_status", EWM_Eban_Command_Status);
 
@@ -95,6 +102,10 @@ void Cvar_EBAN_Changed(ConVar convar, const char[] oldValue, const char[] newVal
 		g_iMaxBanTime = GetConVarInt(convar);
 	else if(convar==g_hCvar_DropOnEBan)
 		g_bDropItemOnEBan = GetConVarBool(convar);
+	else if(convar==g_hCvar_Default_BanReason)
+		GetConVarString(convar, g_sDefaultBanReason, sizeof(g_sDefaultBanReason));
+	else if(convar==g_hCvar_Default_UnBanReason)
+		GetConVarString(convar, g_sDefaultUnBanReason, sizeof(g_sDefaultUnBanReason));
 }
 
 void EWM_Eban_ConnectCallBack(Database hDatabase, const char[] sError, any data)
@@ -240,7 +251,7 @@ void EWM_Eban_SQLGetEbansNumber_Current(Handle hDatabase, Handle hResults, const
 }
 
 // Main function of player e-ban
-public void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, const char[] sReason)
+public void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, char[] sReason)
 {
 	if (g_EbanClients[iClient].Banned)
 	{
@@ -256,6 +267,16 @@ public void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, const cha
 	{
 		LogError("Invalid ban duration time %d", iBanDuration);
 		return;
+	}
+
+	// Reason is too long to get inserted into the DB - Send reason menu instead
+	if (strlen(sReason) > 64)
+	{
+		if (iAdmin != 0)
+		{
+			EWM_Eban_Menu_EBanReason(iAdmin, iClient, iDuration);
+			return;
+		} else FormatEx(sReason, 64, g_sDefaultBanReason);
 	}
 
 	if (iBanDuration >= g_iAdminBanLong && !CheckCommandAccess(iAdmin, "sm_eban_long", ADMFLAG_ROOT))
@@ -371,12 +392,21 @@ void EWM_Eban_SQLTCallBackBan(Handle hDatabase, Handle hResults, const char[] sE
 }
 
 // Main function of player e-unban
-public void EWM_Eban_UnBanClient(int iClient, int iAdmin, const char[] sReason)
+public void EWM_Eban_UnBanClient(int iClient, int iAdmin, char[] sReason)
 {
 	if (!g_EbanClients[iClient].Banned)
 	{
 		CReplyToCommand(iClient, "%s%t %s%t %s%N %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Player", g_SchemeConfig.Color_Name, iClient, g_SchemeConfig.Color_Warning, "Is not restricted");
 		return;
+	}
+
+	if (strlen(sReason) > 64)
+	{
+		if (iAdmin != 0)
+		{
+			EWM_Eban_Menu_EUnBanReason(iAdmin, iClient);
+			return;
+		} else FormatEx(sReason, 64, g_sDefaultUnBanReason);
 	}
 
 	char sAdmin_Name[32];
@@ -577,34 +607,28 @@ void EWM_Eban_SQLTCallBackOfflineUnban(Handle hDatabase, Handle hResults, const 
 // E-unban player
 Action EWM_Eban_Timer_Checker(Handle timer)
 {
-	if(g_iDBStatus>0)
+	switch (g_iDBStatus)
 	{
-		if(g_iDBStatus == 4)// Success Connect
+		case 1: // ReConnect
+			Database.Connect(EWM_Eban_ConnectCallBack, EW_EBAN_ENTWATCH_SECTION);
+
+		case 4: // Success Connect
 		{
 			int iCurrentTimeStamp = GetTime();
 			for(int i=1; i<MaxClients+1; i++)
 			{
 				if(!IsClientInGame(i)) continue;
-				
-				if(g_EbanClients[i].Banned)
-				{
-					if(g_EbanClients[i].Duration>0)
-					{
-						if(iCurrentTimeStamp>g_EbanClients[i].TimeStamp_Issued)
-						{
-							//unban
-							EWM_Eban_UnBanClient(i, 0, "Expired");
-						}
-					}
-				}
+				if(!g_EbanClients[i].Banned) continue;
+				if(g_EbanClients[i].Duration < 0) continue;
+
+				if(iCurrentTimeStamp > g_EbanClients[i].TimeStamp_Issued)
+					EWM_Eban_UnBanClient(i, 0, "Expired");
 			}
+
 			EWM_Eban_Offline_Unban(iCurrentTimeStamp);
-		}else if(g_iDBStatus == 1)// ReConnect every 60 sec
-		{
-			Database.Connect(EWM_Eban_ConnectCallBack, EW_EBAN_ENTWATCH_SECTION);
 		}
 	}
-	
+
 	return Plugin_Continue;
 }
 
@@ -689,7 +713,7 @@ public Action EWM_Eban_Command_Restrict(int iClient, int iArgs)
 		} else
 		{	
 			FormatEx(sReason, sizeof(sReason), Arguments[len]);
-			if(!sReason[0]) GetConVarString(g_hCvar_Default_BanReason, sReason, sizeof(sReason));
+			if(!sReason[0]) sReason = g_sDefaultBanReason;
 			TrimString(sReason);
 			StripQuotes(sReason);
 		}
@@ -743,7 +767,7 @@ public Action EWM_Eban_Command_Unrestrict(int iClient, int iArgs)
 		} else
 		{
 			FormatEx(sReason, sizeof(sReason), Arguments[len]);
-			if (!sReason[0]) GetConVarString(g_hCvar_Default_UnBanReason, sReason, sizeof(sReason));
+			if (!sReason[0]) sReason = g_sDefaultUnBanReason;
 			TrimString(sReason);
 			StripQuotes(sReason);
 			EWM_Eban_UnBanClient(iTarget, iClient, sReason);
