@@ -87,7 +87,7 @@ public Plugin myinfo =
 	name = "EntWatch",
 	author = "DarkerZ[RUS], AgentWesker, notkoen, sTc2201, maxime1907, Cmer, .Rushaway, Dolly",
 	description = "Notify players about entity interactions.",
-	version = "3.DZ.54",
+	version = "3.DZ.55",
 	url = "dark-skill.ru"
 };
  
@@ -605,10 +605,11 @@ void CleanData()
 	#endif
 }
 
-stock void LoadConfig()
+stock void LoadConfig(bool bSecondLoad = false)
 {
 	GetCurrentMap(g_sMap, sizeof(g_sMap));
-	if (g_bLowerMapName) StringToLowerCase(g_sMap);
+	if (bSecondLoad)
+		StringToLowerCase(g_sMap);
 
 	Handle hKeyValues = CreateKeyValues("entities");
 	char sBuffer_path[PLATFORM_MAX_PATH * 2], sBuffer_path_override[PLATFORM_MAX_PATH * 2], sBuffer_temp[32];
@@ -621,6 +622,16 @@ stock void LoadConfig()
 	{
 		FormatEx(sBuffer_path, sizeof(sBuffer_path), "cfg/sourcemod/entwatch/maps/%s.cfg", g_sMap);
 		FormatEx(sBuffer_path_override, sizeof(sBuffer_path_override), "cfg/sourcemod/entwatch/maps/%s_override.cfg", g_sMap);
+	}
+
+	// No configuration was found with the exact same name in both uppercase and lowercase combinations.
+	// Attempt to load the configuration using the lowercase version of the map name. (Usefull for linux srcds)
+	// Dependencies cvar: entwatch_lower_mapname > 0
+	if (!bSecondLoad && g_bLowerMapName && !FileExists(sBuffer_path_override) && !FileExists(sBuffer_path))
+	{
+		LoadConfig(true);
+		CloseHandle(hKeyValues);
+		return;
 	}
 
 	// If there is an override config then load it
@@ -787,6 +798,8 @@ stock void LoadConfig()
 		Call_Finish();
 		#endif
 	}
+
+	CloseHandle(hKeyValues);
 }
 
 stock void LoadScheme()
