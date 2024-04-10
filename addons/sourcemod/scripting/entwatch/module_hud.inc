@@ -653,7 +653,7 @@ public Action EWM_Hud_Command_ToggleHUDType(int iClient, int iArgs)
 	{
 		g_CSettings_Hud[iClient].Type = !g_CSettings_Hud[iClient].Type;
 		SetClientCookie(iClient, g_hCookie_HudType, g_CSettings_Hud[iClient].Type ? "1" : "0");
-		CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Type", g_SchemeConfig.Color_Enabled, g_CSettings_Hud[iClient].Type ? "HUD" : "KeyHintText");
+		CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Type", g_SchemeConfig.Color_Enabled, g_CSettings_Hud[iClient].Type ?"KeyHintText" : "HUD");
 	}
 	return Plugin_Handled;
 }
@@ -893,9 +893,9 @@ public int CookieMenuHandler(Menu menu, MenuAction action, int param1, int param
 			{
 				char Type[32];
 				if (g_CSettings_Hud[param1].Type)
-					FormatEx(Type, sizeof(Type), "%T", "HUD", param1);
-				else
 					FormatEx(Type, sizeof(Type), "%T", "KeyHintText", param1);
+				else
+					FormatEx(Type, sizeof(Type), "%T", "HUD", param1);
 
 				FormatEx(display, sizeof(display), "%T: %s", "Hud Type", param1, Type);
 				return RedrawMenuItem(display);

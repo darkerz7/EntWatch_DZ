@@ -167,7 +167,7 @@
 	}
 	"Has a Restrict"
 	{
-		"fr"	"a un restrict"
+		"fr"	"est actuellement restreint"
 	}
 	"Transfered all items"
 	{
