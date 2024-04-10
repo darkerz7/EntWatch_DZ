@@ -327,7 +327,7 @@ public void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, char[] sR
 	// Save to DB
 	if (g_iDBStatus == 4 && iBanDuration >= 0)
 	{
-		char szAdmin_Name[32], sClient_Name[32], szClient_Name[32], szReason[64];
+		char szAdmin_Name[32 * 2 + 1], sClient_Name[32 * 2 + 1], szClient_Name[32 * 2 + 1], szReason[64 * 2 + 1];
 		g_hEbanDB.Escape(sAdmin_Name, szAdmin_Name, sizeof(szAdmin_Name)); // Admin Name to DB
 		GetClientName(iClient, sClient_Name, sizeof(sClient_Name)); // Get Client Name
 		g_hEbanDB.Escape(sClient_Name, szClient_Name, sizeof(szClient_Name)); // Client Name to DB
@@ -445,7 +445,7 @@ public void EWM_Eban_UnBanClient(int iClient, int iAdmin, char[] sReason)
 	
 	if(g_iDBStatus == 4)
 	{
-		char sSQL_Query[1024], szReason[64], szAdmin_Name[32];
+		char sSQL_Query[1024], szReason[64 * 2 + 1], szAdmin_Name[32 * 2 + 1];
 		g_hEbanDB.Escape(sReason, szReason, sizeof(szReason));//Reason Unban to DB
 		g_hEbanDB.Escape(sAdmin_Name, szAdmin_Name, sizeof(szAdmin_Name));//Admin Name Unban to DB
 		
