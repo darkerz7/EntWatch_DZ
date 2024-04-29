@@ -87,7 +87,7 @@ public Plugin myinfo =
 	name = "EntWatch",
 	author = "DarkerZ[RUS], AgentWesker, notkoen, sTc2201, maxime1907, Cmer, .Rushaway, Dolly",
 	description = "Notify players about entity interactions.",
-	version = "3.DZ.56",
+	version = "3.DZ.57",
 	url = "dark-skill.ru"
 };
  
@@ -1228,7 +1228,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 	//PrintToConsoleAll("[EntWatch] PRESS Button %s by %N - ID %i", edebug, iActivator, iActivator);
 
 	int iOffset = FindDataMapInfo(iButton, "m_bLocked");
-	if (iOffset != -1 && GetEntData(iButton, iOffset, 1)) return Plugin_Handled;
+	if (iOffset != -1 && GetEntData(iButton, iOffset, 1) == 1) return Plugin_Handled;
 
 	int iHammerID = Entity_GetHammerID(iButton);
 
