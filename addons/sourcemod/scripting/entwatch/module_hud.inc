@@ -144,6 +144,9 @@ stock void EWM_Hud_OnClientDisconnect(int iClient)
 
 stock void EWM_Hud_OnClientCookiesCached(int iClient)
 {
+	if (!IsValidClient(iClient) || IsFakeClient(iClient))
+		return;
+
 	char sBuffer_cookie[32];
 	
 	// Display

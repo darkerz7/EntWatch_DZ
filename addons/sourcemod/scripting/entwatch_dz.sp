@@ -87,7 +87,7 @@ public Plugin myinfo =
 	name = "EntWatch",
 	author = "DarkerZ[RUS], AgentWesker, notkoen, sTc2201, maxime1907, Cmer, .Rushaway, Dolly",
 	description = "Notify players about entity interactions.",
-	version = "3.DZ.57",
+	version = "3.DZ.58",
 	url = "dark-skill.ru"
 };
  
@@ -116,11 +116,13 @@ public void OnPluginStart()
 	//Commands
 	RegAdminCmd("sm_ew_reloadconfig", EW_Command_ReloadConfig, ADMFLAG_CONFIG);
 	RegAdminCmd("sm_setcooldown", EW_Command_Cooldown, ADMFLAG_BAN);
+	RegAdminCmd("sm_setuses", EW_Command_Setcurrentuses, ADMFLAG_BAN);
 	RegAdminCmd("sm_setmaxuses", EW_Command_Setmaxuses, ADMFLAG_BAN);
 	RegAdminCmd("sm_addmaxuses", EW_Command_Addmaxuses, ADMFLAG_BAN);
 	RegAdminCmd("sm_ewsetmode", EW_Command_Setmode, ADMFLAG_BAN);
 	
 	RegAdminCmd("sm_setcooldown2", EW_Command_Cooldown2, ADMFLAG_BAN);
+	RegAdminCmd("sm_setuses2", EW_Command_Setcurrentuses, ADMFLAG_BAN);
 	RegAdminCmd("sm_setmaxuses2", EW_Command_Setmaxuses2, ADMFLAG_BAN);
 	RegAdminCmd("sm_addmaxuses2", EW_Command_Addmaxuses2, ADMFLAG_BAN);
 	RegAdminCmd("sm_ewsetmode2", EW_Command_Setmode2, ADMFLAG_BAN);
@@ -1700,6 +1702,18 @@ public Action EW_Command_Cooldown2(int iClient, int iArgs)
 	return Plugin_Handled;
 }
 
+public Action EW_Command_Setcurrentuses(int iClient, int iArgs)
+{
+	SetCurrentUses(iClient, iArgs, false);
+	return Plugin_Handled;
+}
+
+public Action EW_Command_Setcurrentuses2(int iClient, int iArgs)
+{
+	SetCurrentUses(iClient, iArgs, true);
+	return Plugin_Handled;
+}
+
 public Action EW_Command_Setmaxuses(int iClient, int iArgs)
 {
 	SetMaxUses(iClient, iArgs, false);
@@ -1905,12 +1919,13 @@ stock void SetCooldown(int iClient, int iArgs, bool bSecond = false)
 		return;
 	}
 
-	if (iArgs != 2)
+	if (iArgs < 2)
 	{
-		CReplyToCommand(iClient, "%s%t %s%t: %s <hammerid> <cooldown>", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Usage", !bSecond ? "sm_setcooldown" : "sm_setcooldown2");
+		CReplyToCommand(iClient, "%s%t %s%t: %s <hammerid> <cooldown> <force apply>", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Usage", !bSecond ? "sm_setcooldown" : "sm_setcooldown2");
 		return;
 	}
 
+	bool bForceApply = false;
 	char sHammerID[32], sCooldown[10];
 	GetCmdArg(1, sHammerID, sizeof(sHammerID));
 	GetCmdArg(2, sCooldown, sizeof(sCooldown));
@@ -1919,6 +1934,14 @@ stock void SetCooldown(int iClient, int iArgs, bool bSecond = false)
 	int iCooldown = StringToInt(sCooldown);
 	
 	if(iCooldown < 0) iCooldown = 0;
+
+	if(iArgs >= 3)
+	{
+		char sForce[10];
+		GetCmdArg(3, sForce, sizeof(sForce));
+		int iForce = StringToInt(sForce);
+		if(iForce == 1) bForceApply = true;
+	}
 	
 	for(int i = 0; i<g_ItemList.Length; i++)
 	{
@@ -1928,8 +1951,71 @@ stock void SetCooldown(int iClient, int iArgs, bool bSecond = false)
 		{
 			if (!bSecond) ItemTest.CoolDown = iCooldown;
 			else ItemTest.CoolDown2 = iCooldown;
+
+			if (bForceApply)
+			{
+				if (!bSecond) ItemTest.SetCoolDown(iCooldown);
+				else ItemTest.SetCoolDown(iCooldown, true);
+			}
 			g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
 			CReplyToCommand(iClient, "%s%t %s%s %s%t %t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, ItemTest.Name, g_SchemeConfig.Color_Enabled, "CoolDown", "Modified");
+		}
+	}
+}
+
+//----------------------------------------------------------------------------------
+//Purpose: Set the current uses of a special weapon (bSecond = true for second cooldown)
+//----------------------------------------------------------------------------------
+stock void SetCurrentUses(int iClient, int iArgs, bool bSecond = false)
+{
+	if (!g_bConfigLoaded)
+	{
+		CReplyToCommand(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Disabled, "No Config");
+		return;
+	}
+
+	if (iArgs < 2)
+	{
+		CReplyToCommand(iClient, "%s%t %s%t: %s <hammerid> <uses> <current uses + input>", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Usage", !bSecond ? "sm_setuses" : "sm_setuses2");
+		return;
+	}
+
+	bool bAddToCurrentUse = false;
+	char sHammerID[32], sUses[10];
+	GetCmdArg(1, sHammerID, sizeof(sHammerID));
+	GetCmdArg(2, sUses, sizeof(sUses));
+
+	int iHammerID = StringToInt(sHammerID);
+	int iUsesTemp = StringToInt(sUses);
+	int iUses = iUsesTemp;
+
+	if(iArgs >= 3)
+	{
+		char sAdd[10];
+		GetCmdArg(3, sAdd, sizeof(sAdd));
+		int iOver = StringToInt(sAdd);
+		if(iOver == 1) bAddToCurrentUse = true;
+	}
+
+	for(int i = 0; i<g_ItemList.Length; i++)
+	{
+		class_ItemList ItemTest;
+		g_ItemList.GetArray(i, ItemTest, sizeof(ItemTest));
+		if(ItemTest.HammerID == iHammerID)
+		{
+			if (!bSecond)
+			{
+				if(iUsesTemp < 0 || bAddToCurrentUse) iUses = ItemTest.Uses + iUsesTemp;
+				ItemTest.Uses = iUses;
+				if (ItemTest.Uses < 0) ItemTest.Uses = 0;
+			}
+			else {
+				if(iUsesTemp < 0 || bAddToCurrentUse) iUses = ItemTest.Uses2 + iUsesTemp;
+				ItemTest.Uses2 = iUses;
+				if (ItemTest.Uses2 < 0) ItemTest.Uses2 = 0;
+			}
+			g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
+			CReplyToCommand(iClient, "%s%t %s%s %s%t %t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, ItemTest.Name, g_SchemeConfig.Color_Enabled, "Current Uses", "Modified");
 		}
 	}
 }

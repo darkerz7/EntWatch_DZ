@@ -151,7 +151,7 @@ public int EWM_Natives_Native_SetHudDisplay(Handle hPlugin, int iArgC)
 {
 	int iClient = GetNativeCell(1);
 
-	if(!IsValidClient(iClient) || !AreClientCookiesCached(iClient))
+	if(!IsValidClient(iClient) || !AreClientCookiesCached(iClient) || IsFakeClient(iClient))
 	{
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid client or client cookies are not yet loaded");
 		return false;
@@ -180,7 +180,7 @@ public int EWM_Natives_Native_SetHudName(Handle hPlugin, int iArgC)
 {
 	int iClient = GetNativeCell(1);
 
-	if(!IsValidClient(iClient) || !AreClientCookiesCached(iClient))
+	if(!IsValidClient(iClient) || !AreClientCookiesCached(iClient) || IsFakeClient(iClient))
 	{
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid client or client cookies are not yet loaded");
 		return false;
@@ -209,7 +209,7 @@ public int EWM_Natives_Native_SetHudPosition(Handle hPlugin, int iArgC)
 {
 	int iClient = GetNativeCell(1);
 
-	if(!IsValidClient(iClient) || !AreClientCookiesCached(iClient))
+	if(!IsValidClient(iClient) || !AreClientCookiesCached(iClient) || IsFakeClient(iClient))
 	{
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid client or client cookies are not yet loaded");
 		return false;
@@ -237,7 +237,7 @@ public int EWM_Natives_Native_SetHudColors(Handle hPlugin, int iArgC)
 {
 	int iClient = GetNativeCell(1);
 
-	if(!IsValidClient(iClient) || !AreClientCookiesCached(iClient))
+	if(!IsValidClient(iClient) || !AreClientCookiesCached(iClient) || IsFakeClient(iClient))
 	{
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid client or client cookies are not yet loaded");
 		return false;

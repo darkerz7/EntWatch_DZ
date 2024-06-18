@@ -26,6 +26,9 @@ public void Cvar_UsePriority_Changed(ConVar convar, const char[] oldValue, const
 
 stock void EWM_Use_Priority_OnClientCookiesCached(int iClient)
 {
+	if (!IsValidClient(iClient) || IsFakeClient(iClient))
+		return;
+
 	char sBuffer_cookie[4];
 	GetClientCookie(iClient, g_hCookie_UP, sBuffer_cookie, sizeof(sBuffer_cookie));
 	if (strcmp(sBuffer_cookie,"", false) == 0)
