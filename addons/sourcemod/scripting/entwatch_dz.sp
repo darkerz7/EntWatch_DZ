@@ -87,7 +87,7 @@ public Plugin myinfo =
 	name = "EntWatch",
 	author = "DarkerZ[RUS], AgentWesker, notkoen, sTc2201, maxime1907, Cmer, .Rushaway, Dolly",
 	description = "Notify players about entity interactions.",
-	version = "3.DZ.58",
+	version = "3.DZ.59",
 	url = "dark-skill.ru"
 };
  
@@ -1624,7 +1624,7 @@ stock void OnGameUIUse(const char[] sOutput, int iCaller, int iActivator, float 
 							continue;
 						}
 					case 3:
-						if(iItemMaxUses < iItemMaxUses)
+						if((bSecondAbility ? ItemTest.Uses2 : ItemTest.Uses) < iItemMaxUses)
 						{
 							Events_OnUseItem(ItemTest, iActivator, iAbility);
 							bSecondAbility ? ItemTest.Uses2++ : ItemTest.Uses++;
