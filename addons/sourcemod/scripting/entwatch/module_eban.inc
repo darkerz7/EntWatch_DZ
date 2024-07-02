@@ -72,6 +72,9 @@ stock void EWM_Eban_OnPluginStart()
 
 stock void EWM_Eban_OnClientPostAdminCheck(int iClient)
 {
+	if(g_iDBStatus != 4)
+		return;
+
 	char sTQuery[1024];
 	FormatEx(sTQuery, sizeof(sTQuery),
 		"SELECT SUM(cnt) AS total_count " ...
