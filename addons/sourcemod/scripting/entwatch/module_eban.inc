@@ -622,7 +622,7 @@ Action EWM_Eban_Timer_Checker(Handle timer)
 			{
 				if(!IsClientInGame(i)) continue;
 				if(!g_EbanClients[i].Banned) continue;
-				if(g_EbanClients[i].Duration < 0) continue;
+				if(g_EbanClients[i].Duration <= 0) continue;
 
 				if(iCurrentTimeStamp > g_EbanClients[i].TimeStamp_Issued)
 					EWM_Eban_UnBanClient(i, 0, "Expired");

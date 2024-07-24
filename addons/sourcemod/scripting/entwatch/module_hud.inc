@@ -574,6 +574,8 @@ void EWM_Hud_Construct_String(int iClient, char[] sResult, int iSizeResult, char
 							{
 								if (ItemTest.CheckCoolDown(true) > 0) FormatEx(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[%d]", sBuf_woname[iIndex], ItemTest.RoundCoolDown(true));
 								else FormatEx(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "%s[R]", sBuf_woname[iIndex]);
+
+								ReplaceString(sBuf_woname[iIndex], MAXSIZESTRINGFORITEM, "][", "|", false);
 							}
 							case 3:
 							{
