@@ -42,15 +42,7 @@ public APLRes AskPluginLoad2(Handle hThis, bool bLate, char[] sError, int iErr_m
 
 stock void EWM_Natives_OnPluginStart()
 {
-	if (g_bLateLoad)
-	{
-		for (int i = 1; i <= MaxClients; i++)
-		{
-			if (!IsClientInGame(i) || IsFakeClient(i)) continue;
-			OnClientPutInServer(i);
-			OnClientCookiesCached(i);
-		}
-	}
+	// Nothing here yet
 }
 
 #if defined EW_MODULE_EBAN

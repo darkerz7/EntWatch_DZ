@@ -13,8 +13,18 @@ stock void EWM_Menu_OnPluginStart()
 	if (LibraryExists("adminmenu") && ((hTopMenu = GetAdminTopMenu()) != INVALID_HANDLE)) OnAdminMenuReady(hTopMenu);
 }
 
+public void EWM_Menu_OnAllPluginsLoaded()
+{
+	// Nothing here yet.
+}
+
+public void EWM_Menu_OnLibraryAdded(const char[] sName)
+{
+	// Nothing here yet.
+}
+
 // Safeguard against adminmenu unloading
-public void OnLibraryRemoved(const char[] sName)
+public void EWM_Menu_OnLibraryRemoved(const char[] sName)
 {
 	if (strcmp(sName, "adminmenu") == 0) g_hAdminMenu = INVALID_HANDLE;
 }
