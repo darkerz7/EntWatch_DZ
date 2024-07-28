@@ -45,6 +45,9 @@ bool	g_bDispEnabled = true,
 		g_bDispCooldowns = true,
 		g_bAdminsSee = true,
 		g_bZombieNoItemPry = false;
+		bPluginDynamic = false,
+		bNative_Dynamic = false,
+		bNative_MsgTypeProtobuf = false;
 
 int		g_iHUDChannel = 5;
 int		g_iDefaultRotationTime = 3;
@@ -128,6 +131,45 @@ public void Cvar_HUD_Changed(ConVar convar, const char[] oldValue, const char[] 
 
 	if (g_iDefaultRotationTime > TIMEROTATIONHUD)
 		g_iDefaultRotationTime = TIMEROTATIONHUD;
+}
+
+public void EWM_Hud_OnAllPluginsLoaded()
+{
+	VerifyNatives();
+}
+
+public void EWM_Hud_OnLibraryRemoved(const char[] name)
+{
+	if (strcmp(name, "DynamicChannels", false) == 0)
+	{
+		bPluginDynamic = false;
+		VerifyNatives_DynamicChannels();
+	}
+}
+ 
+public void EWM_Hud_OnLibraryAdded(const char[] name)
+{
+	if (strcmp(name, "DynamicChannels", false) == 0)
+	{
+		bPluginDynamic = true;
+		VerifyNatives_DynamicChannels();
+	}
+}
+
+stock VerifyNatives()
+{
+	VerifyNatives_DynamicChannels();
+	VerifyNative_MessageTypeProtobuf();
+}
+
+stock void VerifyNatives_DynamicChannels()
+{
+	bNative_Dynamic = bPluginDynamic && CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "GetDynamicChannel") == FeatureStatus_Available;
+}
+
+stock void VerifyNative_MessageTypeProtobuf()
+{
+	bNative_MsgTypeProtobuf = CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "GetUserMessageType") == FeatureStatus_Available && GetUserMessageType() == UM_Protobuf;
 }
 
 stock void EWM_Hud_OnClientDisconnect(int iClient)
@@ -291,7 +333,7 @@ public void EWM_Hud_OnMapStart()
 public void EWM_Hud_DisplayCustomHUD(int client, int iHUDChannel, const char[] msg)
 {
 #if defined _DynamicChannels_included_
-	if (CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "GetDynamicChannel") == FeatureStatus_Available)
+	if (bNative_Dynamic)
 		iHUDChannel = GetDynamicChannel(iHUDChannel);
 #endif
 
@@ -299,7 +341,7 @@ public void EWM_Hud_DisplayCustomHUD(int client, int iHUDChannel, const char[] m
 	if (g_CSettings_Hud[client].Type <= 0)
 	{
 		Handle hBuffer = StartMessageOne("KeyHintText", client);
-		if (CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "GetUserMessageType") == FeatureStatus_Available && GetUserMessageType() == UM_Protobuf)
+		if (bNative_MsgTypeProtobuf)
 		{
 			PbAddString(hBuffer, "hints", msg);
 		}
@@ -340,8 +382,9 @@ public Action EWM_Hud_Timer_DisplayHUD(Handle timer, int client)
 			g_ItemList.GetArray(i, ItemTest, sizeof(ItemTest));
 			if(ItemTest.Hud && ItemTest.OwnerID != INVALID_ENT_REFERENCE && IsValidEdict(ItemTest.WeaponID))
 			{
-				if(GetClientTeam(ItemTest.OwnerID)==3) g_iHItemsArray.Push(i);
-				else if(GetClientTeam(ItemTest.OwnerID)==2) g_iZMItemsArray.Push(i);
+				int iTeamOwner = GetClientTeam(ItemTest.OwnerID);
+				if(iTeamOwner == CS_TEAM_CT) g_iHItemsArray.Push(i);
+				else if(iTeamOwner == CS_TEAM_T) g_iZMItemsArray.Push(i);
 			}
 		}
 		
@@ -359,6 +402,7 @@ public Action EWM_Hud_Timer_DisplayHUD(Handle timer, int client)
 				if(IsClientInGame(i) && !IsFakeClient(i) && g_CSettings_Hud[i].Display && GetClientMenu(i) == MenuSource_None)
 				{
 					bool bRotation = false;
+					int iTeam = GetClientTeam(i);
 					iRotationTime[i]++;
 					if(iRotationTime[i]>=g_CSettings_Hud[i].RotationTime)
 					{
@@ -366,9 +410,10 @@ public Action EWM_Hud_Timer_DisplayHUD(Handle timer, int client)
 						bRotation = true;
 					}
 					
-					int iMaxHList = RoundToCeil(float(iCountHItems)/float(g_CSettings_Hud[i].ItemsCount));
-					int iMaxZMList = RoundToCeil(float(iCountZMItems)/float(g_CSettings_Hud[i].ItemsCount));
-					int iMaxAList = RoundToCeil(float(iCountAItems)/float(g_CSettings_Hud[i].ItemsCount));
+					float fItemCount = float(g_CSettings_Hud[i].ItemsCount);
+					int iMaxHList = RoundToCeil(float(iCountHItems)/fItemCount);
+					int iMaxZMList = RoundToCeil(float(iCountZMItems)/fItemCount);
+					int iMaxAList = RoundToCeil(float(iCountAItems)/fItemCount);
 					
 					if(iCountHItems != g_iRotation[i][0][0])
 					{
@@ -445,7 +490,7 @@ public Action EWM_Hud_Timer_DisplayHUD(Handle timer, int client)
 							{
 								EWM_Hud_DisplayCustomHUD(i, g_iHUDChannel, sMes_Admins_woname);
 							}
-						}else if((g_bTeamOnly && GetClientTeam(i)==3) || (g_bZombieNoItemPry && iCountZMItems<=0 && GetClientTeam(i)==2))
+						}else if((g_bTeamOnly && iTeam == CS_TEAM_CT) || (g_bZombieNoItemPry && iCountZMItems<=0 && iTeam == CS_TEAM_T))
 						{
 							if(iCountHItems > 0)
 							{
@@ -457,7 +502,7 @@ public Action EWM_Hud_Timer_DisplayHUD(Handle timer, int client)
 									EWM_Hud_DisplayCustomHUD(i, g_iHUDChannel, sMes_Humans_woname);
 								}
 							}
-						}else if(g_bTeamOnly && GetClientTeam(i)==2)
+						}else if(g_bTeamOnly && iTeam == CS_TEAM_T)
 						{
 							if(iCountZMItems > 0)
 							{
