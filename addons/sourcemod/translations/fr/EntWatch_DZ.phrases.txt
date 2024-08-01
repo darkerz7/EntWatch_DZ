@@ -424,7 +424,7 @@
 	"Client Eban numbers"
 	{
 		"#format"	"{1:d}"
-		"en" 	"a été Eban {1} fois"
+		"fr" 	"a été Eban {1} fois"
 	}
 	"Is not restricted"
 	{
