@@ -4,8 +4,6 @@
 
 Handle	g_hOnBanForward,
 		g_hOnUnbanForward,
-		g_hOnHLPrivWeaponForward,
-		g_hOnHLPrivPlayerForward,
 		g_hOnUseItem,
 		g_hOnPickUpItem,
 		g_hOnDropItem,
@@ -37,8 +35,6 @@ stock void EWM_Forwards_OnPluginStart()
 {
 	g_hOnBanForward = CreateGlobalForward("EntWatch_OnClientBanned", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_String);
 	g_hOnUnbanForward = CreateGlobalForward("EntWatch_OnClientUnbanned", ET_Ignore, Param_Cell, Param_Cell, Param_String);
-	g_hOnHLPrivWeaponForward = CreateGlobalForward("EntWatch_OnHLWeaponReady", ET_Ignore);
-	g_hOnHLPrivPlayerForward = CreateGlobalForward("EntWatch_OnHLPlayerReady", ET_Ignore);
 	g_hOnUseItem = CreateGlobalForward("EntWatch_OnUseItem", ET_Ignore, Param_String, Param_Cell, Param_Cell);
 	g_hOnPickUpItem = CreateGlobalForward("EntWatch_OnPickUpItem", ET_Ignore, Param_String, Param_Cell);
 	g_hOnDropItem = CreateGlobalForward("EntWatch_OnDropItem", ET_Ignore, Param_String, Param_Cell);
