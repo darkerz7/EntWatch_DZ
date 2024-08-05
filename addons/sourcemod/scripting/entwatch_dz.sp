@@ -6,22 +6,13 @@
 #include <sdkhooks>
 #include <cstrike>
 #include <clientprefs>
-//Priority: 1.csgocolors_fix - 85 kB, 2. multicolors - 93 kB, 3. morecolors - 89 kB
-#tryinclude <csgocolors_fix>
-#if !defined _csgocolors_included
-#tryinclude <multicolors>
-#endif
-#if !defined _csgocolors_included && !defined _multicolors_included
-#include <morecolors>
-#endif
+#include <multicolors>
 
 #include "entwatch/function.inc"
 
 ArrayList g_ItemConfig;
 ArrayList g_ItemList;
 class_Scheme g_SchemeConfig;
-
-EngineVersion g_evGameEngine;
 
 //-------------------------------------------------------
 // Purpose: Plugin settings
@@ -57,8 +48,7 @@ int  g_iUserIDs[MAXPLAYERS+1];
 int g_iClientEbansNumber[MAXPLAYERS+1] = {0,... };
 
 #undef REQUIRE_PLUGIN
-//Using DynamicChannels: https://github.com/Vauff/DynamicChannels
-#tryinclude <DynamicChannels>
+#tryinclude <DynamicChannels> // https://github.com/Vauff/DynamicChannels
 #define REQUIRE_PLUGIN
 
 //Modules can be included as you wish. To do this, comment out or uncomment the corresponding module
@@ -67,13 +57,12 @@ int g_iClientEbansNumber[MAXPLAYERS+1] = {0,... };
 #include "entwatch/module_hud.inc"
 #include "entwatch/module_eban.inc"
 #include "entwatch/module_offline_eban.inc" // Need module_eban. Experimental
-#include "entwatch/module_highlight.inc" // CS:GO only
 #include "entwatch/module_natives.inc" //For the include EntWatch.inc to work correctly, use with module_eban
 #include "entwatch/module_transfer.inc"
 #include "entwatch/module_spawn_item.inc"
 #include "entwatch/module_menu.inc"
-#include "entwatch/module_blink.inc" //glow for CS:S
-//#include "entwatch/module_glow.inc" //change to HighLight
+//#include "entwatch/module_blink.inc" //glow for CS:S
+#include "entwatch/module_glow.inc"
 #include "entwatch/module_use_priority.inc"
 //#include "entwatch/module_clantag.inc"
 
@@ -88,7 +77,7 @@ public Plugin myinfo =
 	name = "EntWatch",
 	author = "DarkerZ[RUS], AgentWesker, notkoen, sTc2201, maxime1907, Cmer, .Rushaway, Dolly",
 	description = "Notify players about entity interactions.",
-	version = "3.DZ.62",
+	version = "3.DZ.63",
 	url = "dark-skill.ru"
 };
  
@@ -98,8 +87,6 @@ public void OnPluginStart()
 	if(g_ItemList == INVALID_HANDLE) g_ItemList = new ArrayList(512);
 	
 	if(g_TriggerArray == INVALID_HANDLE) g_TriggerArray = new ArrayList(512);
-
-	g_evGameEngine = GetEngineVersion();
 
 	#if defined EW_MODULE_PHYSBOX
 	EWM_Physbox_OnPluginStart();
@@ -212,9 +199,6 @@ public void OnPluginStart()
 	#if defined EW_MODULE_GLOW
 	EWM_Glow_OnPluginStart();
 	#endif
-	#if defined EW_MODULE_HIGHLIGHT
-	EWM_HLight_OnPluginStart();
-	#endif
 	#if defined EW_MODULE_DEBUG
 	EWM_Debug_OnPluginStart();
 	#endif
@@ -302,9 +286,6 @@ public void OnMapStart()
 	#if defined EW_MODULE_GLOW
 	EWM_Glow_OnMapStart();
 	#endif
-	#if defined EW_MODULE_HIGHLIGHT
-	EWM_HLight_OnMapStart();
-	#endif
 	#if defined EW_MODULE_HUD
 	EWM_Hud_OnMapStart();
 	#endif
@@ -324,9 +305,6 @@ public void OnMapEnd()
 	#if defined EW_MODULE_GLOW
 	EWM_Glow_OnMapEnd();
 	#endif
-	#if defined EW_MODULE_HIGHLIGHT
-	EWM_HLight_OnMapEnd();
-	#endif
 	
 	#if defined EW_MODULE_CLANTAG
 	EWM_Clantag_Mass_Reset();
@@ -339,9 +317,6 @@ public void Event_RoundStart(Event hEvent, const char[] sName, bool bDontBroadca
 	
 	#if defined EW_MODULE_CLANTAG
 	EWM_Clantag_Mass_Reset();
-	#endif
-	#if defined EW_MODULE_HIGHLIGHT
-	EWM_HLight_RoundStart();
 	#endif
 }
 
@@ -416,14 +391,6 @@ stock void EWM_Drop_Forward(Handle hEvent)
 			
 			#if defined EW_MODULE_GLOW
 			EWM_Glow_GlowWeapon(ItemTest, i, false);
-			#endif
-			
-			#if defined EW_MODULE_HIGHLIGHT
-			if(g_evGameEngine == Engine_CSGO) 
-			{
-				EWM_HLight_PRemove(iClient);
-				EWM_HLight_Set(ItemTest);
-			}
 			#endif
 			
 			#if defined EW_MODULE_FORWARDS
@@ -577,10 +544,6 @@ public void Event_ClientDisconnect(Handle event, const char[] name, bool dontBro
 			#if defined EW_MODULE_GLOW
 			EWM_Glow_GlowWeapon(ItemTest, i, false);
 			#endif
-
-			#if defined EW_MODULE_HIGHLIGHT
-			if(g_evGameEngine == Engine_CSGO) EWM_HLight_Set(ItemTest);
-			#endif
 		}
 	}
 }
@@ -600,9 +563,6 @@ public void OnClientDisconnect(int iClient)
 	#endif
 	#if defined EW_MODULE_CLANTAG
 	EWM_Clantag_OnClientDisconnect(iClient);
-	#endif
-	#if defined EW_MODULE_HIGHLIGHT
-	EWM_HLight_OnClientPrivilegeReset(iClient);
 	#endif
 	
 	FormatEx(g_sSteamIDs[iClient], sizeof(g_sSteamIDs[]), "");
@@ -725,7 +685,7 @@ stock void LoadConfig(bool bSecondLoad = false)
 			NewItem.GlowColor[2]=255;
 			NewItem.GlowColor[3]=200;
 			
-			#if defined EW_MODULE_GLOW || defined EW_MODULE_HIGHLIGHT || defined EW_MODULE_BLINK
+			#if defined EW_MODULE_GLOW || defined EW_MODULE_BLINK
 			if(strcmp(sBuffer_temp,"{green}",false)==0){NewItem.GlowColor[0]=0;NewItem.GlowColor[1]=255;NewItem.GlowColor[2]=0;}
 			else if(strcmp(sBuffer_temp,"{default}",false)==0){NewItem.GlowColor[0]=255;NewItem.GlowColor[1]=255;NewItem.GlowColor[2]=255;}
 			else if(strcmp(sBuffer_temp,"{darkred}",false)==0){NewItem.GlowColor[0]=175;NewItem.GlowColor[1]=0;NewItem.GlowColor[2]=0;}
@@ -1070,13 +1030,15 @@ public bool RegisterButton(class_ItemList ItemInstance, int iEntity)
 
 public bool RegisterMath(class_ItemList ItemInstance, int iEntity)
 {
-	if (!IsValidEntity(ItemInstance.WeaponID)) return false;
+	if (!IsValidEntity(ItemInstance.WeaponID))
+		return false;
 
 	int iHammerID = Entity_GetHammerID(iEntity);
 	bool bEqual = iHammerID == ItemInstance.EnergyID;
 	bool bEqual_2 = iHammerID == ItemInstance.EnergyID2;
 
-	if (!bEqual && !bEqual_2) return false;
+	if (!bEqual && !bEqual_2)
+		return false;
 
 	char Item_Counter_Targetname[64];
 	Entity_GetTargetName(iEntity, Item_Counter_Targetname, sizeof(Item_Counter_Targetname));
@@ -1117,12 +1079,18 @@ public bool RegisterMath(class_ItemList ItemInstance, int iEntity)
 
 public void OnEntityCreated(int iEntity, const char[] sClassname)
 {
-	if(g_bConfigLoaded && IsValidEntity(iEntity) && IsValidEdict(iEntity))
+	if (!g_bConfigLoaded)
+		return;
+
+	// Note: Some math counter entity are negative, so we need to continue the registration
+	bool bMathCounter = strcmp(sClassname, "math_counter", false) == 0;
+
+	if(bMathCounter || IsValidEntity(iEntity) && IsValidEdict(iEntity))
 	{
 		if(StrContains(sClassname, "weapon_", false) != -1) SDKHook(iEntity, SDKHook_SpawnPost, OnItemSpawned);
 		else if (strcmp(sClassname,"func_button", false) == 0 || strcmp(sClassname,"func_rot_button", false) == 0 || strcmp(sClassname,"func_physbox_multiplayer", false) == 0 ||
 			strcmp(sClassname,"func_door", false) == 0 || strcmp(sClassname,"func_door_rotating", false) == 0) SDKHook(iEntity, SDKHook_SpawnPost, OnButtonSpawned);
-		else if (strcmp(sClassname,"math_counter", false) == 0) SDKHook(iEntity, SDKHook_SpawnPost, OnMathSpawned);
+		else if (bMathCounter) SDKHook(iEntity, SDKHook_SpawnPost, OnMathSpawned);
 		else if(StrContains(sClassname, "trigger_", false) != -1) SDKHook(iEntity, SDKHook_SpawnPost, OnTriggerSpawned);
 		#if defined EW_MODULE_PHYSBOX
 		else if(StrContains(sClassname, "func_physbox", false) != -1) SDKHook(iEntity, SDKHook_SpawnPost, OnPhysboxSpawned);
@@ -1180,13 +1148,13 @@ public void OnItemSpawned(int iEntity)
 public void OnMathSpawned(int iEntity)
 {
 	//In case the math entity spawns just before the weapon entity (?)
-	CreateTimer(1.5, Timer_OnMathSpawned, iEntity, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(2.5, Timer_OnMathSpawned, iEntity, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public Action Timer_OnMathSpawned(Handle timer, int iEntity)
 {
 	if(!g_bConfigLoaded || !IsValidEntity(iEntity)) return Plugin_Stop;
-	
+
 	for(int i = 0; i < g_ItemList.Length; i++)
 	{
 		class_ItemList ItemTest;
@@ -1494,14 +1462,6 @@ public void OnWeaponDrop(int iClient, int iWeapon)
 			EWM_Glow_GlowWeapon(ItemTest, i, false);
 			#endif
 			
-			#if defined EW_MODULE_HIGHLIGHT
-			if(g_evGameEngine == Engine_CSGO)
-			{
-				EWM_HLight_PRemove(iClient);
-				EWM_HLight_Set(ItemTest);
-			}
-			#endif
-			
 			#if defined EW_MODULE_FORWARDS
 			Call_StartForward(g_hOnDropItem);
 			Call_PushString(ItemTest.Name);
@@ -1571,14 +1531,6 @@ public void OnWeaponEquip(int iClient, int iWeapon)
 			
 			#if defined EW_MODULE_GLOW
 			EWM_Glow_DisableGlow(ItemTest);
-			#endif
-			
-			#if defined EW_MODULE_HIGHLIGHT
-			if(g_evGameEngine == Engine_CSGO)
-			{
-				EWM_HLight_WRemove(ItemTest.WeaponID);
-				EWM_HLight_Set(ItemTest);
-			}
 			#endif
 			
 			g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));

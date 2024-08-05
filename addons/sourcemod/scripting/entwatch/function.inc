@@ -280,38 +280,7 @@ stock int GetSlotCSGO(int eWeapon)
 	char wClassName[64];
 	GetEntityClassname(eWeapon,wClassName,sizeof(wClassName));
 	
-	/* Old function https://hlmod.net/threads/analogi-funkcij-na-bolee-bystrye.49613/
-	if((StrEqual(wClassName,"weapon_elite",false))||(StrEqual(wClassName,"weapon_deagle",false))||(StrEqual(wClassName,"weapon_fiveseven",false))||
-		(StrEqual(wClassName,"weapon_glock",false))||(StrEqual(wClassName,"weapon_revolver",false))||(StrEqual(wClassName,"weapon_usp_silencer",false))||
-		(StrEqual(wClassName,"weapon_cz75a",false))||(StrEqual(wClassName,"weapon_hkp2000",false))||(StrEqual(wClassName,"weapon_p250",false))||
-		(StrEqual(wClassName,"weapon_tec9",false)))
-	{
-		return 1;
-	} else if((StrEqual(wClassName,"weapon_knife",false))||(StrEqual(wClassName,"weapon_knifegg",false))||(StrEqual(wClassName,"weapon_taser",false))||
-		(StrEqual(wClassName,"weapon_axe",false))||(StrEqual(wClassName,"weapon_hammer",false))||(StrEqual(wClassName,"weapon_spanner",false)))
-	{
-		return 2;
-	} else if((StrEqual(wClassName,"weapon_decoy",false))||(StrEqual(wClassName,"weapon_flashbang",false))||(StrEqual(wClassName,"weapon_hegrenade",false))||
-		(StrEqual(wClassName,"weapon_incgrenade",false))||(StrEqual(wClassName,"weapon_molotov",false))||(StrEqual(wClassName,"weapon_smokegrenade",false))||
-		(StrEqual(wClassName,"weapon_tagrenade",false))||(StrEqual(wClassName,"weapon_diversion",false))||(StrEqual(wClassName,"weapon_snowball",false)))
-	{
-		return 3;
-	} else if((StrEqual(wClassName,"weapon_ak47",false))||(StrEqual(wClassName,"weapon_aug",false))||(StrEqual(wClassName,"weapon_awp",false))||
-		(StrEqual(wClassName,"weapon_bizon",false))||(StrEqual(wClassName,"weapon_famas",false))||(StrEqual(wClassName,"weapon_g3sg1",false))||
-		(StrEqual(wClassName,"weapon_galilar",false))||(StrEqual(wClassName,"weapon_m4a1",false))||(StrEqual(wClassName,"weapon_m4a1_silencer",false))||
-		(StrEqual(wClassName,"weapon_m249",false))||(StrEqual(wClassName,"weapon_negev",false))||(StrEqual(wClassName,"weapon_p90",false))||
-		(StrEqual(wClassName,"weapon_scar20",false))||(StrEqual(wClassName,"weapon_ssg08",false))||(StrEqual(wClassName,"weapon_ump45",false))||
-		(StrEqual(wClassName,"weapon_xm1014",false))||(StrEqual(wClassName,"weapon_mac10",false))||(StrEqual(wClassName,"weapon_mag7",false))||
-		(StrEqual(wClassName,"weapon_mp7",false))||(StrEqual(wClassName,"weapon_mp9",false))||(StrEqual(wClassName,"weapon_nova",false))||
-		(StrEqual(wClassName,"weapon_sawedoff",false))||(StrEqual(wClassName,"weapon_sg556",false)))
-	{
-		return 0;
-	} else if((StrEqual(wClassName,"weapon_c4",false))||(StrEqual(wClassName,"weapon_breachcharge",false))||(StrEqual(wClassName,"weapon_bumpmine",false))||
-		(StrEqual(wClassName,"weapon_healthshot",false))||(StrEqual(wClassName,"weapon_shield",false)))
-	{
-		return 4;
-	} else return -1;
-	*/
+	// Old function https://hlmod.net/threads/analogi-funkcij-na-bolee-bystrye.49613/
 	if((strcmp(wClassName,"weapon_elite",false)==0)||(strcmp(wClassName,"weapon_deagle",false)==0)||(strcmp(wClassName,"weapon_fiveseven",false)==0)||
 	(strcmp(wClassName,"weapon_glock",false)==0)||(strcmp(wClassName,"weapon_revolver",false)==0)||(strcmp(wClassName,"weapon_usp_silencer",false)==0)||
 	(strcmp(wClassName,"weapon_cz75a",false)==0)||(strcmp(wClassName,"weapon_hkp2000",false)==0)||(strcmp(wClassName,"weapon_p250",false)==0)||

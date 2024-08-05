@@ -663,6 +663,9 @@ stock void EWM_Eban_OnClientDisconnect(int iClient)
 
 void EWM_Eban_CleanData_Client(int iClient)
 {
+	if (!IsClientConnected(iClient) || IsFakeClient(iClient))
+		return;
+
 	g_EbanClients[iClient].Banned = false;
 	FormatEx(g_EbanClients[iClient].Admin_Name, 32, "");
 	FormatEx(g_EbanClients[iClient].Admin_SteamID, 64, "");

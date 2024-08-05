@@ -12,26 +12,23 @@ bool	g_bThinkPostHooked[2048] = { false, ... };
 
 stock void EWM_Blink_OnPluginStart()
 {
-	if(g_evGameEngine != Engine_CSGO)
-	{
-		g_hCvar_Blink	= CreateConVar("entwatch_blink", "0", "Enable/Disable the Blink Global.", _, true, 0.0, true, 1.0);
+	g_hCvar_Blink	= CreateConVar("entwatch_blink", "0", "Enable/Disable the Blink Global.", _, true, 0.0, true, 1.0);
 
-		//Initialize values
-		g_bBlink = GetConVarBool(g_hCvar_Blink);
+	//Initialize values
+	g_bBlink = GetConVarBool(g_hCvar_Blink);
 
-		//Hook CVARs
-		HookConVarChange(g_hCvar_Blink, Cvar_BLINK_Changed);
-	}
+	//Hook CVARs
+	HookConVarChange(g_hCvar_Blink, Cvar_BLINK_Changed);
 }
 
 stock void EWM_Blink_OnMapStart()
 {
-	if(g_evGameEngine != Engine_CSGO) g_bMapRunningBlink = true;
+	g_bMapRunningBlink = true;
 }
 
 stock void EWM_Blink_OnMapEnd()
 {
-	if(g_evGameEngine != Engine_CSGO) g_bMapRunningBlink = false;
+	g_bMapRunningBlink = false;
 }
 
 public void Cvar_BLINK_Changed(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -58,7 +55,7 @@ public void Cvar_BLINK_Changed(ConVar convar, const char[] oldValue, const char[
 // Init Blink weapon on Drop weapons
 stock void EWM_Blink_BlinkWeapon(class_ItemList ItemTest)
 {
-	if(g_evGameEngine != Engine_CSGO && g_bBlink && g_bMapRunningBlink)
+	if(g_bBlink && g_bMapRunningBlink)
 	{
 		SetEntProp(ItemTest.WeaponID, Prop_Send, "m_fEffects", GetEntProp(ItemTest.WeaponID, Prop_Send, "m_fEffects") & ~256);
 		SetEntityRenderColor(ItemTest.WeaponID, ItemTest.GlowColor[0], ItemTest.GlowColor[1], ItemTest.GlowColor[2], ItemTest.GlowColor[3]);
@@ -74,7 +71,7 @@ stock void EWM_Blink_BlinkWeapon(class_ItemList ItemTest)
 // Disable Blink
 stock void EWM_Blink_DisableBlink(class_ItemList ItemTest)
 {
-	if (g_evGameEngine != Engine_CSGO && g_bBlink)
+	if (g_bBlink)
 		if (g_bThinkPostHooked[ItemTest.WeaponID])
 		{
 			SDKUnhook(ItemTest.WeaponID, SDKHook_ThinkPost, EWM_Blink_SDKHook_OnThinkPost);
