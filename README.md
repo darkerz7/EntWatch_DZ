@@ -1,3 +1,5 @@
+# The last commit that supports CS:GO Legasy
+[GitHub 06d7b39 (Aug 1 2024)](https://github.com/darkerz7/EntWatch_DZ/tree/06d7b392b74fd3224783442994e7684815efd38f)
 # Installation:
 1. Open with Notepad addons/sourcemod/scripting/entwatch_csgo_dz.sp and comment out or uncomment the corresponding modules
 2. Compile plugin.
