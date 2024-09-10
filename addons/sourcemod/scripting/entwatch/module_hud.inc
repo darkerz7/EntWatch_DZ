@@ -521,9 +521,9 @@ void EWM_Hud_Construct_String(int iClient, char[] sResult, int iSizeResult, char
 						case 3:
 							FormatItemWithUses(sBuf_woname[iIndex], ItemTest);
 						case 4:
-							FormatItemWithUses(sBuf_woname[iIndex], ItemTest);
+							FormatItemWithUsesAndCoolodown(sBuf_woname[iIndex], ItemTest);
 						case 5:
-							FormatItemWithUses(sBuf_woname[iIndex], ItemTest);
+							FormatItemCooldownAfterUses(sBuf_woname[iIndex], ItemTest);
 						case 6, 7: 
 							FormatItemWithMathValue(sBuf_woname[iIndex], ItemTest);
 						default:
@@ -547,9 +547,9 @@ void EWM_Hud_Construct_String(int iClient, char[] sResult, int iSizeResult, char
 						case 3:
 							FormatItemWithUses(sBuf_woname[iIndex], ItemTest, true);
 						case 4:
-							FormatItemWithUses(sBuf_woname[iIndex], ItemTest, true);
+							FormatItemWithUsesAndCoolodown(sBuf_woname[iIndex], ItemTest, true);
 						case 5:
-							FormatItemWithUses(sBuf_woname[iIndex], ItemTest, true);
+							FormatItemCooldownAfterUses(sBuf_woname[iIndex], ItemTest, true);
 						case 6, 7:
 							FormatItemWithMathValue(sBuf_woname[iIndex], ItemTest, true);
 					}
@@ -614,6 +614,62 @@ void FormatItemWithUses(char[] sBuf_woname, class_ItemList ItemTest, bool bSecon
 	{
 		if (ItemTest.Uses2 < ItemTest.MaxUses2)
 			FormatEx(sBuf_woname, MAX_SizeStringForItem, "%s[%d/%d]", sBuf_woname, ItemTest.Uses2, ItemTest.MaxUses2);
+		else
+			FormatEx(sBuf_woname, MAX_SizeStringForItem, "%s[E]", sBuf_woname);
+	}
+}
+
+void FormatItemWithUsesAndCoolodown(char[] sBuf_woname, class_ItemList ItemTest, bool bSecond = false)
+{
+	if (!bSecond)
+	{
+		if (ItemTest.Uses < ItemTest.MaxUses)
+		{
+			if (ItemTest.CoolDown > 0 && ItemTest.CheckCoolDown() > 0)
+				FormatEx(sBuf_woname, MAX_SizeStringForItem, "%s[%d]", ItemTest.ShortName, ItemTest.RoundCoolDown());
+			else
+				FormatEx(sBuf_woname, MAX_SizeStringForItem, "%s[%d/%d]", ItemTest.ShortName, ItemTest.Uses, ItemTest.MaxUses);
+		}
+		else
+			FormatEx(sBuf_woname, MAX_SizeStringForItem, "%s[E]", ItemTest.ShortName);
+	}
+	else
+	{
+		if (ItemTest.Uses2 < ItemTest.MaxUses2)
+		{
+			if (ItemTest.CoolDown2 > 0 && ItemTest.CheckCoolDown(true) > 0)
+				FormatEx(sBuf_woname, MAX_SizeStringForItem, "%s[%d]", sBuf_woname, ItemTest.RoundCoolDown(true));
+			else
+				FormatEx(sBuf_woname, MAX_SizeStringForItem, "%s[%d/%d]", sBuf_woname, ItemTest.Uses2, ItemTest.MaxUses2);
+		}
+		else
+			FormatEx(sBuf_woname, MAX_SizeStringForItem, "%s[E]", sBuf_woname);
+	}
+}
+
+void FormatItemCooldownAfterUses(char[] sBuf_woname, class_ItemList ItemTest, bool bSecond = false)
+{
+	if (!bSecond)
+	{
+		if (ItemTest.Uses < ItemTest.MaxUses)
+		{
+			if (ItemTest.CoolDown > 0 && ItemTest.CheckCoolDown() > 0)
+				FormatEx(sBuf_woname, MAX_SizeStringForItem, "%s[%d]", ItemTest.ShortName, ItemTest.RoundCoolDown());
+			else
+				FormatEx(sBuf_woname, MAX_SizeStringForItem, "%s[%d/%d]", ItemTest.ShortName, ItemTest.Uses, ItemTest.MaxUses);
+		}
+		else
+			FormatEx(sBuf_woname, MAX_SizeStringForItem, "%s[E]", ItemTest.ShortName);
+	}
+	else
+	{
+		if (ItemTest.Uses2 < ItemTest.MaxUses2)
+		{
+			if (ItemTest.CoolDown2 > 0 && ItemTest.CheckCoolDown(true) > 0)
+				FormatEx(sBuf_woname, MAX_SizeStringForItem, "%s[%d]", sBuf_woname, ItemTest.RoundCoolDown(true));
+			else
+				FormatEx(sBuf_woname, MAX_SizeStringForItem, "%s[%d/%d]", sBuf_woname, ItemTest.Uses2, ItemTest.MaxUses2);
+		}
 		else
 			FormatEx(sBuf_woname, MAX_SizeStringForItem, "%s[E]", sBuf_woname);
 	}
