@@ -147,14 +147,14 @@ public int EWM_Natives_Native_SetHudDisplay(Handle hPlugin, int iArgC)
 		if(g_CSettings_Hud[iClient].Display == true)
 		{
 			g_CSettings_Hud[iClient].Display = false;
-			SetClientCookie(iClient, g_hCookie_Display, "0");
+			SetClientCookie(iClient, g_cCookie_Display, "0");
 		}
 	}else
 	{
 		if(g_CSettings_Hud[iClient].Display == false)
 		{
 			g_CSettings_Hud[iClient].Display = true;
-			SetClientCookie(iClient, g_hCookie_Display, "1");
+			SetClientCookie(iClient, g_cCookie_Display, "1");
 		}
 	}
 	return true;
@@ -176,14 +176,14 @@ public int EWM_Natives_Native_SetHudName(Handle hPlugin, int iArgC)
 		if(g_CSettings_Hud[iClient].Name == true)
 		{
 			g_CSettings_Hud[iClient].Name = false;
-			SetClientCookie(iClient, g_hCookie_HudName, "0");
+			SetClientCookie(iClient, g_cCookie_HudName, "0");
 		}
 	}else
 	{
 		if(g_CSettings_Hud[iClient].Name == false)
 		{
 			g_CSettings_Hud[iClient].Name = true;
-			SetClientCookie(iClient, g_hCookie_HudName, "1");
+			SetClientCookie(iClient, g_cCookie_HudName, "1");
 		}
 	}
 	return true;
@@ -213,7 +213,7 @@ public int EWM_Natives_Native_SetHudPosition(Handle hPlugin, int iArgC)
 	
 	char sBuffer_cookie[32];
 	FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%f/%f", fNativePosX, fNativePosY);
-	SetClientCookie(iClient, g_hCookie_HudPos, sBuffer_cookie);
+	SetClientCookie(iClient, g_cCookie_HudPos, sBuffer_cookie);
 	return true;
 }
 
@@ -250,7 +250,7 @@ public int EWM_Natives_Native_SetHudColors(Handle hPlugin, int iArgC)
 	
 	char sBuffer_cookie[32];
 	Format(sBuffer_cookie, sizeof(sBuffer_cookie), "%i/%i/%i/%i", iNativeColor[0], iNativeColor[1], iNativeColor[2], iNativeColor[3]);
-	SetClientCookie(iClient, g_hCookie_HudColor, sBuffer_cookie);
+	SetClientCookie(iClient, g_cCookie_HudColor, sBuffer_cookie);
 	return true;
 }
 
