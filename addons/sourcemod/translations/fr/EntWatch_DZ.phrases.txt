@@ -121,6 +121,10 @@
 	{
 		"fr"	"Raison"
 	}
+	"Invalid SteamID"
+	{
+		"fr"	"Vous ne pouvez pas prendre d'items avec un SteamID invalide. Veuillez vous reconnecter au serveur ou contacter un manager"
+	}
 	"Currently Eban"
 	{
 		"fr"	"Actuellement Eban"
@@ -285,6 +289,22 @@
 	{
 		"fr"	"Temps de recharge"
 	}
+	"Name"
+	{
+		"fr" 	"Nom"
+	}
+	"Short Name"
+	{
+		"fr" 	"Nom raccourci"
+	}
+	"Block Item"
+	{
+		"fr" 	"Bloquer l'Item"
+	}
+	"Current Uses"
+	{
+		"fr" 	"Utilisations actuelles"
+	}
 	"Max Uses"
 	{
 		"fr"	"Utilisations Max"
@@ -423,7 +443,7 @@
 	}
 	"Client Eban numbers"
 	{
-		"#format"	"{1:d}"
+		"#format"	"{1:i}"
 		"fr" 	"a été Eban {1} fois"
 	}
 	"Is not restricted"
@@ -518,6 +538,20 @@
 	"Hud Items"
 	{
 		"fr"	"Items"
+	}
+	"X axis"
+	{
+		"#format"	"{1:0.2f}"
+		"fr"	"X: {1} (gauche à droite)"
+	}
+	"Y axis"
+	{
+		"#format"	"{1:0.2f}"
+		"fr"	"Y: {1} (haut en bas)"
+	}
+	"HUD Presets"
+	{
+		"fr"	"Préréglages du HUD"
 	}
 	"Hud Top Left"
 	{

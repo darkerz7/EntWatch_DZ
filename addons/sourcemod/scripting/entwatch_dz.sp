@@ -77,7 +77,7 @@ public Plugin myinfo =
 	name = "EntWatch",
 	author = "DarkerZ[RUS], AgentWesker, notkoen, sTc2201, maxime1907, Cmer, .Rushaway, Dolly",
 	description = "Notify players about entity interactions.",
-	version = "3.DZ.65",
+	version = "3.DZ.66",
 	url = "dark-skill.ru"
 };
  
@@ -438,7 +438,7 @@ public void OnClientPutInServer(int iClient)
 	
 	g_bIsAdmin[iClient] = false;
 	char sSteamID[32];
-	GetClientAuthId(iClient, AuthId_Steam2, sSteamID, sizeof(sSteamID), false);
+	GetClientAuthId(iClient, AuthId_Steam2, sSteamID, sizeof(sSteamID));
 	FormatEx(g_sSteamIDs[iClient], sizeof(g_sSteamIDs[]), "%s", sSteamID);
 	FormatEx(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "%s", sSteamID);
 	ReplaceString(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "STEAM_", "", true);

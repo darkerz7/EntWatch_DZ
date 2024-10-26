@@ -125,6 +125,10 @@
 	{
 		"en" 	"Reason"
 	}
+	"Invalid SteamID"
+	{
+		"en" 	"You are unable to pick up items while having invalid SteamID. Please rejoin the server or message a manager"
+	}
 	"Currently Eban"
 	{
 		"en" 	"Currently e-banned"
@@ -300,6 +304,10 @@
 	"Block Item"
 	{
 		"en" 	"Block Item"
+	}
+	"Current Uses"
+	{
+		"en" 	"Current Uses"
 	}
 	"Max Uses"
 	{
