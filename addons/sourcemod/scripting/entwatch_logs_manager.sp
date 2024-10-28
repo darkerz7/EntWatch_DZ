@@ -11,6 +11,8 @@
 #define REQUIRE_PLUGIN
 
 #define DB_ENTWATCH_SECTION "EntWatch"
+#define DB_ENTWATCH_CHARSET "utf8mb4"
+#define DB_ENTWATCH_COLLATION "utf8mb4_unicode_ci"
 
 ConVar	g_hCvar_System_Server,
 		g_hCvar_Item_Server,
@@ -71,7 +73,7 @@ public Plugin myinfo =
 	name = "EntWatch Logs Manager",
 	author = "DarkerZ[RUS], .Rushaway",
 	description = "Allows you to manage logs from the plugin EntWatch.",
-	version = "1.DZ.2",
+	version = "1.DZ.3",
 	url = "dark-skill.ru"
 };
 
@@ -229,7 +231,7 @@ void DB_ConnectCallBack(Database hDatabase, const char[] sError, any data)
 	g_hDB = hDatabase;
 	LogMessage("[EW-LM DB] Successful connection to DB");
 	DB_CreateTables(); // Create Tables
-	g_hDB.SetCharset("utf8"); // Set Charset UTF8
+	g_hDB.SetCharset(DB_ENTWATCH_CHARSET); // Set Charset UTF8
 }
 
 void DB_CreateTables()
@@ -254,9 +256,9 @@ void DB_CreateTables()
 																								`map` varchar(32) NOT NULL, \
 																								`message` varchar(128), \
 																								`other` varchar(32), \
-																								`reason` varchar(64), \	
+																								`reason` varchar(64), \
 																								`timestamp` int NOT NULL, \
-																								PRIMARY KEY (id))");
+																								PRIMARY KEY (id)) CHARACTER SET %s COLLATE %s;", DB_ENTWATCH_CHARSET, DB_ENTWATCH_COLLATION);
 		T_CreateTables.AddQuery(sSQL_Query);
 		SQL_ExecuteTransaction(g_hDB, T_CreateTables, DB_SQLCreateTables_Success, DB_SQLCreateTables_Error, _, DBPrio_High);
 	} else if(strcmp(sConnectDriverDB, "sqlite") == 0)
@@ -277,8 +279,8 @@ void DB_CreateTables()
 																								`map` varchar(32) NOT NULL, \
 																								`message` varchar(128), \
 																								`other` varchar(32), \
-																								`reason` varchar(64), \																								
-																								`timestamp` INTEGER NOT NULL)");
+																								`reason` varchar(64), \
+																								`timestamp` INTEGER NOT NULL) CHARACTER SET %s COLLATE %s;", DB_ENTWATCH_CHARSET, DB_ENTWATCH_COLLATION);
 		T_CreateTables.AddQuery(sSQL_Query);																																												
 		SQL_ExecuteTransaction(g_hDB, T_CreateTables, DB_SQLCreateTables_Success, DB_SQLCreateTables_Error, _, DBPrio_High);
 	} else
