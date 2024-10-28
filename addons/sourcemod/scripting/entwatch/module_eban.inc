@@ -10,14 +10,16 @@ ConVar	g_hCvar_Default_BanTime,
 		g_hCvar_Keep_Expired_Bans,
 		g_hCvar_Use_Reason_Menu,
 		g_hCvar_MaxBanTime,
-		g_hCvar_DropOnEBan;
+		g_hCvar_DropOnEBan,
+		g_hCvar_EbanInvalidSteamID;
 
 // Module Variables
 class_ClientSettings_EBan g_EbanClients[MAXPLAYERS+1];
 
 bool 	g_bKeepExpiredBans,
 		g_bUseReasonMenu,
-		g_bDropItemOnEBan;
+		g_bDropItemOnEBan,
+		g_bEbanInvalidSteamID;
 
 Database g_hEbanDB;
 int g_iDBStatus = 0, // 0 - Def., 1 - Reconnect, 2 - Unknown Driver, 3 - Create Table, 4 - Ready to Query
@@ -38,6 +40,7 @@ stock void EWM_Eban_OnPluginStart()
 	g_hCvar_Use_Reason_Menu			= CreateConVar("entwatch_use_reason_menu", "0", "Enable/Disable menu if the admin has not indicated a reason", _, true, 0.0, true, 1.0);
 	g_hCvar_MaxBanTime				= CreateConVar("entwatch_max_bantime", "0", "Maximum ban time allowed via console command (0 = disabled)", _, true, 0.0);
 	g_hCvar_DropOnEBan				= CreateConVar("entwatch_ban_dropitem", "1", "Automatically drop the item if client is ebanned", _, true, 0.0, true, 1.0);
+	g_hCvar_EbanInvalidSteamID		= CreateConVar("entwatch_eban_invalid_steamid", "1", "Eban temporary invalid steamid", _, true, 0.0, true, 1.0);
 
 	//Hook CVARs
 	HookConVarChange(g_hCvar_Default_BanTime, Cvar_EBAN_Changed);
@@ -48,6 +51,7 @@ stock void EWM_Eban_OnPluginStart()
 	HookConVarChange(g_hCvar_DropOnEBan, Cvar_EBAN_Changed);
 	HookConVarChange(g_hCvar_Default_BanReason, Cvar_EBAN_Changed);
 	HookConVarChange(g_hCvar_Default_UnBanReason, Cvar_EBAN_Changed);
+	HookConVarChange(g_hCvar_EbanInvalidSteamID, Cvar_EBAN_Changed);
 
 	//Initialize values
 	g_iDefaultBanTime = GetConVarInt(g_hCvar_Default_BanTime);
@@ -56,6 +60,7 @@ stock void EWM_Eban_OnPluginStart()
 	g_bUseReasonMenu = GetConVarBool(g_hCvar_Use_Reason_Menu);
 	g_iMaxBanTime = GetConVarInt(g_hCvar_MaxBanTime);
 	g_bDropItemOnEBan = GetConVarBool(g_hCvar_DropOnEBan);
+	g_bEbanInvalidSteamID = GetConVarBool(g_hCvar_EbanInvalidSteamID);
 	GetConVarString(g_hCvar_Default_BanReason, g_sDefaultBanReason, sizeof(g_sDefaultBanReason));
 	GetConVarString(g_hCvar_Default_UnBanReason, g_sDefaultUnBanReason, sizeof(g_sDefaultUnBanReason));
 
@@ -109,6 +114,8 @@ void Cvar_EBAN_Changed(ConVar convar, const char[] oldValue, const char[] newVal
 		GetConVarString(convar, g_sDefaultBanReason, sizeof(g_sDefaultBanReason));
 	else if(convar==g_hCvar_Default_UnBanReason)
 		GetConVarString(convar, g_sDefaultUnBanReason, sizeof(g_sDefaultUnBanReason));
+	else if(convar==g_hCvar_EbanInvalidSteamID)
+		g_bEbanInvalidSteamID = GetConVarBool(convar);
 }
 
 void EWM_Eban_ConnectCallBack(Database hDatabase, const char[] sError, any data)
@@ -254,7 +261,7 @@ void EWM_Eban_SQLGetEbansNumber_Current(Handle hDatabase, Handle hResults, const
 }
 
 // Main function of player e-ban
-public void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, char[] sReason)
+stock void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, char[] sReason, bool bInvalidSteamID = false)
 {
 	if (g_EbanClients[iClient].Banned)
 	{
@@ -312,6 +319,13 @@ public void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, char[] sR
 	FormatEx(g_EbanClients[iClient].Reason, 64, "%s", sReason);
 	TrimString(g_EbanClients[iClient].Reason);
 	StripQuotes(g_EbanClients[iClient].Reason);
+
+	if (bInvalidSteamID)
+	{
+		CPrintToChat(iClient, "%s%t %s%s %s%t %s%N %s%t.", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, sAdmin_Name, g_SchemeConfig.Color_Disabled, "Restricted", g_SchemeConfig.Color_Name, iClient, g_SchemeConfig.Color_Disabled, "Temporary");
+		CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Invalid SteamID");
+		return;
+	}
 
 	switch (iBanDuration)
 	{
@@ -650,6 +664,19 @@ stock void EWM_Eban_OnClientPutInServer(int iClient)
 
 	EWM_Eban_CleanData_Client(iClient);
 	EWM_Eban_Update_Client(iClient);
+
+	if (g_bEbanInvalidSteamID && strncmp(g_sSteamIDs[iClient][6], "ID_", 3) == 0 && !g_EbanClients[iClient].Banned)
+		CreateTimer(3.0, Timer_InvalidSteamID, iClient, TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public Action Timer_InvalidSteamID(Handle timer, any iClient)
+{
+	if (!IsClientConnected(iClient))
+		return Plugin_Stop;
+
+	EWM_Eban_BanClient(iClient, 0, -1, "SteamID not verified.", true);
+
+	return Plugin_Stop;
 }
 
 stock void EWM_Eban_OnClientDisconnect(int iClient)
