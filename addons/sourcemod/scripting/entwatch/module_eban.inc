@@ -1,6 +1,8 @@
 #define EW_MODULE_EBAN
 
 #define EW_EBAN_ENTWATCH_SECTION "EntWatch"
+#define EW_EBAN_DB_ENTWATCH_CHARSET "utf8mb4"
+#define EW_EBAN_DB_ENTWATCH_COLLATION "utf8mb4_unicode_ci"
 
 // Module settings
 ConVar	g_hCvar_Default_BanTime,
@@ -136,7 +138,7 @@ void EWM_Eban_ConnectCallBack(Database hDatabase, const char[] sError, any data)
 	Call_Finish();
 	#endif
 	EWM_Eban_CreateTables(); // Create Tables
-	g_hEbanDB.SetCharset("utf8"); // Set Charset UTF8
+	g_hEbanDB.SetCharset(EW_EBAN_DB_ENTWATCH_CHARSET); // Set Charset UTF8
 }
 
 void EWM_Eban_CreateTables()
@@ -162,7 +164,7 @@ void EWM_Eban_CreateTables()
 																										`admin_name_unban` varchar(32), \
 																										`admin_steamid_unban` varchar(64), \
 																										`timestamp_unban` int, \
-																										PRIMARY KEY (id))");
+																										PRIMARY KEY (id)) CHARACTER SET %s COLLATE %s;", EW_EBAN_DB_ENTWATCH_CHARSET, EW_EBAN_DB_ENTWATCH_COLLATION);
 		T_CreateTables.AddQuery(sSQL_Query);
 		FormatEx(sSQL_Query, sizeof(sSQL_Query), "CREATE TABLE IF NOT EXISTS `EntWatch_Old_Eban`(	`id` int(10) unsigned NOT NULL auto_increment, \
 																									`client_name` varchar(32) NOT NULL, \
@@ -177,7 +179,7 @@ void EWM_Eban_CreateTables()
 																									`admin_name_unban` varchar(32), \
 																									`admin_steamid_unban` varchar(64), \
 																									`timestamp_unban` int, \
-																									PRIMARY KEY (id))");
+																									PRIMARY KEY (id)) CHARACTER SET %s COLLATE %s;", EW_EBAN_DB_ENTWATCH_CHARSET, EW_EBAN_DB_ENTWATCH_COLLATION);
 		T_CreateTables.AddQuery(sSQL_Query);
 		SQL_ExecuteTransaction(g_hEbanDB, T_CreateTables, EWM_Eban_SQLCreateTables_Success, EWM_Eban_SQLCreateTables_Error, _, DBPrio_High);
 	} else if(strcmp(sConnectDriverDB, "sqlite") == 0)
@@ -198,7 +200,7 @@ void EWM_Eban_CreateTables()
 																										`reason_unban` varchar(64), \
 																										`admin_name_unban` varchar(32), \
 																										`admin_steamid_unban` varchar(64), \
-																										`timestamp_unban` INTEGER)");
+																										`timestamp_unban` INTEGER) CHARACTER SET %s COLLATE %s;", EW_EBAN_DB_ENTWATCH_CHARSET, EW_EBAN_DB_ENTWATCH_COLLATION);
 		T_CreateTables.AddQuery(sSQL_Query);																							
 		FormatEx(sSQL_Query, sizeof(sSQL_Query), "CREATE TABLE IF NOT EXISTS `EntWatch_Old_Eban`(	`id` INTEGER PRIMARY KEY AUTOINCREMENT, \
 																									`client_name` varchar(32) NOT NULL, \
@@ -212,7 +214,7 @@ void EWM_Eban_CreateTables()
 																									`reason_unban` varchar(64), \
 																									`admin_name_unban` varchar(32), \
 																									`admin_steamid_unban` varchar(64), \
-																									`timestamp_unban` INTEGER)");
+																									`timestamp_unban` INTEGER) CHARACTER SET %s COLLATE %s;", EW_EBAN_DB_ENTWATCH_CHARSET, EW_EBAN_DB_ENTWATCH_COLLATION);
 		T_CreateTables.AddQuery(sSQL_Query);
 		SQL_ExecuteTransaction(g_hEbanDB, T_CreateTables, EWM_Eban_SQLCreateTables_Success, EWM_Eban_SQLCreateTables_Error, _, DBPrio_High);
 	} else
