@@ -73,7 +73,7 @@ public Plugin myinfo =
 	name = "EntWatch Logs Manager",
 	author = "DarkerZ[RUS], .Rushaway",
 	description = "Allows you to manage logs from the plugin EntWatch.",
-	version = "1.DZ.3",
+	version = "1.DZ.4",
 	url = "dark-skill.ru"
 };
 
@@ -174,7 +174,7 @@ public void OnLibraryRemoved(const char[] sName)
 public void OnClientPostAdminCheck(int iClient)
 {
 	char sSteamID[32];
-	GetClientAuthId(iClient, AuthId_Steam2, sSteamID, sizeof(sSteamID), false);
+	GetClientAuthId(iClient, AuthId_Steam3, sSteamID, sizeof(sSteamID), false);
 	FormatEx(g_sSteamIDs[iClient], sizeof(g_sSteamIDs[]), "%s", sSteamID);
 }
 

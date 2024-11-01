@@ -77,7 +77,7 @@ public Plugin myinfo =
 	name = "EntWatch",
 	author = "DarkerZ[RUS], AgentWesker, notkoen, sTc2201, maxime1907, Cmer, .Rushaway, Dolly",
 	description = "Notify players about entity interactions.",
-	version = "3.DZ.67",
+	version = "3.DZ.68",
 	url = "dark-skill.ru"
 };
  
@@ -440,10 +440,12 @@ public void OnClientPutInServer(int iClient)
 	char sSteamID[32];
 	GetClientAuthId(iClient, AuthId_Steam2, sSteamID, sizeof(sSteamID));
 	FormatEx(g_sSteamIDs[iClient], sizeof(g_sSteamIDs[]), "%s", sSteamID);
-	FormatEx(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "%s", sSteamID);
-	ReplaceString(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "STEAM_", "", true);
-	g_iUserIDs[iClient] = GetClientUserId(iClient);
 
+	GetClientAuthId(iClient, AuthId_Steam3, sSteamID, sizeof(sSteamID));
+	FormatEx(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "%s", sSteamID);
+	ReplaceString(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "[", "", true);
+	ReplaceString(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "]", "", true);
+	g_iUserIDs[iClient] = GetClientUserId(iClient);
 	// No need to run the next functions for fake clients
 	if (IsFakeClient(iClient))
 		return;
