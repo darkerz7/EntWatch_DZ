@@ -445,6 +445,7 @@ public void OnClientPutInServer(int iClient)
 	FormatEx(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "%s", sSteamID);
 	ReplaceString(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "[", "", true);
 	ReplaceString(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "]", "", true);
+	g_iUserIDs[iClient] = GetClientUserId(iClient);
 	// No need to run the next functions for fake clients
 	if (IsFakeClient(iClient))
 		return;
