@@ -1,11 +1,11 @@
 project:
-  sourceknight: 0.2
+  sourceknight: 0.3
   name: EntWatch
   dependencies:
     - name: sourcemod
       type: tar
-      version: 1.13.0-git7190
-      location: https://sm.alliedmods.net/smdrop/1.13/sourcemod-1.13.0-git7190-linux.tar.gz
+      version: 1.12.0-git7137
+      location: https://sm.alliedmods.net/smdrop/1.12/sourcemod-1.12.0-git7137-linux.tar.gz
       unpack:
       - source: /addons
         dest: /addons
