@@ -77,7 +77,7 @@ public Plugin myinfo =
 	name = "EntWatch",
 	author = "DarkerZ[RUS], AgentWesker, notkoen, sTc2201, maxime1907, Cmer, .Rushaway, Dolly",
 	description = "Notify players about entity interactions.",
-	version = "3.DZ.69",
+	version = "3.DZ.70",
 	url = "dark-skill.ru"
 };
  
@@ -399,14 +399,14 @@ stock void EWM_Drop_Forward(Handle hEvent)
 			Call_Finish();
 			#endif
 			
-			int iWeaponSlotCSGO = GetSlotCSGO(ItemTest.WeaponID);
-			if(IsValidEdict(ItemTest.WeaponID) && iWeaponSlotCSGO != -1)
+			int iWeaponSlot = GetWeaponSlot(ItemTest.WeaponID);
+			if(IsValidEdict(ItemTest.WeaponID) && iWeaponSlot != -1)
 			{
 				#if defined EW_MODULE_CLANTAG
 				EWM_Clantag_Reset(iClient);
 				#endif
 
-				if(ItemTest.ForceDrop || (!ItemTest.ForceDrop && iWeaponSlotCSGO != 2))
+				if(ItemTest.ForceDrop || (!ItemTest.ForceDrop && iWeaponSlot != 2))
 				{
 					#if defined EW_MODULE_CHAT
 					if(ItemTest.Chat) EWM_Chat_PlayerDeath_Drop(ItemTest, iClient);
@@ -416,7 +416,7 @@ stock void EWM_Drop_Forward(Handle hEvent)
 				}
 				else
 				{
-					if(iWeaponSlotCSGO == 2)
+					if(iWeaponSlot == 2)
 					{
 						#if defined EW_MODULE_CHAT
 						if(ItemTest.Chat) EWM_Chat_PlayerDeath(ItemTest, iClient);
@@ -512,8 +512,8 @@ public void Event_ClientDisconnect(Handle event, const char[] name, bool dontBro
 			Call_Finish();
 			#endif
 
-			int iWeaponSlotCSGO = GetSlotCSGO(ItemTest.WeaponID);
-			if(IsValidEdict(ItemTest.WeaponID) && iWeaponSlotCSGO != -1)
+			int iWeaponSlot = GetWeaponSlot(ItemTest.WeaponID);
+			if(IsValidEdict(ItemTest.WeaponID) && iWeaponSlot != -1)
 			{
 				if(ItemTest.ForceDrop)
 				{
@@ -524,7 +524,7 @@ public void Event_ClientDisconnect(Handle event, const char[] name, bool dontBro
 				}
 				else
 				{
-					if(iWeaponSlotCSGO == 2)
+					if(iWeaponSlot == 2)
 					{
 						#if defined EW_MODULE_CHAT
 						if(ItemTest.Chat) EWM_Chat_Disconnect(ItemTest, iClient);

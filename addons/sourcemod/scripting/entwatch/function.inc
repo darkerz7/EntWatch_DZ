@@ -240,7 +240,7 @@ stock bool IsValidClient(int iClient)
 // Correct transfer of items to the player
 stock void FixedEquipPlayerWeapon(int iClient, int iWeapon)
 {
-	int wSlot = GetSlotCSGO(iWeapon);
+	int wSlot = GetWeaponSlot(iWeapon);
 	if((wSlot>=0) && (wSlot<=2))
 	{
 		int TargetWInSlot = GetPlayerWeaponSlot(iClient, wSlot);
@@ -267,7 +267,7 @@ stock int GetCounterValue(int counter) {
 }
 
 // Kludge, Getting a weapon slot without using a gamedata
-stock int GetSlotCSGO(int eWeapon)
+stock int GetWeaponSlot(int eWeapon)
 {
 	/*Slots:
 	Invalid/Unknown: -1
@@ -282,30 +282,20 @@ stock int GetSlotCSGO(int eWeapon)
 	
 	// Old function https://hlmod.net/threads/analogi-funkcij-na-bolee-bystrye.49613/
 	if((strcmp(wClassName,"weapon_elite",false)==0)||(strcmp(wClassName,"weapon_deagle",false)==0)||(strcmp(wClassName,"weapon_fiveseven",false)==0)||
-	(strcmp(wClassName,"weapon_glock",false)==0)||(strcmp(wClassName,"weapon_revolver",false)==0)||(strcmp(wClassName,"weapon_usp_silencer",false)==0)||
-	(strcmp(wClassName,"weapon_cz75a",false)==0)||(strcmp(wClassName,"weapon_hkp2000",false)==0)||(strcmp(wClassName,"weapon_p250",false)==0)||
-	(strcmp(wClassName,"weapon_tec9",false)==0)||(strcmp(wClassName,"weapon_p228",false)==0)||(strcmp(wClassName,"weapon_usp",false)==0))
+	(strcmp(wClassName,"weapon_glock",false)==0)|| (strcmp(wClassName,"weapon_p228",false)==0)||(strcmp(wClassName,"weapon_usp",false)==0))
 		return 1;
-	else if((strcmp(wClassName,"weapon_knife",false)==0)||(strcmp(wClassName,"weapon_knifegg",false)==0)||(strcmp(wClassName,"weapon_taser",false)==0)||
-	(strcmp(wClassName,"weapon_axe",false)==0)||(strcmp(wClassName,"weapon_hammer",false)==0)||(strcmp(wClassName,"weapon_spanner",false)==0))
+	else if(strcmp(wClassName,"weapon_knife",false)==0)
 		return 2;
-	else if((strcmp(wClassName,"weapon_hegrenade",false)==0)||(strcmp(wClassName,"weapon_decoy",false)==0)||(strcmp(wClassName,"weapon_molotov",false)==0)||
-	(strcmp(wClassName,"weapon_incgrenade",false)==0)||(strcmp(wClassName,"weapon_flashbang",false)==0)||(strcmp(wClassName,"weapon_smokegrenade",false)==0)||
-	(strcmp(wClassName,"weapon_tagrenade",false)==0)||(strcmp(wClassName,"weapon_diversion",false)==0)||(strcmp(wClassName,"weapon_snowball",false)==0))
+	else if((strcmp(wClassName,"weapon_hegrenade",false)==0)|| (strcmp(wClassName,"weapon_flashbang",false)==0)||(strcmp(wClassName,"weapon_smokegrenade",false)==0))
 		return 3;
 	else if((strcmp(wClassName,"weapon_p90",false)==0)||(strcmp(wClassName,"weapon_ak47",false)==0)||(strcmp(wClassName,"weapon_m4a1",false)==0)||
-	(strcmp(wClassName,"weapon_m249",false)==0)||(strcmp(wClassName,"weapon_bizon",false)==0)||(strcmp(wClassName,"weapon_negev",false)==0)||
-	(strcmp(wClassName,"weapon_m4a1_silencer",false)==0)||(strcmp(wClassName,"weapon_aug",false)==0)||(strcmp(wClassName,"weapon_awp",false)==0)||
-	(strcmp(wClassName,"weapon_famas",false)==0)||(strcmp(wClassName,"weapon_g3sg1",false)==0)||(strcmp(wClassName,"weapon_galilar",false)==0)||
-	(strcmp(wClassName,"weapon_scar20",false)==0)||(strcmp(wClassName,"weapon_ssg08",false)==0)||(strcmp(wClassName,"weapon_ump45",false)==0)||
-	(strcmp(wClassName,"weapon_xm1014",false)==0)||(strcmp(wClassName,"weapon_mac10",false)==0)||(strcmp(wClassName,"weapon_mag7",false)==0)||
-	(strcmp(wClassName,"weapon_mp7",false)==0)||(strcmp(wClassName,"weapon_mp9",false)==0)||(strcmp(wClassName,"weapon_nova",false)==0)||
-	(strcmp(wClassName,"weapon_sawedoff",false)==0)||(strcmp(wClassName,"weapon_sg556",false)==0)||(strcmp(wClassName,"weapon_galil",false)==0)||
+	(strcmp(wClassName,"weapon_m249",false)==0)||(strcmp(wClassName,"weapon_aug",false)==0)||(strcmp(wClassName,"weapon_awp",false)==0)||
+	(strcmp(wClassName,"weapon_famas",false)==0)||(strcmp(wClassName,"weapon_g3sg1",false)==0)||(strcmp(wClassName,"weapon_ump45",false)==0)||
+	(strcmp(wClassName,"weapon_xm1014",false)==0)||(strcmp(wClassName,"weapon_mac10",false)==0)||(strcmp(wClassName,"weapon_galil",false)==0)||
 	(strcmp(wClassName,"weapon_m3",false)==0)||(strcmp(wClassName,"weapon_mp5navy",false)==0)||(strcmp(wClassName,"weapon_scout",false)==0)||
 	(strcmp(wClassName,"weapon_sg550",false)==0)||(strcmp(wClassName,"weapon_sg552",false)==0)||(strcmp(wClassName,"weapon_tmp",false)==0))
 		return 0;
-	else if((strcmp(wClassName,"weapon_c4",false)==0)||(strcmp(wClassName,"weapon_breachcharge",false)==0)||(strcmp(wClassName,"weapon_bumpmine",false)==0)||
-	(strcmp(wClassName,"weapon_healthshot",false)==0)||(strcmp(wClassName,"weapon_shield",false)==0))
+	else if(strcmp(wClassName,"weapon_c4",false)==0)
 		return 4;
 	else return -1;
 }
