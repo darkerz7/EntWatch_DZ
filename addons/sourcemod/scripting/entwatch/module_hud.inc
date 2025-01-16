@@ -397,7 +397,7 @@ public Action EWM_Hud_Timer_DisplayHUD(Handle timer, int client)
 
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if (!IsClientInGame(i) || IsFakeClient(i) || !g_CSettings_Hud[i].Display || GetClientMenu(i) != MenuSource_None)
+		if (!IsClientInGame(i) || IsFakeClient(i) || !g_CSettings_Hud[i].Display)
 		{
 			iRotationTime[i] = 0;
 			continue;
