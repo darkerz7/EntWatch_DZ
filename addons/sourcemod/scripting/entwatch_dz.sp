@@ -77,7 +77,7 @@ public Plugin myinfo =
 	name = "EntWatch",
 	author = "DarkerZ[RUS], AgentWesker, notkoen, sTc2201, maxime1907, Cmer, .Rushaway, Dolly",
 	description = "Notify players about entity interactions.",
-	version = "3.DZ.71",
+	version = EW_VERSION,
 	url = "dark-skill.ru"
 };
  
@@ -222,12 +222,25 @@ public void OnPluginStart()
 
 public void OnAllPluginsLoaded()
 {
+	#if defined EW_MODULE_FORWARDS
+	SendForward_Available();
+	#endif
 	#if defined EW_MODULE_HUD
 	EWM_Hud_OnAllPluginsLoaded();
 	#endif
 	#if defined EW_MODULE_MENU
 	EWM_Menu_OnAllPluginsLoaded();
 	#endif
+}
+
+public void OnPluginPauseChange(bool pause)
+{
+#if defined EW_MODULE_FORWARDS
+	if (pause)
+		SendForward_NotAvailable();
+	else
+		SendForward_Available();
+#endif
 }
 
 public void OnLibraryAdded(const char[] name)
@@ -252,6 +265,9 @@ public void OnLibraryRemoved(const char[] name)
 
 public void OnPluginEnd()
 {
+	#if defined EW_MODULE_FORWARDS
+	SendForward_NotAvailable();
+	#endif
 	#if defined EW_MODULE_CLANTAG
 	EWM_Clantag_Mass_Reset();
 	#endif
