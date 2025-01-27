@@ -3,6 +3,11 @@
 #endif
 #define _EntWatch_include
 
+#define EW_V_MAJOR   3
+#define EW_V_MINOR   72
+
+#define EW_VERSION   "3.DZ.72"
+
 enum struct class_NativeClientSettings_Hud
 {
 	bool		Display;
@@ -213,6 +218,21 @@ native bool EntWatch_RemoveHLWeaponOne(int iClient);
  * On error/errors:		Invalid client index
  */
 native bool EntWatch_RemoveHLPlayerOne(int iClient);
+
+/**
+ * Called when the plugin becomes available.
+ * 
+ * @noreturn
+ */
+forward void EntWatch_OnPluginOK();
+
+/**
+ * Called when the plugin becomes unavailable.
+ * This can happen when the plugin is reloaded or unloaded.
+ * 
+ * @noreturn
+ */
+forward void EntWatch_OnPluginNotOK();
 
 /**
  * Called when a client is e-banned by any means
