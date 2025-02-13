@@ -2,9 +2,6 @@
 
 // Purpose: Announcement of all forwards
 
-GlobalForward g_hForward_StatusOK;
-GlobalForward g_hForward_StatusNotOK;
-
 Handle	g_hOnBanForward,
 		g_hOnUnbanForward,
 		g_hOnUseItem,
@@ -36,9 +33,6 @@ Handle	g_hOnBanForward,
 
 stock void EWM_Forwards_OnPluginStart()
 {
-	g_hForward_StatusOK = CreateGlobalForward("EntWatch_OnPluginOK", ET_Ignore);
-	g_hForward_StatusNotOK = CreateGlobalForward("EntWatch_OnPluginNotOK", ET_Ignore);
-
 	g_hOnBanForward = CreateGlobalForward("EntWatch_OnClientBanned", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_String);
 	g_hOnUnbanForward = CreateGlobalForward("EntWatch_OnClientUnbanned", ET_Ignore, Param_Cell, Param_Cell, Param_String);
 	g_hOnUseItem = CreateGlobalForward("EntWatch_OnUseItem", ET_Ignore, Param_String, Param_Cell, Param_Cell);
@@ -67,18 +61,6 @@ stock void EWM_Forwards_OnPluginStart()
 	g_hOnAdminSpawnItem = CreateGlobalForward("EntWatch_OnAdminSpawnItem", ET_Ignore, Param_Cell, Param_String, Param_Cell);
 	g_hOnAdminTransferedAllItems = CreateGlobalForward("EntWatch_OnAdminTransferedAllItems", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 	g_hOnAdminTransferedItem = CreateGlobalForward("EntWatch_OnAdminTransferedItem", ET_Ignore, Param_Cell, Param_String, Param_Cell);
-}
-
-stock void SendForward_Available()
-{
-	Call_StartForward(g_hForward_StatusOK);
-	Call_Finish();
-}
-
-stock void SendForward_NotAvailable()
-{
-	Call_StartForward(g_hForward_StatusNotOK);
-	Call_Finish();
 }
 
 stock void Forward_OnUseItem(char sItemName[32], int iActivator, int iAbility) {

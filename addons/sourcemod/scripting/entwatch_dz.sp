@@ -222,25 +222,12 @@ public void OnPluginStart()
 
 public void OnAllPluginsLoaded()
 {
-	#if defined EW_MODULE_FORWARDS
-	SendForward_Available();
-	#endif
 	#if defined EW_MODULE_HUD
 	EWM_Hud_OnAllPluginsLoaded();
 	#endif
 	#if defined EW_MODULE_MENU
 	EWM_Menu_OnAllPluginsLoaded();
 	#endif
-}
-
-public void OnPluginPauseChange(bool pause)
-{
-#if defined EW_MODULE_FORWARDS
-	if (pause)
-		SendForward_NotAvailable();
-	else
-		SendForward_Available();
-#endif
 }
 
 public void OnLibraryAdded(const char[] name)
@@ -265,9 +252,6 @@ public void OnLibraryRemoved(const char[] name)
 
 public void OnPluginEnd()
 {
-	#if defined EW_MODULE_FORWARDS
-	SendForward_NotAvailable();
-	#endif
 	#if defined EW_MODULE_CLANTAG
 	EWM_Clantag_Mass_Reset();
 	#endif
