@@ -161,12 +161,20 @@ public void OnPluginStart()
 		LoadConfig();
 		LoadScheme();
 
+		char sSteam32ID[32];
 		for (int i = 1; i <= MaxClients; i++)
 		{
 			if (!IsClientInGame(i) || IsFakeClient(i))
 				continue;
 
 			OnClientPutInServer(i);
+			OnClientConnected(i);
+
+			if (!IsClientAuthorized(i))
+				continue;
+
+			GetClientAuthId(i, AuthId_Steam2, sSteam32ID, sizeof(sSteam32ID));
+			OnClientAuthorized(i, sSteam32ID);
 			OnClientPostAdminCheck(i);
 		}
 	}
@@ -432,26 +440,44 @@ stock void EWM_Drop_Forward(Handle hEvent)
 
 public void OnClientPutInServer(int iClient)
 {
+	#if defined EW_MODULE_EBAN
+	EWM_Eban_CleanData_Client(iClient, false);
+	#endif
+
 	SDKHook(iClient, SDKHook_WeaponDropPost, OnWeaponDrop);
 	SDKHook(iClient, SDKHook_WeaponEquipPost, OnWeaponEquip);
 	SDKHook(iClient, SDKHook_WeaponCanUse, OnWeaponCanUse);
-	
-	g_bIsAdmin[iClient] = false;
-	char sSteamID[32];
-	GetClientAuthId(iClient, AuthId_Steam2, sSteamID, sizeof(sSteamID));
-	FormatEx(g_sSteamIDs[iClient], sizeof(g_sSteamIDs[]), "%s", sSteamID);
+}
 
+public void OnClientConnected(int iClient)
+{
+	if (IsFakeClient(iClient))
+		return;
+
+	g_bIsAdmin[iClient] = false;
+	FormatEx(g_sSteamIDs[iClient], sizeof(g_sSteamIDs[]), "STEAM_ID_PENDING");
+	FormatEx(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "ID_PENDING");
+}
+
+public void OnClientAuthorized(int iClient, const char[] auth)
+{
+	// Steam2 ID
+	FormatEx(g_sSteamIDs[iClient], sizeof(g_sSteamIDs[]), "%s", auth);
+
+	char sSteamID[32];
 	GetClientAuthId(iClient, AuthId_Steam3, sSteamID, sizeof(sSteamID));
 	FormatEx(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "%s", sSteamID);
 	ReplaceString(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "[", "", true);
 	ReplaceString(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "]", "", true);
+
 	g_iUserIDs[iClient] = GetClientUserId(iClient);
+
 	// No need to run the next functions for fake clients
 	if (IsFakeClient(iClient))
 		return;
 
 	#if defined EW_MODULE_EBAN
-	EWM_Eban_OnClientPutInServer(iClient);
+	EWM_Eban_Update_Client(iClient);
 	#endif
 	#if defined EW_MODULE_HUD
 	if(!AreClientCookiesCached(iClient)) EWM_Hud_LoadDefaultClientSettings(iClient);
@@ -830,12 +856,6 @@ stock void LoadScheme()
 	g_SchemeConfig.Color_Warning	= "{orange}";
 	g_SchemeConfig.Color_Enabled	= "{green}";
 	g_SchemeConfig.Color_Disabled	= "{red}";
-	g_SchemeConfig.Color_HUD[0]		= 255;
-	g_SchemeConfig.Color_HUD[1]		= 255;
-	g_SchemeConfig.Color_HUD[2]		= 255;
-	g_SchemeConfig.Color_HUD[3]		= 255;
-	g_SchemeConfig.Pos_HUD_X		= 0.0;
-	g_SchemeConfig.Pos_HUD_Y		= 0.4;
 	
 	KeyValues KvConfig = CreateKeyValues("EW_Scheme");
 	char	ConfigFullPath[PLATFORM_MAX_PATH],
@@ -898,11 +918,6 @@ stock void LoadScheme()
 	KvConfig.GetString("server_name", szBuffer, sizeof(szBuffer));
 	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Server_Name, sizeof(g_SchemeConfig.Server_Name), "%s", szBuffer);
 		else FormatEx(g_SchemeConfig.Server_Name, sizeof(g_SchemeConfig.Server_Name), "Server");
-	#endif
-	#if defined EW_MODULE_HUD
-	KvConfig.GetColor4("color_hud", g_SchemeConfig.Color_HUD);
-	g_SchemeConfig.Pos_HUD_X = KvConfig.GetFloat("pos_hud_x");
-	g_SchemeConfig.Pos_HUD_Y = KvConfig.GetFloat("pos_hud_y");
 	#endif
 	
 	CloseHandle(KvConfig);

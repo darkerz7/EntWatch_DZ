@@ -60,14 +60,6 @@
 	{
 		"ru" 	"Информация в HUD"
 	}
-	"Hud Position"
-	{
-		"ru" 	"Позиция HUD"
-	}
-	"Hud Color"
-	{
-		"ru" 	"Цвет HUD"
-	}
 	"Wrong"
 	{
 		"ru" 	"Неправильно"
@@ -542,51 +534,5 @@
 	"Hud Items"
 	{
 		"ru"	"HUD предметов"
-	}
-	"X axis"
-	{
-		"#format"	"{1:0.2f}"
-		"ru"	"X: {1} (слева направо)"
-	}
-	"Y axis"
-	{
-		"#format"	"{1:0.2f}"
-		"ru"	"Y: {1} (сверху вниз)"
-	}
-	"HUD Presets"
-	{
-		"ru"	"Предустановки HUD"
-	}
-	"Hud Top Left"
-	{
-		"ru"	"Вверху слева"
-	}
-	"Hud Top Center"
-	{
-		"ru"	"Вверху посередине"
-	}
-	"Hud Top Right"
-	{
-		"ru"	"Вверху справа"
-	}
-	"Hud Middle Left"
-	{
-		"ru"	"Посередине слева"
-	}
-	"Hud Middle Right"
-	{
-		"ru"	"Посередине справа"
-	}
-	"Hud Bottom Left"
-	{
-		"ru"	"Снизу слева"
-	}
-	"Hud Bottom Center"
-	{
-		"ru"	"Снизу посередине"
-	}
-	"Hud Bottom Right"
-	{
-		"ru"	"Снизу справа"
 	}
 }

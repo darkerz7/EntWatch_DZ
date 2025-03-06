@@ -173,19 +173,12 @@ enum struct class_Scheme
 	char		Color_Enabled[16];		// String:	Text color of Enable
 	char		Color_Disabled[16];		// String:	Text color of Disable
 	char		Server_Name[64];		// String:	Unique server name to use the same database for different servers
-	int			Color_HUD[4];			// Array:	Default HUD color
-	float		Pos_HUD_X;				// Float:	Default HUD position in X
-	float		Pos_HUD_Y;				// Float:	Default HUD position in Y
 }
 
 // Structure for client settings
 enum struct class_ClientSettings_Hud
 {
 	bool		Display;		// Bool:	Show HUD on client
-	int			Type;			// Integer:	Type of HUD 0 = KeyHintText, 1 = HUD
-	int			Color[4];		// Array:	Color of HUD on client
-	float		Pos_X;			// Float:	HUD position in X on client
-	float		Pos_Y;			// Float:	HUD position in Y on client
 	bool		Name;			// Bool:	Show player nicknames on items
 	int 		ItemsCount; 	// Integer: Number of items to show in HUD
 	int			RotationTime;	// Integer: Time in seconds to switch HUD page
@@ -194,6 +187,7 @@ enum struct class_ClientSettings_Hud
 // Structure for player e-ban information
 enum struct class_ClientSettings_EBan
 {
+	bool 		Verified;			// Bool:	Is the player was verified into DB ?
 	bool		Banned;				// Bool:	Is the player e-banned?
 	char		Admin_Name[32];		// String:	The name of the admin who e-banned the player
 	char		Admin_SteamID[64];	// String:	The SteamID of the admin who e-banned the player
