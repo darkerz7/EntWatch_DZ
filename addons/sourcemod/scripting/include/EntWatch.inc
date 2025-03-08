@@ -4,7 +4,7 @@
 #define _EntWatch_include
 
 #define EW_V_MAJOR   "3"
-#define EW_V_MINOR   "72"
+#define EW_V_MINOR   "73"
 
 #define EW_VERSION   EW_V_MAJOR...".DZ."...EW_V_MINOR
 
@@ -78,15 +78,6 @@ native int EntWatch_GetClientEbansNumber(int iCient);
 native bool EntWatch_GetHudSettings(int iClient, any cSettings[sizeof(class_NativeClientSettings_Hud)]);
 
 /**
- * Gets default HUD settings
- *
- * @param cDefailt		An instance of the class in which the information will be saved
-
- * @return				True
- */
-native bool EntWatch_GetHudDefault(any cDefailt[sizeof(class_NativeClientSettings_Hud)]);
-
-/**
  * Sets client HUD Display
  *
  * @param iClient		Client index to set
@@ -109,31 +100,6 @@ native bool EntWatch_SetHudDisplay(int iClient, int iDisplay);
  * On error/errors:		Invalid client index/Client cookies are not yet loaded
  */
 native bool EntWatch_SetHudName(int iClient, int iName);
-
-/**
- * Sets client HUD Position
- *
- * @param iClient		Client index to set
- * @param fPosX			Parameter to position X
- * @param fPosY			Parameter to position Y
-
- * @return				True on success, false otherwsie
- *
- * On error/errors:		Invalid Position [0.0-1.0|0.0-1.0]/Invalid client index/Client cookies are not yet loaded
- */
-native bool EntWatch_SetHudPosition(int iClient, float fPosX, float fPosY);
-
-/**
- * Sets client HUD Colors
- *
- * @param iClient		Client index to set
- * @param aColors		Parameter to colors[4] - Red, Green, Blue, Alpha
-
- * @return				True on success, false otherwsie
- *
- * On error/errors:		Invalid Colors [0-255|0-255|0-255|0-255]/Invalid Colors Array[4]/Invalid client index/Client cookies are not yet loaded
- */
-native bool EntWatch_SetHudColors(int iClient, int[] aColors);
 
 /**
  * Checks if an entity is a special item.

@@ -74,7 +74,12 @@ stock void EWM_Eban_OnPluginStart()
 
 	Database.Connect(EWM_Eban_ConnectCallBack, EW_EBAN_ENTWATCH_SECTION);
 	//Timer Checker
-	CreateTimer(60.0, EWM_Eban_Timer_Checker, _, TIMER_REPEAT);
+	CreateTimer(30.0, EWM_Eban_Timer_Checker, _, TIMER_REPEAT);
+}
+
+stock bool IsDBConnected()
+{
+	return g_hEbanDB != null && g_iDBStatus == 4;
 }
 
 stock void EWM_Eban_OnClientPostAdminCheck(int iClient)
@@ -294,7 +299,7 @@ stock void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, char[] sRe
 	if (iBanDuration >= g_iAdminBanLong && !CheckCommandAccess(iAdmin, "sm_eban_long", ADMFLAG_ROOT))
 	{
 		CReplyToCommand(iAdmin, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Not have permission lEBan", g_iAdminBanLong);
-		return;
+		iBanDuration = g_iAdminBanLong;
 	}
 
 	if (iBanDuration == 0 && !CheckCommandAccess(iAdmin, "sm_eban_perm", ADMFLAG_ROOT))
@@ -313,6 +318,8 @@ stock void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, char[] sRe
 		FormatEx(sAdmin_SteamID, sizeof(sAdmin_SteamID), "SERVER");
 	}
 
+	// Since this can be called via API, we force the client as verified
+	g_EbanClients[iClient].Verified = true;
 	g_EbanClients[iClient].Banned = true;
 	FormatEx(g_EbanClients[iClient].Admin_Name, 32, "%s", sAdmin_Name);
 	FormatEx(g_EbanClients[iClient].Admin_SteamID, 64, "%s", sAdmin_SteamID);
@@ -337,14 +344,14 @@ stock void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, char[] sRe
 			CPrintToChatAll("%s%t %s%s %s%t %s%N %s%t.", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, sAdmin_Name, g_SchemeConfig.Color_Disabled, "Restricted", g_SchemeConfig.Color_Name, iClient, g_SchemeConfig.Color_Disabled, "Temporary");
 		default: {
 			CPrintToChatAll("%s%t %s%s %s%t %s%N %s%t.", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Name, sAdmin_Name, g_SchemeConfig.Color_Disabled, "Restricted", g_SchemeConfig.Color_Name, iClient, g_SchemeConfig.Color_Enabled, "For Minutes", iBanDuration);
-			g_EbanClients[iClient].TimeStamp_Issued = GetTime() + iBanDuration * 60;
+			g_EbanClients[iClient].TimeStamp_Issued += iBanDuration * 60;
 		}
 	}
 
 	CPrintToChatAll("%s%t %s%t: %s", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Reason", g_EbanClients[iClient].Reason);
 
 	// Save to DB
-	if (g_iDBStatus == 4 && iBanDuration >= 0)
+	if (IsDBConnected() && iBanDuration >= 0)
 	{
 		char szAdmin_Name[32 * 2 + 1], sClient_Name[32 * 2 + 1], szClient_Name[32 * 2 + 1], szReason[64 * 2 + 1];
 		g_hEbanDB.Escape(sAdmin_Name, szAdmin_Name, sizeof(szAdmin_Name)); // Admin Name to DB
@@ -462,7 +469,7 @@ public void EWM_Eban_UnBanClient(int iClient, int iAdmin, char[] sReason)
 		FormatEx(sAdmin_SteamID, sizeof(sAdmin_SteamID), "SERVER");
 	}
 	
-	if(g_iDBStatus == 4)
+	if (IsDBConnected())
 	{
 		char sSQL_Query[1024], szReason[64 * 2 + 1], szAdmin_Name[32 * 2 + 1];
 		g_hEbanDB.Escape(sReason, szReason, sizeof(szReason));//Reason Unban to DB
@@ -487,7 +494,7 @@ public void EWM_Eban_UnBanClient(int iClient, int iAdmin, char[] sReason)
 		SQL_ExecuteTransaction(g_hEbanDB, T_UnBan, EWM_Eban_SQLUnBan_Success, EWM_Eban_SQLUnBan_Error, _, DBPrio_Normal);
 	}
 	
-	EWM_Eban_CleanData_Client(iClient);
+	EWM_Eban_CleanData_Client(iClient, true);
 
 	#if defined EW_MODULE_FORWARDS
 	Call_StartForward(g_hOnUnbanForward);
@@ -525,7 +532,14 @@ void EWM_Eban_Update_Client(int iClient)
 	if (IsFakeClient(iClient))
 		return;
 
-	if(g_iDBStatus == 4)
+	if (g_bEbanInvalidSteamID && (strncmp(g_sSteamIDs[iClient][6], "ID_", 3) == 0 || strncmp(g_sSteamIDs_short[iClient][0], "ID_", 3) == 0))
+	{
+		g_EbanClients[iClient].Verified = true;
+		EWM_Eban_BanClient(iClient, 0, -1, "SteamID not verified.", true);
+		return;
+	}
+
+	if (IsDBConnected())
 	{
 		char sTQuery[1024];
 		FormatEx(sTQuery, sizeof(sTQuery), "SELECT `admin_name`, `admin_steamid`, `duration`, `timestamp_issued`, `reason` FROM `EntWatch_Current_Eban` \
@@ -566,6 +580,7 @@ void EWM_Eban_SQLTCallBackUpdate(Handle hDatabase, Handle hResults, const char[]
 			ClientSet = ClientBuffer;
 		}
 
+		g_EbanClients[iClient].Verified = true;
 		g_EbanClients[iClient].Banned = bBanFound;
 		FormatEx(g_EbanClients[iClient].Admin_Name, 32, "%s", bBanFound ? ClientSet.Admin_Name : "");
 		FormatEx(g_EbanClients[iClient].Admin_SteamID, 64, "%s", bBanFound ? ClientSet.Admin_SteamID : "");
@@ -578,7 +593,7 @@ void EWM_Eban_SQLTCallBackUpdate(Handle hDatabase, Handle hResults, const char[]
 // Getting a list of banned people whose e-ban has expired
 void EWM_Eban_Offline_Unban(int iTime)
 {
-	if(g_iDBStatus == 4)
+	if (IsDBConnected())
 	{
 		char sTQuery[1024];
 		FormatEx(sTQuery, sizeof(sTQuery), "SELECT `id` FROM `EntWatch_Current_Eban` \
@@ -639,9 +654,17 @@ Action EWM_Eban_Timer_Checker(Handle timer)
 			int iCurrentTimeStamp = GetTime();
 			for(int i=1; i<MaxClients+1; i++)
 			{
-				if(!IsClientInGame(i)) continue;
-				if(!g_EbanClients[i].Banned) continue;
-				if(g_EbanClients[i].Duration <= 0) continue;
+				if(!IsClientInGame(i))
+					continue;
+				if(!g_EbanClients[i].Verified)
+				{
+					EWM_Eban_Update_Client(i);
+					continue;
+				}
+				if(!g_EbanClients[i].Banned)
+					continue;
+				if(g_EbanClients[i].Duration <= 0)
+					continue;
 
 				if(iCurrentTimeStamp > g_EbanClients[i].TimeStamp_Issued)
 					EWM_Eban_UnBanClient(i, 0, "Expired");
@@ -659,41 +682,22 @@ stock void EWM_Eban_OnMapStart()
 	EWM_Eban_CleanData_All();
 }
 
-stock void EWM_Eban_OnClientPutInServer(int iClient)
-{
-	if (!IsClientConnected(iClient) || IsFakeClient(iClient))
-		return;
-
-	EWM_Eban_CleanData_Client(iClient);
-	EWM_Eban_Update_Client(iClient);
-
-	if (g_bEbanInvalidSteamID && strncmp(g_sSteamIDs[iClient][6], "ID_", 3) == 0 && !g_EbanClients[iClient].Banned)
-		CreateTimer(3.0, Timer_InvalidSteamID, iClient, TIMER_FLAG_NO_MAPCHANGE);
-}
-
-public Action Timer_InvalidSteamID(Handle timer, any iClient)
-{
-	if (!IsClientConnected(iClient))
-		return Plugin_Stop;
-
-	EWM_Eban_BanClient(iClient, 0, -1, "SteamID not verified.", true);
-
-	return Plugin_Stop;
-}
-
 stock void EWM_Eban_OnClientDisconnect(int iClient)
 {
 	if (!IsClientConnected(iClient) || IsFakeClient(iClient))
 		return;
 
-	EWM_Eban_CleanData_Client(iClient);
+	EWM_Eban_CleanData_Client(iClient, false);
 	g_iClientEbansNumber[iClient] = 0;
 }
 
-void EWM_Eban_CleanData_Client(int iClient)
+void EWM_Eban_CleanData_Client(int iClient, bool bForceVerified = false)
 {
-	if (!IsClientConnected(iClient) || IsFakeClient(iClient))
+	if (IsFakeClient(iClient))
 		return;
+
+	if (!bForceVerified)
+		g_EbanClients[iClient].Verified = false;
 
 	g_EbanClients[iClient].Banned = false;
 	FormatEx(g_EbanClients[iClient].Admin_Name, 32, "");
@@ -707,8 +711,11 @@ void EWM_Eban_CleanData_All()
 {
 	for(int i=1; i<=MaxClients; i++)
 	{
-		EWM_Eban_CleanData_Client(i);
-		if(IsClientInGame(i) && !IsFakeClient(i)) EWM_Eban_Update_Client(i);
+		if (!IsClientInGame(i) || IsFakeClient(i))
+			continue;
+
+		EWM_Eban_CleanData_Client(i, false);
+		EWM_Eban_Update_Client(i);
 	}
 }
 

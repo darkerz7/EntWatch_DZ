@@ -56,14 +56,6 @@
 	{
 		"fr"	"Le HUD est maintenant"
 	}
-	"Hud Position"
-	{
-		"fr"	"Position"
-	}
-	"Hud Color"
-	{
-		"fr"	"Couleur"
-	}
 	"Wrong"
 	{
 		"fr"	"Mauvais"
@@ -538,51 +530,5 @@
 	"Hud Items"
 	{
 		"fr"	"Items"
-	}
-	"X axis"
-	{
-		"#format"	"{1:0.2f}"
-		"fr"	"X: {1} (gauche à droite)"
-	}
-	"Y axis"
-	{
-		"#format"	"{1:0.2f}"
-		"fr"	"Y: {1} (haut en bas)"
-	}
-	"HUD Presets"
-	{
-		"fr"	"Préréglages du HUD"
-	}
-	"Hud Top Left"
-	{
-		"fr"	"Haut Gauche"
-	}
-	"Hud Top Center"
-	{
-		"fr"	"Haut Centre"
-	}
-	"Hud Top Right"
-	{
-		"fr"	"Haut Droite"
-	}
-	"Hud Middle Left"
-	{
-		"fr"	"Milieu Gauche"
-	}
-	"Hud Middle Right"
-	{
-		"fr"	"Milieu Droite"
-	}
-	"Hud Bottom Left"
-	{
-		"fr"	"Bas Gauche"
-	}
-	"Hud Bottom Center"
-	{
-		"fr"	"Bas Centre"
-	}
-	"Hud Bottom Right"
-	{
-		"fr"	"Bas Droite"
 	}
 }
