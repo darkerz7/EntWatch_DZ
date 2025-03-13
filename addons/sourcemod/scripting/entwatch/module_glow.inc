@@ -54,7 +54,7 @@ public void Cvar_GLOW_Changed(ConVar convar, const char[] oldValue, const char[]
 }
 
 // Init Glow weapon on Drop weapons
-stock void EWM_Glow_GlowWeapon(class_ItemList ItemTest, int index, bool bSpawn)
+stock void EWM_Glow_GlowWeapon(class_ItemList ItemTest)
 {
 	if(g_bGlow && g_bMapRunning)
 	{

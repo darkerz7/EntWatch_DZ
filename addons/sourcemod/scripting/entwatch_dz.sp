@@ -397,7 +397,7 @@ stock void EWM_Drop_Forward(Handle hEvent)
 			#endif
 			
 			#if defined EW_MODULE_GLOW
-			EWM_Glow_GlowWeapon(ItemTest, i, false);
+			EWM_Glow_GlowWeapon(ItemTest);
 			#endif
 			
 			#if defined EW_MODULE_FORWARDS
@@ -572,7 +572,7 @@ public void Event_ClientDisconnect(Handle event, const char[] name, bool dontBro
 			#endif
 
 			#if defined EW_MODULE_GLOW
-			EWM_Glow_GlowWeapon(ItemTest, i, false);
+			EWM_Glow_GlowWeapon(ItemTest);
 			#endif
 		}
 	}
@@ -1009,7 +1009,7 @@ public bool RegisterItem(class_ItemConfig ItemConfig, int iEntity, int iHammerID
 				g_ItemList.GetArray(i, ItemTest, sizeof(ItemTest));
 				if(ItemTest.WeaponID == iEntity)
 				{
-					EWM_Glow_GlowWeapon(ItemTest, i, true);
+					EWM_Glow_GlowWeapon(ItemTest);
 					break;
 				}
 			}
@@ -1444,7 +1444,7 @@ public void Event_OutValue(const char[] sOutput, int iCaller, int iActivator, fl
 //-------------------------------------------------------
 public Action Event_GameUI_LeftClick(const char[] sOutput, int iCaller, int iActivator, float Delay)
 {
-	OnGameUIUse(sOutput, iCaller, iActivator, Delay, false);
+	OnGameUIUse(iCaller, iActivator, false);
 	return Plugin_Continue;
 }
 
@@ -1453,7 +1453,7 @@ public Action Event_GameUI_LeftClick(const char[] sOutput, int iCaller, int iAct
 //-------------------------------------------------------
 public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iActivator, float Delay)
 {
-	OnGameUIUse(sOutput, iCaller, iActivator, Delay, true);
+	OnGameUIUse(iCaller, iActivator, true);
 	return Plugin_Continue;
 }
 
@@ -1478,7 +1478,7 @@ public void OnWeaponDrop(int iClient, int iWeapon)
 			#endif
 			
 			#if defined EW_MODULE_GLOW
-			EWM_Glow_GlowWeapon(ItemTest, i, false);
+			EWM_Glow_GlowWeapon(ItemTest);
 			#endif
 			
 			#if defined EW_MODULE_FORWARDS
@@ -1595,7 +1595,7 @@ stock void Events_OnUseItem(class_ItemList ItemTest,int iActivator, int iAbility
 // Note: PressedAttack2 is true when the right mouse button is pressed
 // Note: If the HammerID used for "game_ui" is the same for Left and Right click (shared "game_ui"), the PressedAttack2 will be true
 // Note: That mean PressedAttack2 will be "buttonid2, mode2, etc"
-stock void OnGameUIUse(const char[] sOutput, int iCaller, int iActivator, float Delay, bool PressedAttack2 = false)
+stock void OnGameUIUse(int iCaller, int iActivator, bool PressedAttack2 = false)
 {
 	if(!g_bConfigLoaded) return;
 
