@@ -47,10 +47,6 @@ char g_sSteamIDs_short[MAXPLAYERS+1][32];
 int  g_iUserIDs[MAXPLAYERS+1];
 int g_iClientEbansNumber[MAXPLAYERS+1] = {0,... };
 
-#undef REQUIRE_PLUGIN
-#tryinclude <DynamicChannels> // https://github.com/Vauff/DynamicChannels
-#define REQUIRE_PLUGIN
-
 //Modules can be included as you wish. To do this, comment out or uncomment the corresponding module
 #include "entwatch/module_forwards.inc" //For the include EntWatch.inc to work correctly, use with module_eban and module_database
 #include "entwatch/module_chat.inc"
@@ -1444,7 +1440,7 @@ public void Event_OutValue(const char[] sOutput, int iCaller, int iActivator, fl
 //-------------------------------------------------------
 public Action Event_GameUI_LeftClick(const char[] sOutput, int iCaller, int iActivator, float Delay)
 {
-	OnGameUIUse(iCaller, iActivator, false);
+	OnGameUIUse(iActivator, false);
 	return Plugin_Continue;
 }
 
@@ -1453,7 +1449,7 @@ public Action Event_GameUI_LeftClick(const char[] sOutput, int iCaller, int iAct
 //-------------------------------------------------------
 public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iActivator, float Delay)
 {
-	OnGameUIUse(iCaller, iActivator, true);
+	OnGameUIUse(iActivator, true);
 	return Plugin_Continue;
 }
 
@@ -1595,7 +1591,7 @@ stock void Events_OnUseItem(class_ItemList ItemTest,int iActivator, int iAbility
 // Note: PressedAttack2 is true when the right mouse button is pressed
 // Note: If the HammerID used for "game_ui" is the same for Left and Right click (shared "game_ui"), the PressedAttack2 will be true
 // Note: That mean PressedAttack2 will be "buttonid2, mode2, etc"
-stock void OnGameUIUse(int iCaller, int iActivator, bool PressedAttack2 = false)
+stock void OnGameUIUse(int iActivator, bool PressedAttack2 = false)
 {
 	if(!g_bConfigLoaded) return;
 
