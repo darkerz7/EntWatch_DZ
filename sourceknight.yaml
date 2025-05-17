@@ -17,13 +17,6 @@ project:
       - source: /addons/sourcemod/scripting/include
         dest: /addons/sourcemod/scripting/include
 
-    - name: dynamicchannels
-      type: git
-      repo: https://github.com/Vauff/DynamicChannels
-      unpack:
-      - source: /scripting/include
-        dest: /addons/sourcemod/scripting/include
-
     - name: discordwebhookapi
       type: git
       repo: https://github.com/Sarrus1/DiscordWebhookAPI
