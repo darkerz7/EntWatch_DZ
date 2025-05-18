@@ -10,7 +10,6 @@
 ConVar	g_hCvar_DisplayEnabled,
 		g_hCvar_DisplayCooldowns,
 		g_hCvar_Admins_See,
-		g_hCvar_HUD_Channel,
 		g_hCvar_ZM_pry,
 		g_hCvar_MaxHudItemsCount,
 		g_hCvar_HudRotationDefault;
@@ -26,11 +25,8 @@ bool	g_bDispEnabled = true,
 		g_bDispCooldowns = true,
 		g_bAdminsSee = true,
 		g_bZombieNoItemPry = false;
-		bPluginDynamic = false,
-		bNative_Dynamic = false,
 		bNative_MsgTypeProtobuf = false;
 
-int		g_iHUDChannel = 5;
 int		g_iDefaultRotationTime = 3;
 int		g_iMaxItemsCount = 10;
 
@@ -47,7 +43,6 @@ stock void EWM_Hud_OnPluginStart()
 	g_hCvar_DisplayEnabled		= CreateConVar("entwatch_display_enable", "1", "Enable/Disable the display.", _, true, 0.0, true, 1.0);
 	g_hCvar_DisplayCooldowns	= CreateConVar("entwatch_display_cooldowns", "1", "Show/Hide the cooldowns on the display.", _, true, 0.0, true, 1.0);
 	g_hCvar_Admins_See			= CreateConVar("entwatch_admins_see", "1", "Enable/Disable admins see everything Items", _, true, 0.0, true, 1.0);
-	g_hCvar_HUD_Channel			= CreateConVar("entwatch_hud_channel", "5", "Change HUD Channel/Group Dynamic channel.", _, true, 0.0, true, 5.0);
 	g_hCvar_ZM_pry				= CreateConVar("entwatch_zm_noitem_pry", "0", "Enable/Disable zm pry human Items if zms without items", _, true, 0.0, true, 1.0);
 	g_hCvar_MaxHudItemsCount	= CreateConVar("entwatch_hud_items_count", "10", "Max/Default Items Count in hud to display.", _, true, 1.0, true, 10.0);
 	g_hCvar_HudRotationDefault	= CreateConVar("entwatch_hud_rotation_time_default", "3", "Default Rotation time in seconds for hud.", _, true, 1.0, true, 5.0);
@@ -55,7 +50,6 @@ stock void EWM_Hud_OnPluginStart()
 	g_bDispEnabled = GetConVarBool(g_hCvar_DisplayEnabled);
 	g_bDispCooldowns = GetConVarBool(g_hCvar_DisplayCooldowns);
 	g_bAdminsSee = GetConVarBool(g_hCvar_Admins_See);
-	g_iHUDChannel = GetConVarInt(g_hCvar_HUD_Channel);
 	g_bZombieNoItemPry = GetConVarBool(g_hCvar_ZM_pry);
 
 	RegConsoleCmd("sm_hud", EWM_Hud_Command_ToggleHUD);
@@ -66,7 +60,6 @@ stock void EWM_Hud_OnPluginStart()
 	HookConVarChange(g_hCvar_DisplayEnabled, Cvar_HUD_Changed);
 	HookConVarChange(g_hCvar_DisplayCooldowns, Cvar_HUD_Changed);
 	HookConVarChange(g_hCvar_Admins_See, Cvar_HUD_Changed);
-	HookConVarChange(g_hCvar_HUD_Channel, Cvar_HUD_Changed);
 	HookConVarChange(g_hCvar_ZM_pry, Cvar_HUD_Changed);
 	HookConVarChange(g_hCvar_MaxHudItemsCount, Cvar_HUD_Changed);
 	HookConVarChange(g_hCvar_HudRotationDefault, Cvar_HUD_Changed);
@@ -89,8 +82,6 @@ public void Cvar_HUD_Changed(ConVar convar, const char[] oldValue, const char[] 
 		g_bDispCooldowns = GetConVarBool(convar);
 	else if(convar==g_hCvar_Admins_See)
 		g_bAdminsSee = GetConVarBool(convar);
-	else if(convar==g_hCvar_HUD_Channel)
-		g_iHUDChannel = GetConVarInt(convar);
 	else if(convar==g_hCvar_ZM_pry)
 		g_bZombieNoItemPry = GetConVarBool(convar);
 	else if(convar==g_hCvar_MaxHudItemsCount)
@@ -113,31 +104,17 @@ public void EWM_Hud_OnAllPluginsLoaded()
 
 public void EWM_Hud_OnLibraryRemoved(const char[] name)
 {
-	if (strcmp(name, "DynamicChannels", false) == 0)
-	{
-		bPluginDynamic = false;
-		VerifyNatives_DynamicChannels();
-	}
+	// Nothing yet
 }
 
 public void EWM_Hud_OnLibraryAdded(const char[] name)
 {
-	if (strcmp(name, "DynamicChannels", false) == 0)
-	{
-		bPluginDynamic = true;
-		VerifyNatives_DynamicChannels();
-	}
+	// Nothing yet
 }
 
 stock VerifyNatives()
 {
-	VerifyNatives_DynamicChannels();
 	VerifyNative_MessageTypeProtobuf();
-}
-
-stock void VerifyNatives_DynamicChannels()
-{
-	bNative_Dynamic = bPluginDynamic && CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "GetDynamicChannel") == FeatureStatus_Available;
 }
 
 stock void VerifyNative_MessageTypeProtobuf()
@@ -232,13 +209,8 @@ public void EWM_Hud_OnMapStart()
 	}
 }
 
-public void EWM_Hud_DisplayCustomHUD(int client, int iHUDChannel, const char[] sMes_Names, const char[] sMes_NoNames)
+public void EWM_Hud_DisplayCustomHUD(int client, const char[] sMes_Names, const char[] sMes_NoNames)
 {
-#if defined _DynamicChannels_included_
-	if (bNative_Dynamic)
-		iHUDChannel = GetDynamicChannel(iHUDChannel);
-#endif
-
 	char msg[MAX_KeyHintText];
 	if (g_CSettings_Hud[client].Name)
 		Format(msg, sizeof(msg), "%s", sMes_Names);
@@ -334,13 +306,13 @@ public Action EWM_Hud_Timer_DisplayHUD(Handle timer, int client)
 			bool bShowZombiesHUD = (iCountZMItems > 0) && (g_bTeamOnly && iTeam == CS_TEAM_T);
 
 			if (bIsAdmin)
-				EWM_Hud_DisplayCustomHUD(i, g_iHUDChannel, sMes_Admins, sMes_Admins_woname);
+				EWM_Hud_DisplayCustomHUD(i, sMes_Admins, sMes_Admins_woname);
 			else if (bShowHumansHUD)
-				EWM_Hud_DisplayCustomHUD(i, g_iHUDChannel, sMes_Humans, sMes_Humans_woname);
+				EWM_Hud_DisplayCustomHUD(i, sMes_Humans, sMes_Humans_woname);
 			else if (bShowZombiesHUD)
-				EWM_Hud_DisplayCustomHUD(i, g_iHUDChannel, sMes_Zombies, sMes_Zombies_woname);
+				EWM_Hud_DisplayCustomHUD(i, sMes_Zombies, sMes_Zombies_woname);
 			else
-				EWM_Hud_DisplayCustomHUD(i, g_iHUDChannel, sMes_Admins, sMes_Admins_woname);
+				EWM_Hud_DisplayCustomHUD(i, sMes_Admins, sMes_Admins_woname);
 		}
 	}
 
