@@ -83,10 +83,6 @@ public void OnPluginStart()
 	if(g_ItemList == INVALID_HANDLE) g_ItemList = new ArrayList(512);
 	
 	if(g_TriggerArray == INVALID_HANDLE) g_TriggerArray = new ArrayList(512);
-
-	#if defined EW_MODULE_PHYSBOX
-	EWM_Physbox_OnPluginStart();
-	#endif
 	
 	//CVARs
 	g_hCvar_TeamOnly		= CreateConVar("entwatch_mode_teamonly", "1", "Enable/Disable team only mode.", _, true, 0.0, true, 1.0);
@@ -147,34 +143,9 @@ public void OnPluginStart()
 	//Hook Output OutValue
 	HookEntityOutput("math_counter", "OutValue", Event_OutValue);
 	
-	#if defined EW_MODULE_FORWARDS
-	EWM_Forwards_OnPluginStart();
+	#if defined EW_MODULE_PHYSBOX
+	EWM_Physbox_OnPluginStart();
 	#endif
-
-	// Fix late load
-	if(g_bLateLoad)
-	{
-		LoadConfig();
-		LoadScheme();
-
-		char sSteam32ID[32];
-		for (int i = 1; i <= MaxClients; i++)
-		{
-			if (!IsClientInGame(i) || IsFakeClient(i))
-				continue;
-
-			OnClientPutInServer(i);
-			OnClientConnected(i);
-
-			if (!IsClientAuthorized(i))
-				continue;
-
-			GetClientAuthId(i, AuthId_Steam2, sSteam32ID, sizeof(sSteam32ID));
-			OnClientAuthorized(i, sSteam32ID);
-			OnClientPostAdminCheck(i);
-		}
-	}
-	
 	#if defined EW_MODULE_EBAN
 	EWM_Eban_OnPluginStart();
 	#endif
@@ -208,20 +179,45 @@ public void OnPluginStart()
 	#if defined EW_MODULE_USE_PRIORITY
 	EWM_Use_Priority_OnPluginStart();
 	#endif
-	
 	#if defined EW_MODULE_CLANTAG
 	EWM_Clantag_OnPluginStart();
 	#endif
+	#if defined EW_MODULE_NATIVES
+	EWM_Natives_OnPluginStart();
+	#endif
+	#if defined EW_MODULE_FORWARDS
+	EWM_Forwards_OnPluginStart();
+	#endif
+
+	// Fix late load
+	if(g_bLateLoad)
+	{
+		LoadConfig();
+		LoadScheme();
+
+		char sSteam32ID[32];
+		for (int i = 1; i <= MaxClients; i++)
+		{
+			if (!IsClientInGame(i) || IsFakeClient(i))
+				continue;
+
+			OnClientPutInServer(i);
+			OnClientConnected(i);
+
+			if (!IsClientAuthorized(i))
+				continue;
+
+			GetClientAuthId(i, AuthId_Steam2, sSteam32ID, sizeof(sSteam32ID));
+			OnClientAuthorized(i, sSteam32ID);
+			OnClientPostAdminCheck(i);
+		}
+	}
 	
 	LoadTranslations("EntWatch_DZ.phrases");
 	LoadTranslations("common.phrases");
 	LoadTranslations("clientprefs.phrases");
 	
 	AutoExecConfig(true, "EntWatch_DZ");
-	
-	#if defined EW_MODULE_NATIVES
-	EWM_Natives_OnPluginStart();
-	#endif
 }
 
 public void OnAllPluginsLoaded()
@@ -753,10 +749,10 @@ stock void LoadConfig(bool bSecondLoad = false)
 			KvGetString(hKeyValues, "forcedrop", sBuffer_temp, sizeof(sBuffer_temp), "false");
 			NewItem.ForceDrop = strcmp(sBuffer_temp, "true", false) == 0;
 			
-			KvGetString(hKeyValues, "chat", sBuffer_temp, sizeof(sBuffer_temp), "false");
+			KvGetString(hKeyValues, "chat", sBuffer_temp, sizeof(sBuffer_temp), "true");
 			NewItem.Chat = strcmp(sBuffer_temp, "true", false) == 0;
 			
-			KvGetString(hKeyValues, "chat_uses", sBuffer_temp, sizeof(sBuffer_temp), "false");
+			KvGetString(hKeyValues, "chat_uses", sBuffer_temp, sizeof(sBuffer_temp), "true");
 			NewItem.Chat_Uses = strcmp(sBuffer_temp, "true", false) == 0;
 			
 			KvGetString(hKeyValues, "hud", sBuffer_temp, sizeof(sBuffer_temp), "false");
@@ -1583,7 +1579,7 @@ stock void Events_OnUseItem(class_ItemList ItemTest,int iActivator, int iAbility
 #endif
 
 #if defined EW_MODULE_CHAT
-	if(ItemTest.Chat || ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+	if(ItemTest.Chat && ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
 #endif
 }
 
