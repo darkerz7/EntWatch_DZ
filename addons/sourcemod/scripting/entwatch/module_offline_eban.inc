@@ -16,7 +16,7 @@ class_Offline_Eban g_aMenuBuffer[MAXPLAYERS+1];
 
 stock void EWM_OfflineEban_OnPluginStart()
 {
-	g_OfflineArray = new ArrayList(512);
+	if(g_OfflineArray == INVALID_HANDLE) g_OfflineArray = new ArrayList(512);
 
 	g_hCvar_OfflineClearRecords		= CreateConVar("entwatch_offline_clear_time", "30", "Time during which data is stored (1-240)", _, true, 1.0, true, 240.0);
 	g_hCvar_Admin_OfflineLong		= CreateConVar("entwatch_offline_long", "720", "Maximum time in minutes that an admin is able to offline eban.", _, true, 1.0);
