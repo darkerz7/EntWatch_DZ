@@ -5,6 +5,7 @@
 #define MAX_SizeStringForItem 40
 #define MAX_KeyHintText 254
 #define TIMEROTATIONHUD 3
+#define MAX_HUD_BUFFERS 6  // Number of static buffers needed (Humans, Humans_wo_name, Zombies, Zombies_wo_name, Admins, Admins_wo_name)
 
 // Purpose: Module settings
 ConVar	g_hCvar_DisplayEnabled,
@@ -24,17 +25,68 @@ Cookie	g_cCookie_Display,
 bool	g_bDispEnabled = true,
 		g_bDispCooldowns = true,
 		g_bAdminsSee = true,
-		g_bZombieNoItemPry = false;
+		g_bZombieNoItemPry = false,
 		bNative_MsgTypeProtobuf = false;
 
 int		g_iDefaultRotationTime = 3;
 int		g_iMaxItemsCount = 10;
+
+// Cache for HUD calculations
+int g_iCachedItemCounts[3]; // [0] = Humans, [1] = Zombies, [2] = Total
+bool g_bCachedHUDStates[2]; // [0] = Humans, [1] = Zombies
+int g_iCachedMaxLists[3]; // [0] = Humans, [1] = Zombies, [2] = Total
+bool g_bCacheDirty = true;
+
+// Static buffers for string operations
+char g_sStaticBuffers[MAX_HUD_BUFFERS][MAX_KeyHintText]; // Reusable buffers for HUD strings
 
 int			g_iRotation[MAXPLAYERS+1][3][2]; // [client][0] - Humans, [client][1] - Zombies, [client][2] - Admins, [x][0] - count Items, [client][x][1] - current # list
 ArrayList	g_iHItemsArray;
 ArrayList	g_iZMItemsArray;
 
 class_ClientSettings_Hud g_CSettings_Hud[MAXPLAYERS+1];
+
+stock void EWM_Hud_OnClientPutInServer(int iClient)
+{
+	if (!IsClientSourceTV(iClient))
+		return;
+
+	// Initialize HUD settings for SourceTV
+	g_CSettings_Hud[iClient].Display = true;
+	g_CSettings_Hud[iClient].Name = true;
+	g_CSettings_Hud[iClient].ItemsCount = g_iMaxItemsCount;
+	g_CSettings_Hud[iClient].RotationTime = g_iDefaultRotationTime;
+}
+
+void UpdateCache()
+{
+	if (!g_bCacheDirty)
+		return;
+
+	int iCountHItems = g_iHItemsArray.Length;
+	int iCountZMItems = g_iZMItemsArray.Length;
+	int iCountAItems = iCountHItems + iCountZMItems;
+
+	g_iCachedItemCounts[0] = iCountHItems;
+	g_iCachedItemCounts[1] = iCountZMItems;
+	g_iCachedItemCounts[2] = iCountAItems;
+
+	g_bCachedHUDStates[0] = (iCountHItems > 0) && (g_bTeamOnly || (g_bZombieNoItemPry && iCountZMItems <= 0));
+	g_bCachedHUDStates[1] = (iCountZMItems > 0) && g_bTeamOnly;
+
+	// Pre-calculate max lists for default item count
+	float fDefaultItemCount = float(g_iMaxItemsCount);
+	g_iCachedMaxLists[0] = RoundToCeil(float(iCountHItems) / fDefaultItemCount);
+	g_iCachedMaxLists[1] = RoundToCeil(float(iCountZMItems) / fDefaultItemCount);
+	g_iCachedMaxLists[2] = RoundToCeil(float(iCountAItems) / fDefaultItemCount);
+
+	g_bCacheDirty = false;
+}
+
+void MarkCacheDirty()
+{
+	g_bCacheDirty = true;
+}
 
 stock void EWM_Hud_OnPluginStart()
 {
@@ -95,6 +147,8 @@ public void Cvar_HUD_Changed(ConVar convar, const char[] oldValue, const char[] 
 
 	if (g_iDefaultRotationTime > TIMEROTATIONHUD)
 		g_iDefaultRotationTime = TIMEROTATIONHUD;
+
+	MarkCacheDirty();
 }
 
 public void EWM_Hud_OnAllPluginsLoaded()
@@ -254,18 +308,22 @@ public Action EWM_Hud_Timer_DisplayHUD(Handle timer, int client)
 				g_iZMItemsArray.Push(i);
 		}
 	}
-		
-	int iCountHItems = g_iHItemsArray.Length;
-	int iCountZMItems = g_iZMItemsArray.Length;
-	int iCountAItems = iCountHItems + iCountZMItems;
+
+	// Update cache with new item counts
+	MarkCacheDirty();
+	UpdateCache();
 
 	// No items to display
-	if (iCountHItems == 0 && iCountZMItems == 0)
+	if (g_iCachedItemCounts[2] == 0)
 		return Plugin_Continue;
 
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if (!IsClientInGame(i) || IsFakeClient(i) || !g_CSettings_Hud[i].Display)
+		if (!IsClientInGame(i))
+			continue;
+
+		// Skip normal bots but keep SourceTV, and check Display setting for non-SourceTV clients
+		if ((IsFakeClient(i) && !IsClientSourceTV(i)) || (!IsClientSourceTV(i) && !g_CSettings_Hud[i].Display))
 		{
 			iRotationTime[i] = 0;
 			continue;
@@ -279,40 +337,43 @@ public Action EWM_Hud_Timer_DisplayHUD(Handle timer, int client)
 			iRotationTime[i] = 0;
 			bRotation = true;
 		}
-					
-		float fItemCount = float(g_CSettings_Hud[i].ItemsCount);
-		int iMaxHList = RoundToCeil(float(iCountHItems) / fItemCount);
-		int iMaxZMList = RoundToCeil(float(iCountZMItems) / fItemCount);
-		int iMaxAList = RoundToCeil(float(iCountAItems) / fItemCount);
 
-		UpdateRotation(i, 0, iCountHItems, iMaxHList, bRotation);
-		UpdateRotation(i, 1, iCountZMItems, iMaxZMList, bRotation);
-		UpdateRotation(i, 2, iCountAItems, iMaxAList, bRotation);
+		// Use cached max lists if client uses default item count
+		int iMaxHList = (g_CSettings_Hud[i].ItemsCount == g_iMaxItemsCount) ? g_iCachedMaxLists[0] : RoundToCeil(float(g_iCachedItemCounts[0]) / float(g_CSettings_Hud[i].ItemsCount));
+		int iMaxZMList = (g_CSettings_Hud[i].ItemsCount == g_iMaxItemsCount) ? g_iCachedMaxLists[1] : RoundToCeil(float(g_iCachedItemCounts[1]) / float(g_CSettings_Hud[i].ItemsCount));
+		int iMaxAList = (g_CSettings_Hud[i].ItemsCount == g_iMaxItemsCount) ? g_iCachedMaxLists[2] : RoundToCeil(float(g_iCachedItemCounts[2]) / float(g_CSettings_Hud[i].ItemsCount));
 
-		char[] sMes_Humans = new char[MAX_KeyHintText];
-		char[] sMes_Humans_woname = new char[MAX_KeyHintText];
-		char[] sMes_Zombies = new char[MAX_KeyHintText];
-		char[] sMes_Zombies_woname = new char[MAX_KeyHintText];
-		char[] sMes_Admins = new char[MAX_KeyHintText];
-		char[] sMes_Admins_woname = new char[MAX_KeyHintText];
+		UpdateRotation(i, 0, g_iCachedItemCounts[0], iMaxHList, bRotation);
+		UpdateRotation(i, 1, g_iCachedItemCounts[1], iMaxZMList, bRotation);
+		UpdateRotation(i, 2, g_iCachedItemCounts[2], iMaxAList, bRotation);
 
-		ConstructHudStrings(i, iCountHItems, iMaxHList, iCountZMItems, iMaxZMList, iCountAItems, iMaxAList, sMes_Humans, sMes_Humans_woname, sMes_Zombies, sMes_Zombies_woname, sMes_Admins, sMes_Admins_woname);
+		// Clear static buffers before use
+		for (int j = 0; j < MAX_HUD_BUFFERS; j++)
+		{
+			g_sStaticBuffers[j][0] = '\0';
+		}
+
+		ConstructHudStrings(i, g_iCachedItemCounts[0], iMaxHList, g_iCachedItemCounts[1], iMaxZMList, g_iCachedItemCounts[2], iMaxAList, g_sStaticBuffers[0], g_sStaticBuffers[1], g_sStaticBuffers[2], g_sStaticBuffers[3], g_sStaticBuffers[4], g_sStaticBuffers[5]);
 
 		// Always display full information to the SourceTV
-		if (!IsClientSourceTV(i))
+		if (IsClientSourceTV(i))
+		{
+			EWM_Hud_DisplayCustomHUD(i, g_sStaticBuffers[4], g_sStaticBuffers[5]);
+		}
+		else
 		{
 			bool bIsAdmin = g_bAdminsSee && g_bIsAdmin[i];
-			bool bShowHumansHUD = (iCountHItems > 0) && ((g_bTeamOnly && iTeam == CS_TEAM_CT) || (g_bZombieNoItemPry && iCountZMItems <= 0 && iTeam == CS_TEAM_T));
-			bool bShowZombiesHUD = (iCountZMItems > 0) && (g_bTeamOnly && iTeam == CS_TEAM_T);
+			bool bShowHumansHUD = g_bCachedHUDStates[0] && iTeam == CS_TEAM_CT;
+			bool bShowZombiesHUD = g_bCachedHUDStates[1] && iTeam == CS_TEAM_T;
 
 			if (bIsAdmin)
-				EWM_Hud_DisplayCustomHUD(i, sMes_Admins, sMes_Admins_woname);
+				EWM_Hud_DisplayCustomHUD(i, g_sStaticBuffers[4], g_sStaticBuffers[5]);
 			else if (bShowHumansHUD)
-				EWM_Hud_DisplayCustomHUD(i, sMes_Humans, sMes_Humans_woname);
+				EWM_Hud_DisplayCustomHUD(i, g_sStaticBuffers[0], g_sStaticBuffers[1]);
 			else if (bShowZombiesHUD)
-				EWM_Hud_DisplayCustomHUD(i, sMes_Zombies, sMes_Zombies_woname);
+				EWM_Hud_DisplayCustomHUD(i, g_sStaticBuffers[2], g_sStaticBuffers[3]);
 			else
-				EWM_Hud_DisplayCustomHUD(i, sMes_Admins, sMes_Admins_woname);
+				EWM_Hud_DisplayCustomHUD(i, g_sStaticBuffers[4], g_sStaticBuffers[5]);
 		}
 	}
 
@@ -351,8 +412,8 @@ void EWM_Hud_Construct_String(int iClient, char[] sResult, int iSizeResult, char
 		return;
 
 	int count = g_CSettings_Hud[iClient].ItemsCount;
-	char[][] sBuf = new char[count][MAX_SizeStringForItem];
-	char[][] sBuf_woname = new char[count][MAX_SizeStringForItem];
+	static char sBuf[MAX_ShowHudItems][MAX_SizeStringForItem];
+	static char sBuf_woname[MAX_ShowHudItems][MAX_SizeStringForItem];
 	int iLastIndex = (g_iRotation[iClient][iType][1] + 1) * count;
 	if (iLastIndex > iCountItems)
 		iLastIndex = iCountItems;
