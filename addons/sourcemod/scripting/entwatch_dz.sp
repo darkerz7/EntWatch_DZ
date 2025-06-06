@@ -30,9 +30,7 @@ ConVar	g_hCvar_TeamOnly,
 //-------------------------------------------------------
 bool	g_bTeamOnly = true,
 		g_bBlockEPick = true,
-		g_bGlobalBlock = false,
-		g_bLowerMapName = false,
-		g_bSMDirectory = false;
+		g_bGlobalBlock = false;
 float	g_fDelayUse = 3.0;
 
 //-------------------------------------------------------
@@ -119,15 +117,12 @@ public void OnPluginStart()
 	HookConVarChange(g_hCvar_Delay_Use, Cvar_Main_Changed);
 	HookConVarChange(g_hCvar_BlockEPick, Cvar_Main_Changed);
 	HookConVarChange(g_hCvar_GlobalBlock, Cvar_Main_Changed);
-	HookConVarChange(g_hCvar_LowerMapName, Cvar_Main_Changed);
 	
 	//Initialize values
 	g_bTeamOnly = GetConVarBool(g_hCvar_TeamOnly);
 	g_fDelayUse = GetConVarFloat(g_hCvar_Delay_Use);
 	g_bBlockEPick = GetConVarBool(g_hCvar_BlockEPick);
 	g_bGlobalBlock = GetConVarBool(g_hCvar_GlobalBlock);
-	g_bLowerMapName = GetConVarBool(g_hCvar_LowerMapName);
-	g_bSMDirectory = GetConVarBool(g_hCvar_Directory);
 	
 	//Hook Events
 	HookEvent("player_disconnect", Event_ClientDisconnect, EventHookMode_Pre);
@@ -189,8 +184,7 @@ public void OnPluginStart()
 	EWM_Forwards_OnPluginStart();
 	#endif
 
-	// Fix late load
-	if(g_bLateLoad)
+	if (g_bLateLoad)
 	{
 		LoadConfig();
 		LoadScheme();
@@ -198,7 +192,7 @@ public void OnPluginStart()
 		char sSteam32ID[32];
 		for (int i = 1; i <= MaxClients; i++)
 		{
-			if (!IsClientInGame(i) || IsFakeClient(i))
+			if (!IsClientInGame(i) || (IsFakeClient(i) && !IsClientSourceTV(i)))
 				continue;
 
 			OnClientPutInServer(i);
@@ -267,10 +261,6 @@ public void Cvar_Main_Changed(ConVar convar, const char[] oldValue, const char[]
 		g_bBlockEPick = GetConVarBool(convar);
 	else if (convar == g_hCvar_GlobalBlock)
 		g_bGlobalBlock = GetConVarBool(convar);
-	else if (convar == g_hCvar_LowerMapName)
-		g_bLowerMapName = GetConVarBool(convar);
-	else if (convar == g_hCvar_Directory)
-		g_bSMDirectory = GetConVarBool(convar);
 }
 
 public void OnMapStart()
@@ -432,6 +422,14 @@ stock void EWM_Drop_Forward(Handle hEvent)
 
 public void OnClientPutInServer(int iClient)
 {
+	#if defined EW_MODULE_HUD
+	EWM_Hud_OnClientPutInServer(iClient);
+	#endif
+
+	// No need to continue for SourceTV
+	if (IsClientSourceTV(iClient))
+		return;
+
 	#if defined EW_MODULE_EBAN
 	EWM_Eban_CleanData_Client(iClient, false);
 	#endif
@@ -646,7 +644,7 @@ stock void LoadConfig(bool bSecondLoad = false)
 	Handle hKeyValues = CreateKeyValues("entities");
 	char sBuffer_path[PLATFORM_MAX_PATH * 2], sBuffer_path_override[PLATFORM_MAX_PATH * 2], sBuffer_temp[32];
 
-	if (g_bSMDirectory)
+	if (g_hCvar_Directory.BoolValue)
 	{
 		BuildPath(Path_SM, sBuffer_path, sizeof(sBuffer_path), "configs/entwatch/maps/%s.cfg", g_sMap);
 		BuildPath(Path_SM, sBuffer_path_override, sizeof(sBuffer_path_override), "configs/entwatch/maps/%s_override.cfg", g_sMap);
@@ -659,7 +657,7 @@ stock void LoadConfig(bool bSecondLoad = false)
 	// No configuration was found with the exact same name in both uppercase and lowercase combinations.
 	// Attempt to load the configuration using the lowercase version of the map name. (Usefull for linux srcds)
 	// Dependencies cvar: entwatch_lower_mapname > 0
-	if (!bSecondLoad && g_bLowerMapName && !FileExists(sBuffer_path_override) && !FileExists(sBuffer_path))
+	if (!bSecondLoad && g_hCvar_LowerMapName.BoolValue && !FileExists(sBuffer_path_override) && !FileExists(sBuffer_path))
 	{
 		LoadConfig(true);
 		CloseHandle(hKeyValues);
@@ -854,7 +852,7 @@ stock void LoadScheme()
 			ConfigFile[16];
 
 	GetConVarString(g_hCvar_Scheme, ConfigFile, sizeof(ConfigFile));
-	if (g_bSMDirectory)
+	if (g_hCvar_Directory.BoolValue)
 		BuildPath(Path_SM, ConfigFullPath, sizeof(ConfigFullPath), "configs/entwatch/scheme/%s.cfg", ConfigFile);
 	else
 		FormatEx(ConfigFullPath, sizeof(ConfigFullPath), "cfg/sourcemod/entwatch/scheme/%s.cfg", ConfigFile);
