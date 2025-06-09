@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> For versions 3.DZ.21 and 3.DZ.78: If you are using an older version of the plugin, please perform the migration by [following the provided steps](#migration).
+
 # The last commit that supports CS:GO Legasy
 [GitHub 06d7b39 (Aug 1 2024)](https://github.com/darkerz7/EntWatch_DZ/tree/06d7b392b74fd3224783442994e7684815efd38f)
 # Installation:
@@ -201,6 +204,32 @@ ALTER TABLE `EntWatch_Old_Eban` RENAME TO `EntWatch_tmp`;
 CREATE TABLE IF NOT EXISTS `EntWatch_Old_Eban`(	`id` INTEGER PRIMARY KEY AUTOINCREMENT, `client_name` varchar(32) NOT NULL, `client_steamid` varchar(64) NOT NULL, `admin_name` varchar(32) NOT NULL, `admin_steamid` varchar(64) NOT NULL, `server` varchar(64), `duration` INTEGER NOT NULL, `timestamp_issued` INTEGER NOT NULL, `reason` varchar(64), `reason_unban` varchar(64), `admin_name_unban` varchar(32), `admin_steamid_unban` varchar(64), `timestamp_unban` INTEGER);
 INSERT INTO `EntWatch_Old_Eban` SELECT * FROM `EntWatch_tmp`;
 DROP TABLE `EntWatch_tmp`;
+```
+
+## 3.DZ.77 to 3.DZ.78
+
+### MYSQL
+```sql
+-- MySQL version
+ALTER TABLE `EntWatch_Current_Eban` ADD INDEX `idx_steamid_search` (`client_steamid`, `admin_steamid`);
+ALTER TABLE `EntWatch_Current_Eban` ADD INDEX `idx_expiry_sort` (`timestamp_issued`, `duration`);
+ALTER TABLE `EntWatch_Current_Eban` ADD INDEX `idx_server_expiry` (`server`, `duration`, `timestamp_issued`);
+
+ALTER TABLE `EntWatch_Old_Eban` ADD INDEX `idx_steamid_search` (`client_steamid`, `admin_steamid`);
+ALTER TABLE `EntWatch_Old_Eban` ADD INDEX `idx_expiry_sort` (`timestamp_issued`, `duration`);
+ALTER TABLE `EntWatch_Old_Eban` ADD INDEX `idx_server_expiry` (`server`, `duration`, `timestamp_issued`);
+```
+
+### SQLITE
+```sql
+-- SQLite version
+CREATE INDEX IF NOT EXISTS `idx_steamid_search` ON `EntWatch_Current_Eban` (`client_steamid`, `admin_steamid`);
+CREATE INDEX IF NOT EXISTS `idx_expiry_sort` ON `EntWatch_Current_Eban` (`timestamp_issued`, `duration`);
+CREATE INDEX IF NOT EXISTS `idx_server_expiry` ON `EntWatch_Current_Eban` (`server`, `duration`, `timestamp_issued`);
+
+CREATE INDEX IF NOT EXISTS `idx_steamid_search` ON `EntWatch_Old_Eban` (`client_steamid`, `admin_steamid`);
+CREATE INDEX IF NOT EXISTS `idx_expiry_sort` ON `EntWatch_Old_Eban` (`timestamp_issued`, `duration`);
+CREATE INDEX IF NOT EXISTS `idx_server_expiry` ON `EntWatch_Old_Eban` (`server`, `duration`, `timestamp_issued`); 
 ```
 
 # Recommended commands to add to bspconvar whitelist

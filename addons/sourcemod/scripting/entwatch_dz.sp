@@ -1577,7 +1577,7 @@ stock void Events_OnUseItem(class_ItemList ItemTest,int iActivator, int iAbility
 #endif
 
 #if defined EW_MODULE_CHAT
-	if(ItemTest.Chat && ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+	if(ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
 #endif
 }
 
