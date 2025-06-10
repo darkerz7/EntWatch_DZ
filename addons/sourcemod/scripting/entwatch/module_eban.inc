@@ -21,7 +21,10 @@ class_ClientSettings_EBan g_EbanClients[MAXPLAYERS+1];
 bool 	g_bKeepExpiredBans,
 		g_bUseReasonMenu,
 		g_bDropItemOnEBan,
-		g_bEbanInvalidSteamID;
+		g_bEbanInvalidSteamID,
+		g_bSqlite = false,
+		g_bFirstTimer = true;
+
 
 Database g_hEbanDB;
 int g_iDBStatus = 0, // 0 - Def., 1 - Reconnect, 2 - Unknown Driver, 3 - Create Table, 4 - Ready to Query
@@ -73,7 +76,9 @@ stock void EWM_Eban_OnPluginStart()
 	RegAdminCmd("sm_ebanlist", EWM_Eban_Command_EBanlist, ADMFLAG_BAN);
 
 	Database.Connect(EWM_Eban_ConnectCallBack, EW_EBAN_ENTWATCH_SECTION);
+
 	//Timer Checker
+	g_bFirstTimer = true;
 	CreateTimer(30.0, EWM_Eban_Timer_Checker, _, TIMER_REPEAT);
 }
 
@@ -84,23 +89,8 @@ stock bool IsDBConnected()
 
 stock void EWM_Eban_OnClientPostAdminCheck(int iClient)
 {
-	if(g_iDBStatus != 4)
-		return;
-
-	char sTQuery[1024];
-	FormatEx(sTQuery, sizeof(sTQuery),
-		"SELECT SUM(cnt) AS total_count " ...
-		"FROM ( " ...
-		"SELECT COUNT(*) AS cnt " ...
-		"FROM `EntWatch_Current_Eban` " ...
-		"WHERE `client_steamid` = '%s' " ...
-		"UNION ALL " ...
-		"SELECT COUNT(*) AS cnt " ...
-		"FROM `EntWatch_Old_Eban` " ...
-		"WHERE `client_steamid` = '%s' " ...
-		") " ...
-		"AS counts", g_sSteamIDs[iClient], g_sSteamIDs[iClient]);
-	SQL_TQuery(g_hEbanDB, EWM_Eban_SQLGetEbansNumber_Current, sTQuery, g_iUserIDs[iClient]);
+	if (!g_bFirstTimer && !g_EbanClients[iClient].Verified)
+		EWM_Eban_Update_Client(iClient);
 }
 
 void Cvar_EBAN_Changed(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -152,6 +142,7 @@ void EWM_Eban_CreateTables()
 	g_hEbanDB.Driver.GetIdentifier(sConnectDriverDB, sizeof(sConnectDriverDB));
 	if(strcmp(sConnectDriverDB, "mysql") == 0)
 	{
+		g_bSqlite = false;
 		g_iDBStatus = 3;
 		//Create MySQL Tables
 		char sSQL_Query[1024];
@@ -169,8 +160,18 @@ void EWM_Eban_CreateTables()
 																										`admin_name_unban` varchar(32), \
 																										`admin_steamid_unban` varchar(64), \
 																										`timestamp_unban` int, \
-																										PRIMARY KEY (id)) CHARACTER SET %s COLLATE %s;", EW_EBAN_DB_ENTWATCH_CHARSET, EW_EBAN_DB_ENTWATCH_COLLATION);
+																										PRIMARY KEY (id), \
+																										INDEX `idx_steamid_search` (`client_steamid`, `admin_steamid`), \
+																										INDEX `idx_expiry_sort` (`timestamp_issued`, `duration`), \
+																										INDEX `idx_server_expiry` (`server`, `duration`, `timestamp_issued`)) CHARACTER SET %s COLLATE %s;", EW_EBAN_DB_ENTWATCH_CHARSET, EW_EBAN_DB_ENTWATCH_COLLATION);
 		T_CreateTables.AddQuery(sSQL_Query);
+
+		FormatEx(sSQL_Query, sizeof(sSQL_Query), 
+			"ALTER TABLE `EntWatch_Current_Eban` ADD INDEX IF NOT EXISTS `idx_steamid_search` (`client_steamid`, `admin_steamid`), \
+			ADD INDEX IF NOT EXISTS `idx_expiry_sort` (`timestamp_issued`, `duration`), \
+			ADD INDEX IF NOT EXISTS `idx_server_expiry` (`server`, `duration`, `timestamp_issued`);");
+		T_CreateTables.AddQuery(sSQL_Query);
+
 		FormatEx(sSQL_Query, sizeof(sSQL_Query), "CREATE TABLE IF NOT EXISTS `EntWatch_Old_Eban`(	`id` int(10) unsigned NOT NULL auto_increment, \
 																									`client_name` varchar(32) NOT NULL, \
 																									`client_steamid` varchar(64) NOT NULL, \
@@ -184,11 +185,22 @@ void EWM_Eban_CreateTables()
 																									`admin_name_unban` varchar(32), \
 																									`admin_steamid_unban` varchar(64), \
 																									`timestamp_unban` int, \
-																									PRIMARY KEY (id)) CHARACTER SET %s COLLATE %s;", EW_EBAN_DB_ENTWATCH_CHARSET, EW_EBAN_DB_ENTWATCH_COLLATION);
+																									PRIMARY KEY (id), \
+																									INDEX `idx_steamid_search` (`client_steamid`, `admin_steamid`), \
+																									INDEX `idx_expiry_sort` (`timestamp_issued`, `duration`), \
+																									INDEX `idx_server_expiry` (`server`, `duration`, `timestamp_issued`)) CHARACTER SET %s COLLATE %s;", EW_EBAN_DB_ENTWATCH_CHARSET, EW_EBAN_DB_ENTWATCH_COLLATION);
 		T_CreateTables.AddQuery(sSQL_Query);
+
+		FormatEx(sSQL_Query, sizeof(sSQL_Query), 
+			"ALTER TABLE `EntWatch_Old_Eban` ADD INDEX IF NOT EXISTS `idx_steamid_search` (`client_steamid`, `admin_steamid`), \
+			ADD INDEX IF NOT EXISTS `idx_expiry_sort` (`timestamp_issued`, `duration`), \
+			ADD INDEX IF NOT EXISTS `idx_server_expiry` (`server`, `duration`, `timestamp_issued`);");
+		T_CreateTables.AddQuery(sSQL_Query);
+
 		SQL_ExecuteTransaction(g_hEbanDB, T_CreateTables, EWM_Eban_SQLCreateTables_Success, EWM_Eban_SQLCreateTables_Error, _, DBPrio_High);
 	} else if(strcmp(sConnectDriverDB, "sqlite") == 0)
 	{
+		g_bSqlite = true;
 		g_iDBStatus = 3;
 		//Create SQLite Tables
 		char sSQL_Query[1024];
@@ -206,7 +218,21 @@ void EWM_Eban_CreateTables()
 																										`admin_name_unban` varchar(32), \
 																										`admin_steamid_unban` varchar(64), \
 																										`timestamp_unban` INTEGER) CHARACTER SET %s COLLATE %s;", EW_EBAN_DB_ENTWATCH_CHARSET, EW_EBAN_DB_ENTWATCH_COLLATION);
-		T_CreateTables.AddQuery(sSQL_Query);																							
+		T_CreateTables.AddQuery(sSQL_Query);
+
+		FormatEx(sSQL_Query, sizeof(sSQL_Query),
+			"CREATE INDEX IF NOT EXISTS `idx_steamid_search` ON `EntWatch_Current_Eban` (`client_steamid`, `admin_steamid`);");
+		T_CreateTables.AddQuery(sSQL_Query);
+
+		FormatEx(sSQL_Query, sizeof(sSQL_Query),
+			"CREATE INDEX IF NOT EXISTS `idx_expiry_sort` ON `EntWatch_Current_Eban` (`timestamp_issued`, `duration`);");
+		T_CreateTables.AddQuery(sSQL_Query);
+
+		FormatEx(sSQL_Query, sizeof(sSQL_Query),
+			"CREATE INDEX IF NOT EXISTS `idx_server_expiry` ON `EntWatch_Current_Eban` (`server`, `duration`, `timestamp_issued`);");
+		T_CreateTables.AddQuery(sSQL_Query);
+
+
 		FormatEx(sSQL_Query, sizeof(sSQL_Query), "CREATE TABLE IF NOT EXISTS `EntWatch_Old_Eban`(	`id` INTEGER PRIMARY KEY AUTOINCREMENT, \
 																									`client_name` varchar(32) NOT NULL, \
 																									`client_steamid` varchar(64) NOT NULL, \
@@ -221,6 +247,19 @@ void EWM_Eban_CreateTables()
 																									`admin_steamid_unban` varchar(64), \
 																									`timestamp_unban` INTEGER) CHARACTER SET %s COLLATE %s;", EW_EBAN_DB_ENTWATCH_CHARSET, EW_EBAN_DB_ENTWATCH_COLLATION);
 		T_CreateTables.AddQuery(sSQL_Query);
+
+		FormatEx(sSQL_Query, sizeof(sSQL_Query),
+			"CREATE INDEX IF NOT EXISTS `idx_steamid_search` ON `EntWatch_Old_Eban` (`client_steamid`, `admin_steamid`);");
+		T_CreateTables.AddQuery(sSQL_Query);
+
+		FormatEx(sSQL_Query, sizeof(sSQL_Query),
+			"CREATE INDEX IF NOT EXISTS `idx_expiry_sort` ON `EntWatch_Old_Eban` (`timestamp_issued`, `duration`);");
+		T_CreateTables.AddQuery(sSQL_Query);
+
+		FormatEx(sSQL_Query, sizeof(sSQL_Query),
+			"CREATE INDEX IF NOT EXISTS `idx_server_expiry` ON `EntWatch_Old_Eban` (`server`, `duration`, `timestamp_issued`);");
+		T_CreateTables.AddQuery(sSQL_Query);
+
 		SQL_ExecuteTransaction(g_hEbanDB, T_CreateTables, EWM_Eban_SQLCreateTables_Success, EWM_Eban_SQLCreateTables_Error, _, DBPrio_High);
 	} else
 	{
@@ -251,20 +290,6 @@ void EWM_Eban_SQLCreateTables_Error(Database hDatabase, any Data, int iNumQuerie
 	Call_PushString(sError);
 	Call_Finish();
 	#endif
-}
-
-void EWM_Eban_SQLGetEbansNumber_Current(Handle hDatabase, Handle hResults, const char[] sError, int userid)
-{
-	if(hDatabase == null || hResults == null || sError[0])
-	{
-		LogError("[EBan DB] SQL Get Ebans Number Error: %s", sError);
-		return;
-	}
-
-	int iClient = GetClientOfUserId(userid);
-	if(iClient < 1) return;
-
-	if (SQL_FetchRow(hResults)) g_iClientEbansNumber[iClient] = SQL_FetchInt(hResults, 0);
 }
 
 // Main function of player e-ban
@@ -532,6 +557,7 @@ void EWM_Eban_Update_Client(int iClient)
 	if (IsFakeClient(iClient))
 		return;
 
+	// Check for invalid SteamID
 	if (g_bEbanInvalidSteamID && (strncmp(g_sSteamIDs[iClient][6], "ID_", 3) == 0 || strncmp(g_sSteamIDs_short[iClient][0], "ID_", 3) == 0))
 	{
 		g_EbanClients[iClient].Verified = true;
@@ -539,11 +565,45 @@ void EWM_Eban_Update_Client(int iClient)
 		return;
 	}
 
+	// Skip database query if client is already verified and banned
+	if (g_EbanClients[iClient].Verified && g_EbanClients[iClient].Banned)
+		return;
+
 	if (IsDBConnected())
 	{
 		char sTQuery[1024];
-		FormatEx(sTQuery, sizeof(sTQuery), "SELECT `admin_name`, `admin_steamid`, `duration`, `timestamp_issued`, `reason` FROM `EntWatch_Current_Eban` \
-												WHERE `client_steamid`='%s' and `server`='%s'", g_sSteamIDs[iClient], g_SchemeConfig.Server_Name);
+		if (!g_bSqlite)
+		{
+			FormatEx(sTQuery, sizeof(sTQuery), 
+				"SELECT c.`admin_name`, c.`admin_steamid`, c.`duration`, c.`timestamp_issued`, c.`reason`, " ...
+				"COUNT(current_bans.id) + COUNT(old_bans.id) AS total_ebans " ...
+				"FROM (SELECT * FROM `EntWatch_Current_Eban` USE INDEX (`idx_steamid_search`, `idx_expiry_sort`) " ...
+				"WHERE `client_steamid` = '%s' AND `server` = '%s' " ...
+				"UNION ALL " ...
+				"SELECT * FROM `EntWatch_Old_Eban` USE INDEX (`idx_steamid_search`, `idx_expiry_sort`) " ...
+				"WHERE `client_steamid` = '%s' AND `server` = '%s') c " ...
+				"LEFT JOIN `EntWatch_Current_Eban` current_bans ON current_bans.`client_steamid` = '%s' " ...
+				"LEFT JOIN `EntWatch_Old_Eban` old_bans ON old_bans.`client_steamid` = '%s' " ...
+				"GROUP BY c.id " ...
+				"ORDER BY c.`timestamp_issued` DESC LIMIT 1", 
+				g_sSteamIDs[iClient], g_SchemeConfig.Server_Name, g_sSteamIDs[iClient], g_SchemeConfig.Server_Name, g_sSteamIDs[iClient], g_sSteamIDs[iClient]);
+		}
+		else
+		{
+			FormatEx(sTQuery, sizeof(sTQuery), 
+				"SELECT c.`admin_name`, c.`admin_steamid`, c.`duration`, c.`timestamp_issued`, c.`reason`, " ...
+				"COUNT(current_bans.id) + COUNT(old_bans.id) AS total_ebans " ...
+				"FROM (SELECT * FROM `EntWatch_Current_Eban` INDEXED BY `idx_steamid_search` " ...
+				"WHERE `client_steamid` = '%s' AND `server` = '%s' " ...
+				"UNION ALL " ...
+				"SELECT * FROM `EntWatch_Old_Eban` INDEXED BY `idx_steamid_search` " ...
+				"WHERE `client_steamid` = '%s' AND `server` = '%s') c " ...
+				"LEFT JOIN `EntWatch_Current_Eban` current_bans ON current_bans.`client_steamid` = '%s' " ...
+				"LEFT JOIN `EntWatch_Old_Eban` old_bans ON old_bans.`client_steamid` = '%s' " ...
+				"GROUP BY c.id " ...
+				"ORDER BY c.`timestamp_issued` DESC LIMIT 1", 
+				g_sSteamIDs[iClient], g_SchemeConfig.Server_Name, g_sSteamIDs[iClient], g_SchemeConfig.Server_Name, g_sSteamIDs[iClient], g_sSteamIDs[iClient]);
+		}
 		SQL_TQuery(g_hEbanDB, EWM_Eban_SQLTCallBackUpdate, sTQuery, g_iUserIDs[iClient]);
 	}
 }
@@ -569,14 +629,14 @@ void EWM_Eban_SQLTCallBackUpdate(Handle hDatabase, Handle hResults, const char[]
 
 		while(SQL_FetchRow(hResults))
 		{
-			bBanFound = true;
 			class_ClientSettings_EBan ClientBuffer;
 			SQL_FetchString(hResults, 0, ClientBuffer.Admin_Name, sizeof(ClientBuffer.Admin_Name));
 			SQL_FetchString(hResults, 1, ClientBuffer.Admin_SteamID, sizeof(ClientBuffer.Admin_SteamID));
 			ClientBuffer.Duration = SQL_FetchInt(hResults, 2);
 			ClientBuffer.TimeStamp_Issued = SQL_FetchInt(hResults, 3);
 			SQL_FetchString(hResults, 4, ClientBuffer.Reason, sizeof(ClientBuffer.Reason));
-
+			bBanFound =  GetTime() <= ClientBuffer.TimeStamp_Issued || ClientBuffer.Duration == 0
+			g_iClientEbansNumber[iClient] = SQL_FetchInt(hResults, 5);
 			ClientSet = ClientBuffer;
 		}
 
@@ -596,8 +656,22 @@ void EWM_Eban_Offline_Unban(int iTime)
 	if (IsDBConnected())
 	{
 		char sTQuery[1024];
-		FormatEx(sTQuery, sizeof(sTQuery), "SELECT `id` FROM `EntWatch_Current_Eban` \
-												WHERE `server`='%s' and `duration` > 0 and `timestamp_issued` < %d", g_SchemeConfig.Server_Name, iTime);
+		if (!g_bSqlite)
+		{
+			FormatEx(sTQuery, sizeof(sTQuery), 
+				"SELECT `id` FROM `EntWatch_Current_Eban` USE INDEX (`idx_server_expiry`) " ...
+				"WHERE `server` = '%s' AND `duration` > 0 AND `timestamp_issued` < %d " ...
+				"ORDER BY `timestamp_issued` DESC", 
+				g_SchemeConfig.Server_Name, iTime);
+		}
+		else
+		{
+			FormatEx(sTQuery, sizeof(sTQuery), 
+				"SELECT `id` FROM `EntWatch_Current_Eban` INDEXED BY `idx_server_expiry` " ...
+				"WHERE `server` = '%s' AND `duration` > 0 AND `timestamp_issued` < %d " ...
+				"ORDER BY `timestamp_issued` DESC", 
+				g_SchemeConfig.Server_Name, iTime);
+		}
 		SQL_TQuery(g_hEbanDB, EWM_Eban_SQLTCallBackOfflineUnban, sTQuery, iTime);
 	}
 }
@@ -641,7 +715,7 @@ void EWM_Eban_SQLTCallBackOfflineUnban(Handle hDatabase, Handle hResults, const 
 	}
 }
 
-// E-unban player
+// Timer checker for ban expiration and database status
 Action EWM_Eban_Timer_Checker(Handle timer)
 {
 	switch (g_iDBStatus)
@@ -669,6 +743,8 @@ Action EWM_Eban_Timer_Checker(Handle timer)
 				if(iCurrentTimeStamp > g_EbanClients[i].TimeStamp_Issued)
 					EWM_Eban_UnBanClient(i, 0, "Expired");
 			}
+
+			g_bFirstTimer = false;
 
 			EWM_Eban_Offline_Unban(iCurrentTimeStamp);
 		}
