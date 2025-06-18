@@ -1014,15 +1014,31 @@ public bool RegisterButton(class_ItemList ItemInstance, int iEntity)
 {
 	if(IsValidEntity(ItemInstance.WeaponID))
 	{
-		char Item_Weapon_Targetname[64], Item_Weapon_Parent[64];
-		Entity_GetTargetName(ItemInstance.WeaponID, Item_Weapon_Targetname, sizeof(Item_Weapon_Targetname));
-		Entity_GetParentName(iEntity, Item_Weapon_Parent, sizeof(Item_Weapon_Parent));
-		if(strcmp(Item_Weapon_Targetname, "", false) != 0 && strcmp(Item_Weapon_Targetname, Item_Weapon_Parent, false) == 0)
+		int iHammerID = Entity_GetHammerID(iEntity);
+		bool bShouldRegister = false;
+		
+		// Check if this button matches a configured buttonid
+		if((ItemInstance.ButtonID != INVALID_ENT_REFERENCE && ItemInstance.ButtonID == iHammerID) || (ItemInstance.ButtonID2 != INVALID_ENT_REFERENCE && ItemInstance.ButtonID2 == iHammerID))
+			bShouldRegister = true;
+		else
 		{
-			// Check if the entity is already registered as a button
-			if (ItemInstance.IsRegisterButton) return false;
+			// Fallback to original parent-child relationship check
+			char Item_Weapon_Targetname[64], Item_Weapon_Parent[64];
+			Entity_GetTargetName(ItemInstance.WeaponID, Item_Weapon_Targetname, sizeof(Item_Weapon_Targetname));
+			Entity_GetParentName(iEntity, Item_Weapon_Parent, sizeof(Item_Weapon_Parent));
+			if (strcmp(Item_Weapon_Targetname, "", false) != 0 && strcmp(Item_Weapon_Targetname, Item_Weapon_Parent, false) == 0)
+				bShouldRegister = true;
+		}
+		
+		if(bShouldRegister)
+		{
+			// Check if this specific button entity is already registered
+			for (int k = 0; k < ItemInstance.ButtonsArray.Length; k++)
+			{
+				if (ItemInstance.ButtonsArray.Get(k) == iEntity)
+					return false; // Button already registered
+			}
 
-			int iHammerID = Entity_GetHammerID(iEntity);
 			// Update the ButtonID or ButtonID2 if they are invalid
 			if(ItemInstance.ButtonID == INVALID_ENT_REFERENCE) ItemInstance.ButtonID = iHammerID; //Default the first button spawned will be the main button. Need to module use_priority
 			else if(ItemInstance.ButtonID2 == INVALID_ENT_REFERENCE) ItemInstance.ButtonID2 = iHammerID; //May be Second Button?
@@ -1030,7 +1046,6 @@ public bool RegisterButton(class_ItemList ItemInstance, int iEntity)
 			// Register the entity as a button and push it into the array
 			SDKHookEx(iEntity, SDKHook_Use, OnButtonUse);
 			ItemInstance.ButtonsArray.Push(iEntity);
-			ItemInstance.IsRegisterButton = true;
 			return true;
 		}
 	}
@@ -1319,12 +1334,12 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 
 					if(waitTime < 0) waitTime = 0;
 
-					// Make the code easier to understand
 					bool bSecondAbility = iAbility == 2;
-					int iMode = bSecondAbility ? ItemTest.Mode2 : ItemTest.Mode;
-					int iItemCooldown = bSecondAbility ? ItemTest.CoolDown2 : ItemTest.CoolDown;
-					int iItemMaxUses = bSecondAbility ? ItemTest.MaxUses2 : ItemTest.MaxUses;
-					
+
+					int iMode = (bSecondAbility && ItemTest.ButtonID2 != INVALID_ENT_REFERENCE) ? ItemTest.Mode2 : ItemTest.Mode;
+					int iItemCooldown = (bSecondAbility && ItemTest.ButtonID2 != INVALID_ENT_REFERENCE) ? ItemTest.CoolDown2 : ItemTest.CoolDown;
+					int iItemMaxUses = (bSecondAbility && ItemTest.ButtonID2 != INVALID_ENT_REFERENCE) ? ItemTest.MaxUses2 : ItemTest.MaxUses;
+	
 					switch (iMode)
 					{
 						case 2: 
@@ -1578,6 +1593,10 @@ stock void Events_OnUseItem(class_ItemList ItemTest,int iActivator, int iAbility
 
 #if defined EW_MODULE_CHAT
 	if(ItemTest.Chat_Uses) EWM_Chat_Use(ItemTest, iActivator, iAbility);
+#endif
+
+#if defined EW_MODULE_HUD
+	MarkCacheDirty();
 #endif
 }
 

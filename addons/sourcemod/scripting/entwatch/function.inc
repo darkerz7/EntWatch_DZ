@@ -72,7 +72,6 @@ enum struct class_ItemList
 	int			Team;				// Integer:	Which team owns the item (-1 - No Team, 1 - Spec, 2 - T, 3 - CT)
 	bool		LockButton;			// Bool:	Item cannot be used
 	float		WaitTime;			// Float:	Timestamp when the button is rolled back
-	bool 		IsRegisterButton;	// Bool:	Is the button registered in the array
 	
 	// Parameters for the entity activating the second ability
 	char		ButtonClass2[32];
