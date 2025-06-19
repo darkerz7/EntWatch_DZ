@@ -164,7 +164,7 @@ public void EWM_OfflineEban_UpdateItemName(int iClient, const char[] sNameItem)
 // The main function of the offline client e-ban
 public void EWM_OfflineEban_BanClient(class_Offline_Eban cPlayer, int iAdmin, int iDuration, const char[] sReason)
 {
-	if(g_iDBStatus == 4)
+	if(g_EbanDatabaseState == DatabaseState_Connected)
 	{
 		char sAdmin_Name[32];
 		char sAdmin_SteamID[64];

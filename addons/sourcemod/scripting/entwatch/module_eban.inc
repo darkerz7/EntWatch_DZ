@@ -27,13 +27,24 @@ bool 	g_bKeepExpiredBans,
 
 
 Database g_hEbanDB;
-int g_iDBStatus = 0, // 0 - Def., 1 - Reconnect, 2 - Unknown Driver, 3 - Create Table, 4 - Ready to Query
-	g_iDefaultBanTime,
+int	g_iDefaultBanTime,
 	g_iAdminBanLong,
 	g_iMaxBanTime;
 
 char g_sDefaultBanReason[64],
 	g_sDefaultUnBanReason[64];
+
+enum DatabaseState
+{
+	DatabaseState_Disconnected = 0,
+	DatabaseState_Wait,
+	DatabaseState_Connecting,
+	DatabaseState_Connected,
+}
+DatabaseState g_EbanDatabaseState = DatabaseState_Disconnected;
+int g_iEbanConnectLock = 0;
+int g_iEbanSequence = 0;
+float g_fEbanRetryTime = 15.0;
 
 stock void EWM_Eban_OnPluginStart()
 {
@@ -75,16 +86,21 @@ stock void EWM_Eban_OnPluginStart()
 	RegAdminCmd("sm_eunban", EWM_Eban_Command_Unrestrict, ADMFLAG_BAN);
 	RegAdminCmd("sm_ebanlist", EWM_Eban_Command_EBanlist, ADMFLAG_BAN);
 
-	Database.Connect(EWM_Eban_ConnectCallBack, EW_EBAN_ENTWATCH_SECTION);
+	EbanDB_Connect();
 
 	//Timer Checker
 	g_bFirstTimer = true;
 	CreateTimer(30.0, EWM_Eban_Timer_Checker, _, TIMER_REPEAT);
 }
 
+stock void EWM_Eban_OnMapEnd()
+{
+	EbanDB_Disconnect();
+}
+
 stock bool IsDBConnected()
 {
-	return g_hEbanDB != null && g_iDBStatus == 4;
+	return g_hEbanDB != null && g_EbanDatabaseState == DatabaseState_Connected;
 }
 
 stock void EWM_Eban_OnClientPostAdminCheck(int iClient)
@@ -115,25 +131,75 @@ void Cvar_EBAN_Changed(ConVar convar, const char[] oldValue, const char[] newVal
 		g_bEbanInvalidSteamID = GetConVarBool(convar);
 }
 
-void EWM_Eban_ConnectCallBack(Database hDatabase, const char[] sError, any data)
+stock void EbanDB_Disconnect()
 {
-	if (hDatabase == null)	// Fail Connect
+	if (g_hEbanDB != null)
+	{
+		delete g_hEbanDB;
+		g_hEbanDB = null;
+	}
+	g_EbanDatabaseState = DatabaseState_Disconnected;
+}
+
+stock void EbanDB_Connect()
+{
+	if (g_hEbanDB != null && g_EbanDatabaseState == DatabaseState_Connected)
+		return;
+
+	if (g_EbanDatabaseState == DatabaseState_Wait)
+		return;
+
+	if (g_EbanDatabaseState != DatabaseState_Connecting)
+	{
+		g_EbanDatabaseState = DatabaseState_Connecting;
+		g_iEbanConnectLock = g_iEbanSequence++;
+		Database.Connect(EbanDB_OnConnect, EW_EBAN_ENTWATCH_SECTION, g_iEbanConnectLock);
+	}
+}
+
+public void EbanDB_OnConnect(Database db, const char[] error, any data)
+{
+	if (db == null)
 	{
 		#if defined EW_MODULE_FORWARDS
 		Call_StartForward(g_hOnDatabaseFailure);
-		Call_PushString(sError);
+		Call_PushString(error);
 		Call_Finish();
 		#endif
-		g_iDBStatus = 1; //ReConnect
+		if (g_EbanDatabaseState != DatabaseState_Wait && g_EbanDatabaseState != DatabaseState_Connecting)
+		{
+			g_EbanDatabaseState = DatabaseState_Wait;
+			CreateTimer(g_fEbanRetryTime, EbanDB_Timer_Reconnect, _, TIMER_FLAG_NO_MAPCHANGE);
+		}
 		return;
 	}
-	g_hEbanDB = hDatabase;
+
+	// Ignore if this is an old request
+	if (data != g_iEbanConnectLock || (g_hEbanDB != null && g_EbanDatabaseState == DatabaseState_Connected))
+	{
+		if (db)
+			delete db;
+		return;
+	}
+
+	g_iEbanConnectLock = 0;
+	g_EbanDatabaseState = DatabaseState_Connected;
+	g_hEbanDB = db;
+
 	#if defined EW_MODULE_FORWARDS
 	Call_StartForward(g_hOnDatabaseSuccess);
 	Call_Finish();
 	#endif
-	EWM_Eban_CreateTables(); // Create Tables
-	g_hEbanDB.SetCharset(EW_EBAN_DB_ENTWATCH_CHARSET); // Set Charset UTF8
+
+	EWM_Eban_CreateTables();
+	g_hEbanDB.SetCharset(EW_EBAN_DB_ENTWATCH_CHARSET);
+}
+
+public Action EbanDB_Timer_Reconnect(Handle timer, any data)
+{
+	g_EbanDatabaseState = DatabaseState_Disconnected;
+	EbanDB_Connect();
+	return Plugin_Continue;
 }
 
 void EWM_Eban_CreateTables()
@@ -143,9 +209,9 @@ void EWM_Eban_CreateTables()
 	if(strcmp(sConnectDriverDB, "mysql") == 0)
 	{
 		g_bSqlite = false;
-		g_iDBStatus = 3;
+		g_EbanDatabaseState = DatabaseState_Connected;
 		//Create MySQL Tables
-		char sSQL_Query[1024];
+		char sSQL_Query[2048];
 		Transaction T_CreateTables = SQL_CreateTransaction();
 		FormatEx(sSQL_Query, sizeof(sSQL_Query), "CREATE TABLE IF NOT EXISTS `EntWatch_Current_Eban`(	`id` int(10) unsigned NOT NULL auto_increment, \
 																										`client_name` varchar(32) NOT NULL, \
@@ -167,12 +233,7 @@ void EWM_Eban_CreateTables()
 		T_CreateTables.AddQuery(sSQL_Query);
 
 		FormatEx(sSQL_Query, sizeof(sSQL_Query), 
-			"ALTER TABLE `EntWatch_Current_Eban` ADD INDEX IF NOT EXISTS `idx_steamid_search` (`client_steamid`, `admin_steamid`), \
-			ADD INDEX IF NOT EXISTS `idx_expiry_sort` (`timestamp_issued`, `duration`), \
-			ADD INDEX IF NOT EXISTS `idx_server_expiry` (`server`, `duration`, `timestamp_issued`);");
-		T_CreateTables.AddQuery(sSQL_Query);
-
-		FormatEx(sSQL_Query, sizeof(sSQL_Query), "CREATE TABLE IF NOT EXISTS `EntWatch_Old_Eban`(	`id` int(10) unsigned NOT NULL auto_increment, \
+			"CREATE TABLE IF NOT EXISTS `EntWatch_Old_Eban`(	`id` int(10) unsigned NOT NULL auto_increment, \
 																									`client_name` varchar(32) NOT NULL, \
 																									`client_steamid` varchar(64) NOT NULL, \
 																									`admin_name` varchar(32) NOT NULL, \
@@ -191,17 +252,11 @@ void EWM_Eban_CreateTables()
 																									INDEX `idx_server_expiry` (`server`, `duration`, `timestamp_issued`)) CHARACTER SET %s COLLATE %s;", EW_EBAN_DB_ENTWATCH_CHARSET, EW_EBAN_DB_ENTWATCH_COLLATION);
 		T_CreateTables.AddQuery(sSQL_Query);
 
-		FormatEx(sSQL_Query, sizeof(sSQL_Query), 
-			"ALTER TABLE `EntWatch_Old_Eban` ADD INDEX IF NOT EXISTS `idx_steamid_search` (`client_steamid`, `admin_steamid`), \
-			ADD INDEX IF NOT EXISTS `idx_expiry_sort` (`timestamp_issued`, `duration`), \
-			ADD INDEX IF NOT EXISTS `idx_server_expiry` (`server`, `duration`, `timestamp_issued`);");
-		T_CreateTables.AddQuery(sSQL_Query);
-
 		SQL_ExecuteTransaction(g_hEbanDB, T_CreateTables, EWM_Eban_SQLCreateTables_Success, EWM_Eban_SQLCreateTables_Error, _, DBPrio_High);
 	} else if(strcmp(sConnectDriverDB, "sqlite") == 0)
 	{
 		g_bSqlite = true;
-		g_iDBStatus = 3;
+		g_EbanDatabaseState = DatabaseState_Connected;
 		//Create SQLite Tables
 		char sSQL_Query[1024];
 		Transaction T_CreateTables = SQL_CreateTransaction();
@@ -231,7 +286,6 @@ void EWM_Eban_CreateTables()
 		FormatEx(sSQL_Query, sizeof(sSQL_Query),
 			"CREATE INDEX IF NOT EXISTS `idx_server_expiry` ON `EntWatch_Current_Eban` (`server`, `duration`, `timestamp_issued`);");
 		T_CreateTables.AddQuery(sSQL_Query);
-
 
 		FormatEx(sSQL_Query, sizeof(sSQL_Query), "CREATE TABLE IF NOT EXISTS `EntWatch_Old_Eban`(	`id` INTEGER PRIMARY KEY AUTOINCREMENT, \
 																									`client_name` varchar(32) NOT NULL, \
@@ -263,7 +317,7 @@ void EWM_Eban_CreateTables()
 		SQL_ExecuteTransaction(g_hEbanDB, T_CreateTables, EWM_Eban_SQLCreateTables_Success, EWM_Eban_SQLCreateTables_Error, _, DBPrio_High);
 	} else
 	{
-		g_iDBStatus = 2;
+		g_EbanDatabaseState = DatabaseState_Disconnected;
 		#if defined EW_MODULE_FORWARDS
 		Call_StartForward(g_hOnDatabaseUnknownDriver);
 		Call_PushString(sConnectDriverDB);
@@ -274,7 +328,7 @@ void EWM_Eban_CreateTables()
 
 void EWM_Eban_SQLCreateTables_Success(Database hDatabase, any Data, int iNumQueries, Handle[] hResults, any[] QueryData)
 {
-	g_iDBStatus = 4;
+	g_EbanDatabaseState = DatabaseState_Connected;
 	#if defined EW_MODULE_FORWARDS
 	Call_StartForward(g_hOnDatabaseReady);
 	Call_Finish();
@@ -284,7 +338,7 @@ void EWM_Eban_SQLCreateTables_Success(Database hDatabase, any Data, int iNumQuer
 
 void EWM_Eban_SQLCreateTables_Error(Database hDatabase, any Data, int iNumQueries, const  char[] sError, int iFailIndex, any[] QueryData)
 {
-	g_iDBStatus = 1;
+	g_EbanDatabaseState = DatabaseState_Wait;
 	#if defined EW_MODULE_FORWARDS
 	Call_StartForward(g_hOnDatabaseCreateTablesError);
 	Call_PushString(sError);
@@ -718,12 +772,12 @@ void EWM_Eban_SQLTCallBackOfflineUnban(Handle hDatabase, Handle hResults, const 
 // Timer checker for ban expiration and database status
 Action EWM_Eban_Timer_Checker(Handle timer)
 {
-	switch (g_iDBStatus)
+	switch (g_EbanDatabaseState)
 	{
-		case 1: // ReConnect
-			Database.Connect(EWM_Eban_ConnectCallBack, EW_EBAN_ENTWATCH_SECTION);
+		case DatabaseState_Wait: // ReConnect
+			EbanDB_Connect();
 
-		case 4: // Success Connect
+		case DatabaseState_Connected: // Success Connect
 		{
 			int iCurrentTimeStamp = GetTime();
 			for(int i=1; i<MaxClients+1; i++)
