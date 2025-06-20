@@ -288,13 +288,15 @@ public void OnConfigsExecuted()
 
 public void OnMapEnd()
 {
+	#if defined EW_MODULE_EBAN
+	EWM_Eban_OnMapEnd();
+	#endif
 	#if defined EW_MODULE_BLINK
 	EWM_Blink_OnMapEnd();
 	#endif
 	#if defined EW_MODULE_GLOW
 	EWM_Glow_OnMapEnd();
 	#endif
-	
 	#if defined EW_MODULE_CLANTAG
 	EWM_Clantag_Mass_Reset();
 	#endif
