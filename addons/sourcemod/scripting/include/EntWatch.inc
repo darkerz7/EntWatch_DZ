@@ -4,7 +4,7 @@
 #define _EntWatch_include
 
 #define EW_V_MAJOR   "3"
-#define EW_V_MINOR   "80"
+#define EW_V_MINOR   "81"
 
 #define EW_VERSION   EW_V_MAJOR...".DZ."...EW_V_MINOR
 
