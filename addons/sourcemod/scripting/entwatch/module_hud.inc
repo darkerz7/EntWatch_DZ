@@ -16,10 +16,7 @@ ConVar	g_hCvar_DisplayEnabled,
 		g_hCvar_HudRotationDefault;
 
 // Purpose: Module Client settings
-Cookie	g_cCookie_Display,
-		g_cCookie_HudName,
-		g_cCookie_HudItemsCount,
-		g_cCookie_HudRotationTime;
+Cookie	g_cCookie_HudSettings;
 
 // Purpose: Module Local settings
 bool	g_bDispEnabled = true,
@@ -45,6 +42,72 @@ ArrayList	g_iHItemsArray;
 ArrayList	g_iZMItemsArray;
 
 class_ClientSettings_Hud g_CSettings_Hud[MAXPLAYERS+1];
+
+// Helper functions for cookie management
+void SaveHudSettings(int client)
+{
+	// Only save if settings differ from defaults
+	if (g_CSettings_Hud[client].Display == true && 
+		g_CSettings_Hud[client].Name == true && 
+		g_CSettings_Hud[client].ItemsCount == g_iMaxItemsCount && 
+		g_CSettings_Hud[client].RotationTime == g_iDefaultRotationTime)
+	{
+		// Settings are at defaults, delete the cookie to save DB space
+		g_cCookie_HudSettings.Set(client, "");
+		return;
+	}
+	
+	char sCookieData[32];
+	FormatEx(sCookieData, sizeof(sCookieData), "%d|%d|%d|%d", 
+		g_CSettings_Hud[client].Display ? 1 : 0,
+		g_CSettings_Hud[client].Name ? 1 : 0,
+		g_CSettings_Hud[client].ItemsCount,
+		g_CSettings_Hud[client].RotationTime);
+	g_cCookie_HudSettings.Set(client, sCookieData);
+}
+
+void LoadHudSettings(int client)
+{
+	char sCookieData[32];
+	g_cCookie_HudSettings.Get(client, sCookieData, sizeof(sCookieData));
+	
+	if (strcmp(sCookieData, "") == 0)
+	{
+		// No cookie found, use default values (don't save them)
+		g_CSettings_Hud[client].Display = true;
+		g_CSettings_Hud[client].Name = true;
+		g_CSettings_Hud[client].ItemsCount = g_iMaxItemsCount;
+		g_CSettings_Hud[client].RotationTime = g_iDefaultRotationTime;
+		return;
+	}
+	
+	// Parse the cookie data: "1|1|10|3" format
+	char sParts[4][8];
+	int iPartCount = ExplodeString(sCookieData, "|", sParts, sizeof(sParts), sizeof(sParts[]));
+	
+	if (iPartCount >= 4)
+	{
+		// Parse all values as integers
+		g_CSettings_Hud[client].Display = (StringToInt(sParts[0]) == 1);
+		g_CSettings_Hud[client].Name = (StringToInt(sParts[1]) == 1);
+		g_CSettings_Hud[client].ItemsCount = StringToInt(sParts[2]);
+		g_CSettings_Hud[client].RotationTime = StringToInt(sParts[3]);
+		
+		// Validate ranges
+		if (g_CSettings_Hud[client].ItemsCount <= 0 || g_CSettings_Hud[client].ItemsCount > MAX_ShowHudItems)
+			g_CSettings_Hud[client].ItemsCount = g_iMaxItemsCount;
+		if (g_CSettings_Hud[client].RotationTime <= 0 || g_CSettings_Hud[client].RotationTime > TIMEROTATIONHUD)
+			g_CSettings_Hud[client].RotationTime = g_iDefaultRotationTime;
+	}
+	else
+	{
+		// Corrupted data, use defaults (don't save them)
+		g_CSettings_Hud[client].Display = true;
+		g_CSettings_Hud[client].Name = true;
+		g_CSettings_Hud[client].ItemsCount = g_iMaxItemsCount;
+		g_CSettings_Hud[client].RotationTime = g_iDefaultRotationTime;
+	}
+}
 
 stock void EWM_Hud_OnClientPutInServer(int iClient)
 {
@@ -118,10 +181,7 @@ stock void EWM_Hud_OnPluginStart()
 
 	SetCookieMenuItem(CookieHandler, 0, "EntWatch Settings");
 
-	g_cCookie_Display     	= new Cookie("entwatch_display", "", CookieAccess_Private);
-	g_cCookie_HudName     	= new Cookie("entwatch_hudname", "", CookieAccess_Private);
-	g_cCookie_HudItemsCount	= new Cookie("entwatch_huditems_count", "", CookieAccess_Private);
-	g_cCookie_HudRotationTime = new Cookie("entwatch_hudrotation_time", "", CookieAccess_Private);
+	g_cCookie_HudSettings = new Cookie("entwatch_hud_settings", "Combined settings (display|name|items|time)", CookieAccess_Private);
 	
 	CreateTimer(1.0, EWM_Hud_Timer_DisplayHUD, _, TIMER_REPEAT);
 }
@@ -193,51 +253,7 @@ stock void EWM_Hud_OnClientCookiesCached(int iClient)
 	if (!IsValidClient(iClient) || IsFakeClient(iClient))
 		return;
 
-	char sBuffer_cookie[32];
-	
-	// Display
-	g_cCookie_Display.Get(iClient, sBuffer_cookie, sizeof(sBuffer_cookie));
-	if (strcmp(sBuffer_cookie, "") == 0)
-	{
-		strcopy(sBuffer_cookie, sizeof(sBuffer_cookie), "1");
-		g_cCookie_Display.Set(iClient, sBuffer_cookie);
-	}
-	g_CSettings_Hud[iClient].Display = view_as<bool>(StringToInt(sBuffer_cookie));
-
-	//Hud Names
-	g_cCookie_HudName.Get(iClient, sBuffer_cookie, sizeof(sBuffer_cookie));
-	if (strcmp(sBuffer_cookie, "") == 0)
-	{
-		strcopy(sBuffer_cookie, sizeof(sBuffer_cookie), "1");
-		g_cCookie_HudName.Set(iClient, sBuffer_cookie);
-	}
-	g_CSettings_Hud[iClient].Name = view_as<bool>(StringToInt(sBuffer_cookie));
-
-	// Items count
-	g_cCookie_HudItemsCount.Get(iClient, sBuffer_cookie, sizeof(sBuffer_cookie));
-	if (strcmp(sBuffer_cookie, "") == 0) 
-	{
-		FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%d", g_iMaxItemsCount);
-		g_cCookie_HudItemsCount.Set(iClient, sBuffer_cookie);
-		g_CSettings_Hud[iClient].ItemsCount = g_iMaxItemsCount;
-	}else
-	{
-		int count = StringToInt(sBuffer_cookie);
-		g_CSettings_Hud[iClient].ItemsCount = count;
-	}
-	
-	// Rotation time
-	g_cCookie_HudRotationTime.Get(iClient, sBuffer_cookie, sizeof(sBuffer_cookie));
-	if (strcmp(sBuffer_cookie, "") == 0) 
-	{
-		FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%d", g_iDefaultRotationTime);
-		g_cCookie_HudRotationTime.Set(iClient, sBuffer_cookie);
-		g_CSettings_Hud[iClient].RotationTime = g_iDefaultRotationTime;
-	}else
-	{
-		int time = StringToInt(sBuffer_cookie);
-		g_CSettings_Hud[iClient].RotationTime = time;
-	}
+	LoadHudSettings(iClient);
 }
 
 stock void EWM_Hud_LoadDefaultClientSettings(int iClient)
@@ -639,7 +655,7 @@ public Action EWM_Hud_Command_ToggleHUD(int iClient, int iArgs)
 	{
 		char sStatus[32], sColor[32];
 		g_CSettings_Hud[iClient].Display = !g_CSettings_Hud[iClient].Display;
-		g_cCookie_Display.Set(iClient, g_CSettings_Hud[iClient].Display ? "1" : "0");
+		SaveHudSettings(iClient);
 
 		sStatus = g_CSettings_Hud[iClient].Display ? "Enabled" : "Disabled";
 		sColor = g_CSettings_Hud[iClient].Display ? g_SchemeConfig.Color_Enabled : g_SchemeConfig.Color_Disabled;        
@@ -654,7 +670,7 @@ public Action EWM_Hud_Command_ToggleHUDName(int iClient, int iArgs)
 	{
 		char sStatus[32], sColor[32];
 		g_CSettings_Hud[iClient].Name = !g_CSettings_Hud[iClient].Name;
-		g_cCookie_HudName.Set(iClient, g_CSettings_Hud[iClient].Name ? "1" : "0");
+		SaveHudSettings(iClient);
 
 		sStatus = g_CSettings_Hud[iClient].Name ? "Enabled" : "Disabled";
 		sColor = g_CSettings_Hud[iClient].Name ? g_SchemeConfig.Color_Enabled : g_SchemeConfig.Color_Disabled;
@@ -688,11 +704,8 @@ public Action EWM_Hud_Command_HudItems(int iClient, int iArgs)
 			return Plugin_Handled;
 		}
 		
-		char sBuffer_cookie[32];
-		IntToString(iCount, sBuffer_cookie, sizeof(sBuffer_cookie));
-		g_cCookie_HudItemsCount.Set(iClient, sBuffer_cookie);
-		
 		g_CSettings_Hud[iClient].ItemsCount = iCount;
+		SaveHudSettings(iClient);
 		CPrintToChat(iClient, "%s%t %s%t %s%t (%d)", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Items", g_SchemeConfig.Color_Enabled, "Saved", g_CSettings_Hud[iClient].RotationTime);
 	}
 	
@@ -724,11 +737,8 @@ public Action EWM_Hud_Command_HudRotation(int iClient, int iArgs)
 			return Plugin_Handled;
 		}
 		
-		char sBuffer_cookie[32];
-		IntToString(iTime, sBuffer_cookie, sizeof(sBuffer_cookie));
-		g_cCookie_HudRotationTime.Set(iClient, sBuffer_cookie);
-		
 		g_CSettings_Hud[iClient].RotationTime = iTime;
+		SaveHudSettings(iClient);
 		CPrintToChat(iClient, "%s%t %s%t %s%t (%d)", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Rotation Time", g_SchemeConfig.Color_Enabled, "Saved", g_CSettings_Hud[iClient].RotationTime);
 	}
 	
@@ -807,7 +817,7 @@ public int CookieMenuHandler(Menu menu, MenuAction action, int param1, int param
 			if (strcmp(info, "display", false) == 0)
 			{
 				g_CSettings_Hud[param1].Display = !g_CSettings_Hud[param1].Display;
-				g_cCookie_Display.Set(param1, g_CSettings_Hud[param1].Display ? "1" : "0");
+				SaveHudSettings(param1);
 
 				color = g_CSettings_Hud[param1].Display ? g_SchemeConfig.Color_Enabled : g_SchemeConfig.Color_Disabled;
 				status = g_CSettings_Hud[param1].Display ? "Enabled" : "Disabled";
@@ -818,7 +828,7 @@ public int CookieMenuHandler(Menu menu, MenuAction action, int param1, int param
 			else if (strcmp(info, "name", false) == 0)
 			{
 				g_CSettings_Hud[param1].Name = !g_CSettings_Hud[param1].Name;
-				g_cCookie_HudName.Set(param1, g_CSettings_Hud[param1].Name ? "1" : "0");
+				SaveHudSettings(param1);
 
 				color = g_CSettings_Hud[param1].Name ? g_SchemeConfig.Color_Enabled : g_SchemeConfig.Color_Disabled;
 				status = g_CSettings_Hud[param1].Name ? "Enabled" : "Disabled";
@@ -874,14 +884,12 @@ public int DisplayMenuItemsNumberHUDMenuHandler(Menu menu, MenuAction action, in
 	{
 		case MenuAction_Select:
 		{
-			char sBuffer[10], sBuffer_cookie[32];
+			char sBuffer[10];
 			menu.GetItem(param2, sBuffer, sizeof(sBuffer));
 			int count = StringToInt(sBuffer);
 
 			g_CSettings_Hud[param1].ItemsCount = count;
-			FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%d", count);
-			g_cCookie_HudItemsCount.Set(param1, sBuffer_cookie);
-
+			SaveHudSettings(param1);
 			CPrintToChat(param1, "%s%t %s%t %t: %s%t (%d)", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "HUD", "Hud Items", g_SchemeConfig.Color_Enabled, "Saved", g_CSettings_Hud[param1].ItemsCount);
 			DisplayCookieMenu(param1);
 		}
@@ -925,14 +933,12 @@ public int DisplayMenuRotationTimeHUDMenuHandler(Menu menu, MenuAction action, i
 	{
 		case MenuAction_Select:
 		{
-			char sBuffer[10], sBuffer_cookie[32];
+			char sBuffer[10];
 			menu.GetItem(param2, sBuffer, sizeof(sBuffer));
 			int time = StringToInt(sBuffer);
 
 			g_CSettings_Hud[param1].RotationTime = time;
-			FormatEx(sBuffer_cookie, sizeof(sBuffer_cookie), "%d", time);
-			g_cCookie_HudRotationTime.Set(param1, sBuffer_cookie);
-
+			SaveHudSettings(param1);
 			CPrintToChat(param1, "%s%t %s%t %t: %s%t (%d)", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "HUD", "Hud Rotation Time", g_SchemeConfig.Color_Enabled, "Saved", g_CSettings_Hud[param1].RotationTime);
 			DisplayCookieMenu(param1);
 		}

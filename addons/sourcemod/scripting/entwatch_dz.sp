@@ -246,6 +246,9 @@ public void OnLibraryRemoved(const char[] name)
 
 public void OnPluginEnd()
 {
+	#if defined EW_MODULE_EBAN
+	EWM_Eban_OnPluginEnd();
+	#endif
 	#if defined EW_MODULE_CLANTAG
 	EWM_Clantag_Mass_Reset();
 	#endif
@@ -288,9 +291,6 @@ public void OnConfigsExecuted()
 
 public void OnMapEnd()
 {
-	#if defined EW_MODULE_EBAN
-	EWM_Eban_OnMapEnd();
-	#endif
 	#if defined EW_MODULE_BLINK
 	EWM_Blink_OnMapEnd();
 	#endif
@@ -474,18 +474,12 @@ public void OnClientAuthorized(int iClient, const char[] auth)
 	#if defined EW_MODULE_HUD
 	if(!AreClientCookiesCached(iClient)) EWM_Hud_LoadDefaultClientSettings(iClient);
 	#endif
-	#if defined EW_MODULE_USE_PRIORITY
-	if(!AreClientCookiesCached(iClient)) EWM_Use_Priority_LoadDefaultClientSettings(iClient);
-	#endif
 }
 
 public void OnClientCookiesCached(int iClient)
 {
 	#if defined EW_MODULE_HUD
 	EWM_Hud_OnClientCookiesCached(iClient);
-	#endif
-	#if defined EW_MODULE_USE_PRIORITY
-	EWM_Use_Priority_OnClientCookiesCached(iClient);
 	#endif
 }
 

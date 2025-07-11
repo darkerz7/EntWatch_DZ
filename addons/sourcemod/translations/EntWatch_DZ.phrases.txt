@@ -26,19 +26,19 @@
 	}
 	"Pickup"
 	{
-		"en" 	"has picked up"
+		"en" 	"picked up"
 	}
 	"Drop"
 	{
-		"en" 	"has dropped"
+		"en" 	"dropped"
 	}
 	"Death"
 	{
-		"en" 	"has died with"
+		"en" 	"died with"
 	}
 	"Death and drop"
 	{
-		"en" 	"has died and dropped"
+		"en" 	"died and dropped"
 	}
 	"Disconnect"
 	{
@@ -522,10 +522,6 @@
 	"Not have permission rEBan"
 	{
 		"en" 	"You do not have permission to remove permanent EBans"
-	}
-	"Use Priority"
-	{
-		"en" 	"Force use function"
 	}
 	"Reload Configs"
 	{

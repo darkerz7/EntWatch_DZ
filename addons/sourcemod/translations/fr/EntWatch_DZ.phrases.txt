@@ -519,10 +519,6 @@
 	{
 		"fr"	"Vous n'avez pas la permission de retirer des EBans permanents"
 	}
-	"Use Priority"
-	{
-		"fr"	"Forcer la fonction d'utilisation"
-	}
 	"Reload Configs"
 	{
 		"fr"	"Les configurations ont été rechargées.."
