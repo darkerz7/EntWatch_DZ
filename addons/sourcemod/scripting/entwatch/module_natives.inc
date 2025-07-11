@@ -133,20 +133,12 @@ public int EWM_Natives_Native_SetHudDisplay(Handle hPlugin, int iArgC)
 	}
 	
 	int iNativeDisplay = GetNativeCell(2);
-	if(iNativeDisplay == 0)
+	bool bNewDisplay = (iNativeDisplay != 0);
+	
+	if(g_CSettings_Hud[iClient].Display != bNewDisplay)
 	{
-		if(g_CSettings_Hud[iClient].Display == true)
-		{
-			g_CSettings_Hud[iClient].Display = false;
-			SetClientCookie(iClient, g_cCookie_Display, "0");
-		}
-	}else
-	{
-		if(g_CSettings_Hud[iClient].Display == false)
-		{
-			g_CSettings_Hud[iClient].Display = true;
-			SetClientCookie(iClient, g_cCookie_Display, "1");
-		}
+		g_CSettings_Hud[iClient].Display = bNewDisplay;
+		SaveHudSettings(iClient);
 	}
 	return true;
 }
@@ -162,20 +154,12 @@ public int EWM_Natives_Native_SetHudName(Handle hPlugin, int iArgC)
 	}
 	
 	int iNativeName = GetNativeCell(2);
-	if(iNativeName == 0)
+	bool bNewName = (iNativeName != 0);
+	
+	if(g_CSettings_Hud[iClient].Name != bNewName)
 	{
-		if(g_CSettings_Hud[iClient].Name == true)
-		{
-			g_CSettings_Hud[iClient].Name = false;
-			SetClientCookie(iClient, g_cCookie_HudName, "0");
-		}
-	}else
-	{
-		if(g_CSettings_Hud[iClient].Name == false)
-		{
-			g_CSettings_Hud[iClient].Name = true;
-			SetClientCookie(iClient, g_cCookie_HudName, "1");
-		}
+		g_CSettings_Hud[iClient].Name = bNewName;
+		SaveHudSettings(iClient);
 	}
 	return true;
 }
