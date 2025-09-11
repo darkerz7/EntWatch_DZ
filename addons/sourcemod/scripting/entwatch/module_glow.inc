@@ -58,6 +58,9 @@ stock void EWM_Glow_GlowWeapon(class_ItemList ItemTest)
 {
 	if(g_bGlow && g_bMapRunning)
 	{
+		if (!IsValidEntity(ItemTest.WeaponID))
+			return;
+
 		SetEntProp(ItemTest.WeaponID, Prop_Send, "m_fEffects", GetEntProp(ItemTest.WeaponID, Prop_Send, "m_fEffects") & ~256);
 		SetEntityRenderColor(ItemTest.WeaponID, 255, 255, 255, 255);
 
