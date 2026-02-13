@@ -390,6 +390,9 @@ stock void EWM_Drop_Forward(Handle hEvent)
 			Call_PushCell(iClient);
 			Call_Finish();
 			#endif
+
+			if (!GetEntPropEnt(ItemTest.WeaponID, Prop_Data, "m_hOwnerEntity"))
+				return;
 			
 			int iWeaponSlot = GetWeaponSlot(ItemTest.WeaponID);
 			if(IsValidEdict(ItemTest.WeaponID) && iWeaponSlot != -1)
