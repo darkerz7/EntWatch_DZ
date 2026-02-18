@@ -174,10 +174,7 @@ public int EWM_Natives_Native_IsSpecialItem(Handle hPlugin, int iArgC)
 	{
 		class_ItemList ItemTest;
 		g_ItemList.GetArray(i, ItemTest, sizeof(ItemTest));
-		for(int j = 0; j < ItemTest.ButtonsArray.Length; j++)
-		{
-			if(ItemTest.ButtonsArray.Get(j) == iEntity) return true;
-		}
+		if (ItemTest.WeaponID == iEntity) return true;
 	}
 
 	return false;
