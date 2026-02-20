@@ -4,12 +4,12 @@
 #include <EntWatch>
 #include <vip_core>
 
-public Plugin myinfo = 
+public Plugin myinfo =
 {
-	name = "VIP EntWatch Privileges", 
-	author = "DarkerZ[RUS]", 
-	description = "", 
-	version = "1.0", 
+	name = "VIP EntWatch Privileges",
+	author = "DarkerZ[RUS]",
+	description = "",
+	version = "1.0",
 	url = ""
 }
 
@@ -75,8 +75,8 @@ public void EntWatch_OnHLPlayerReady()
 	EntWatch_SetHLPlayer(iCount, iClients);
 }
 
-stock bool IsValidClient(int iClient) 
-{ 
-	if (iClient > 0 && iClient <= MaxClients && IsValidEdict(iClient) && IsClientInGame(iClient)) return true; 
-	return false; 
+stock bool IsValidClient(int iClient)
+{
+	if (iClient > 0 && iClient <= MaxClients && IsValidEdict(iClient) && IsClientInGame(iClient)) return true;
+	return false;
 }

@@ -6,7 +6,7 @@
 ConVar	g_hCvar_Blink;
 
 // Module Local settings
-bool	g_bBlink = true;	
+bool	g_bBlink = true;
 bool	g_bMapRunningBlink = false;
 bool	g_bThinkPostHooked[2048] = { false, ... };
 

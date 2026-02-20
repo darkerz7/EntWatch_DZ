@@ -46,7 +46,7 @@ public Action OnPlayerRunCmd(int iClient, int& iButtons, int& iImpulse, float aV
 					if(iCountButtons == 1 && iCurCountButton == 1)
 					{
 						int iBtnBuff = ItemTest.ButtonsArray.Get(0);
-						if(IsValidEdict(iBtnBuff) && ItemTest.ButtonID == Entity_GetHammerID(iBtnBuff)) 
+						if(IsValidEdict(iBtnBuff) && ItemTest.ButtonID == Entity_GetHammerID(iBtnBuff))
 						{
 							iButton = iBtnBuff;
 							iMode = ItemTest.Mode;
@@ -55,7 +55,7 @@ public Action OnPlayerRunCmd(int iClient, int& iButtons, int& iImpulse, float aV
 				}
 			}
 			// Checking for the number of buttons on the item or if the player has several items or ignore mod 1,6,7
-			if(bHasNotDelay && iCountButtons == 1 && iMode!=1 && iMode!=6 && iMode!=7 && IsValidEdict(iButton)) AcceptEntityInput(iButton, "Use", iClient, iClient); 
+			if(bHasNotDelay && iCountButtons == 1 && iMode!=1 && iMode!=6 && iMode!=7 && IsValidEdict(iButton)) AcceptEntityInput(iButton, "Use", iClient, iClient);
 		}
 	}
 	return Plugin_Continue;

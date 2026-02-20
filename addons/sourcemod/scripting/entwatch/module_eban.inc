@@ -232,7 +232,7 @@ void EWM_Eban_CreateTables()
 																										INDEX `idx_server_expiry` (`server`, `duration`, `timestamp_issued`)) CHARACTER SET %s COLLATE %s;", EW_EBAN_DB_ENTWATCH_CHARSET, EW_EBAN_DB_ENTWATCH_COLLATION);
 		T_CreateTables.AddQuery(sSQL_Query);
 
-		FormatEx(sSQL_Query, sizeof(sSQL_Query), 
+		FormatEx(sSQL_Query, sizeof(sSQL_Query),
 			"CREATE TABLE IF NOT EXISTS `EntWatch_Old_Eban`(	`id` int(10) unsigned NOT NULL auto_increment, \
 																									`client_name` varchar(32) NOT NULL, \
 																									`client_steamid` varchar(64) NOT NULL, \
@@ -537,7 +537,7 @@ public void EWM_Eban_UnBanClient(int iClient, int iAdmin, char[] sReason)
 				return;
 			}
 		}
-		
+
 		//Admin
 		FormatEx(sAdmin_Name, sizeof(sAdmin_Name), "%N", iAdmin);
 		FormatEx(sAdmin_SteamID, sizeof(sAdmin_SteamID), "%s", g_sSteamIDs[iAdmin]);
@@ -547,15 +547,15 @@ public void EWM_Eban_UnBanClient(int iClient, int iAdmin, char[] sReason)
 		FormatEx(sAdmin_Name, sizeof(sAdmin_Name), "Console");
 		FormatEx(sAdmin_SteamID, sizeof(sAdmin_SteamID), "SERVER");
 	}
-	
+
 	if (IsDBConnected())
 	{
 		char sSQL_Query[1024], szReason[64 * 2 + 1], szAdmin_Name[32 * 2 + 1];
 		g_hEbanDB.Escape(sReason, szReason, sizeof(szReason));//Reason Unban to DB
 		g_hEbanDB.Escape(sAdmin_Name, szAdmin_Name, sizeof(szAdmin_Name));//Admin Name Unban to DB
-		
+
 		Transaction T_UnBan = SQL_CreateTransaction();
-		
+
 		if(g_bKeepExpiredBans)
 		{
 			FormatEx(sSQL_Query, sizeof(sSQL_Query), "UPDATE `EntWatch_Current_Eban` SET `reason_unban`='%s', `admin_name_unban`='%s', `admin_steamid_unban`='%s', `timestamp_unban`=%d \
@@ -566,13 +566,13 @@ public void EWM_Eban_UnBanClient(int iClient, int iAdmin, char[] sReason)
 														WHERE `client_steamid`='%s' and `server`='%s'", g_sSteamIDs[iClient], g_SchemeConfig.Server_Name);
 			T_UnBan.AddQuery(sSQL_Query);
 		}
-		
+
 		FormatEx(sSQL_Query, sizeof(sSQL_Query), "DELETE FROM `EntWatch_Current_Eban` \
 													WHERE `client_steamid`='%s' and `server`='%s'", g_sSteamIDs[iClient], g_SchemeConfig.Server_Name);
 		T_UnBan.AddQuery(sSQL_Query);
 		SQL_ExecuteTransaction(g_hEbanDB, T_UnBan, EWM_Eban_SQLUnBan_Success, EWM_Eban_SQLUnBan_Error, _, DBPrio_Normal);
 	}
-	
+
 	EWM_Eban_CleanData_Client(iClient, true);
 
 	#if defined EW_MODULE_FORWARDS
@@ -627,7 +627,7 @@ void EWM_Eban_Update_Client(int iClient)
 		char sTQuery[2048];
 		if (!g_bSqlite)
 		{
-			FormatEx(sTQuery, sizeof(sTQuery), 
+			FormatEx(sTQuery, sizeof(sTQuery),
 				"SELECT ban_data.`admin_name`, ban_data.`admin_steamid`, ban_data.`duration`, ban_data.`timestamp_issued`, ban_data.`reason`, ban_data.`source_table`, " ...
 				"(SELECT COUNT(*) FROM `EntWatch_Current_Eban` WHERE `client_steamid` = '%s' AND `server` = '%s' AND `timestamp_unban` IS NULL) + " ...
 				"(SELECT COUNT(*) FROM `EntWatch_Old_Eban` WHERE `client_steamid` = '%s' AND `server` = '%s') AS total_ebans " ...
@@ -638,7 +638,7 @@ void EWM_Eban_Update_Client(int iClient)
 				"WHERE `client_steamid` = '%s' AND `server` = '%s' " ...
 				"AND NOT EXISTS (SELECT 1 FROM `EntWatch_Current_Eban` " ...
 				"WHERE `client_steamid` = '%s' AND `server` = '%s' AND `timestamp_unban` IS NULL)) AS ban_data " ...
-				"ORDER BY ban_data.`timestamp_issued` DESC LIMIT 1", 
+				"ORDER BY ban_data.`timestamp_issued` DESC LIMIT 1",
 				g_sSteamIDs[iClient], g_SchemeConfig.Server_Name,
 				g_sSteamIDs[iClient], g_SchemeConfig.Server_Name,
 				g_sSteamIDs[iClient], g_SchemeConfig.Server_Name,
@@ -648,7 +648,7 @@ void EWM_Eban_Update_Client(int iClient)
 		}
 		else
 		{
-			FormatEx(sTQuery, sizeof(sTQuery), 
+			FormatEx(sTQuery, sizeof(sTQuery),
 				"SELECT ban_data.`admin_name`, ban_data.`admin_steamid`, ban_data.`duration`, ban_data.`timestamp_issued`, ban_data.`reason`, ban_data.`source_table`, " ...
 				"(SELECT COUNT(*) FROM `EntWatch_Current_Eban` WHERE `client_steamid` = '%s' AND `server` = '%s' AND `timestamp_unban` IS NULL) + " ...
 				"(SELECT COUNT(*) FROM `EntWatch_Old_Eban` WHERE `client_steamid` = '%s' AND `server` = '%s') AS total_ebans " ...
@@ -659,7 +659,7 @@ void EWM_Eban_Update_Client(int iClient)
 				"WHERE `client_steamid` = '%s' AND `server` = '%s' " ...
 				"AND NOT EXISTS (SELECT 1 FROM `EntWatch_Current_Eban` " ...
 				"WHERE `client_steamid` = '%s' AND `server` = '%s' AND `timestamp_unban` IS NULL)) AS ban_data " ...
-				"ORDER BY ban_data.`timestamp_issued` DESC LIMIT 1", 
+				"ORDER BY ban_data.`timestamp_issued` DESC LIMIT 1",
 				g_sSteamIDs[iClient], g_SchemeConfig.Server_Name,
 				g_sSteamIDs[iClient], g_SchemeConfig.Server_Name,
 				g_sSteamIDs[iClient], g_SchemeConfig.Server_Name,
@@ -753,18 +753,18 @@ void EWM_Eban_Offline_Unban(int iTime)
 		char sTQuery[1024];
 		if (!g_bSqlite)
 		{
-			FormatEx(sTQuery, sizeof(sTQuery), 
+			FormatEx(sTQuery, sizeof(sTQuery),
 				"SELECT `id` FROM `EntWatch_Current_Eban` USE INDEX (`idx_server_expiry`) " ...
 				"WHERE `server` = '%s' AND `duration` > 0 AND `timestamp_issued` < %d " ...
-				"ORDER BY `timestamp_issued` DESC", 
+				"ORDER BY `timestamp_issued` DESC",
 				g_SchemeConfig.Server_Name, iTime);
 		}
 		else
 		{
-			FormatEx(sTQuery, sizeof(sTQuery), 
+			FormatEx(sTQuery, sizeof(sTQuery),
 				"SELECT `id` FROM `EntWatch_Current_Eban` INDEXED BY `idx_server_expiry` " ...
 				"WHERE `server` = '%s' AND `duration` > 0 AND `timestamp_issued` < %d " ...
-				"ORDER BY `timestamp_issued` DESC", 
+				"ORDER BY `timestamp_issued` DESC",
 				g_SchemeConfig.Server_Name, iTime);
 		}
 		SQL_TQuery(g_hEbanDB, EWM_Eban_SQLTCallBackOfflineUnban, sTQuery, iTime);
@@ -790,7 +790,7 @@ void EWM_Eban_SQLTCallBackOfflineUnban(Handle hDatabase, Handle hResults, const 
 		{
 			iCurrentID = SQL_FetchInt(hResults, 0);
 			Transaction T_UnBan = SQL_CreateTransaction();
-		
+
 			if(g_bKeepExpiredBans)
 			{
 				FormatEx(sSQL_Query, sizeof(sSQL_Query), "UPDATE `EntWatch_Current_Eban` SET `reason_unban`='Expired', `admin_name_unban`='Console', `admin_steamid_unban`='SERVER', `timestamp_unban`=%d \
@@ -801,7 +801,7 @@ void EWM_Eban_SQLTCallBackOfflineUnban(Handle hDatabase, Handle hResults, const 
 															WHERE `id`=%d", iCurrentID);
 				T_UnBan.AddQuery(sSQL_Query);
 			}
-			
+
 			FormatEx(sSQL_Query, sizeof(sSQL_Query), "DELETE FROM `EntWatch_Current_Eban` \
 														WHERE `id`=%d", iCurrentID);
 			T_UnBan.AddQuery(sSQL_Query);
@@ -912,7 +912,7 @@ public Action EWM_Eban_Command_Restrict(int iClient, int iArgs)
 
 	int iTarget = -1;
 	if((iTarget = FindTarget(iClient, sArg, true)) == -1) return Plugin_Handled;
-	
+
 	if((next_len = BreakString(Arguments[len], sTime, sizeof(sTime))) != -1)
 	{
 		len += next_len;
@@ -931,7 +931,7 @@ public Action EWM_Eban_Command_Restrict(int iClient, int iArgs)
 		EWM_Eban_Menu_EBanReason(iClient, iTarget, iDuration);
 		return Plugin_Handled;
 	} else
-	{	
+	{
 		FormatEx(sReason, sizeof(sReason), Arguments[len]);
 		if(!sReason[0]) sReason = g_sDefaultBanReason;
 		TrimString(sReason);
@@ -960,7 +960,7 @@ public Action EWM_Eban_Command_Unrestrict(int iClient, int iArgs)
 	int len;
 	char Arguments[256], sArg[64];
 	GetCmdArgString(Arguments, sizeof(Arguments));
-	
+
 	len = BreakString(Arguments, sArg, sizeof(sArg));
 	if(len == -1)
 	{
@@ -1002,7 +1002,7 @@ public Action EWM_Eban_Command_EBanlist(int iClient, int iArgs)
 	for(int i=1; i<MaxClients+1; i++)
 	{
 		if(!IsClientInGame(i)) continue;
-		
+
 		if(g_EbanClients[i].Banned)
 		{
 			bFirst = true;
@@ -1012,7 +1012,7 @@ public Action EWM_Eban_Command_EBanlist(int iClient, int iArgs)
 				FormatEx(sBuff, sizeof(sBuff), "%T: %T", "Duration", iClient, "Temporary", iClient);
 			else if(g_EbanClients[i].Duration==0)
 				FormatEx(sBuff, sizeof(sBuff), "%T: %T", "Duration", iClient, "Permanently", iClient);
-			else 
+			else
 			{
 				char sIssuedBuf[64];
 				FormatTime(sIssuedBuf, sizeof(sIssuedBuf), NULL_STRING, g_EbanClients[i].TimeStamp_Issued);
@@ -1085,39 +1085,39 @@ void EWM_Eban_Menu_EBanReason(int iClient, int iTarget, int iDuration)
 	else if(iDuration == 0) FormatEx(sMenuTranslate, sizeof(sMenuTranslate), "%T %T %N [%T]", "EW_Tag", iClient, "EBan Reason for", iClient, iTarget, "Permanently", iClient);
 		else FormatEx(sMenuTranslate, sizeof(sMenuTranslate), "%T %T %N [%i %T]", "EW_Tag", iClient, "EBan Reason for", iClient, iTarget, iDuration, "Minutes", iClient);
 	hMenu.SetTitle(sMenuTranslate);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Item misuse");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Item misuse", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Trolling on purpose");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Trolling on purpose", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Throwing item away");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Throwing item away", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Not using an item");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Not using an item", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Trimming team");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Trimming team", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Not listening to leader");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Not listening to leader", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Spamming an item");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Spamming an item", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Other");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Other", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	hMenu.Display(iClient, MENU_TIME_FOREVER);
 }
 

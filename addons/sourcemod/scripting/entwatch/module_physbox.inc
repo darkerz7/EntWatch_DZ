@@ -82,7 +82,7 @@ public bool RegisterPhysbox(class_ItemList ItemInstance, int iEntity)
 public void OnPhysboxSpawned(int iEntity)
 {
 	if(!IsValidEntity(iEntity) || !g_bConfigLoaded) return;
-	
+
 	for(int i = 0; i<g_ItemList.Length; i++)
 	{
 		class_ItemList ItemTest;

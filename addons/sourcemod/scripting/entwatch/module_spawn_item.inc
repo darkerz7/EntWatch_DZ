@@ -19,7 +19,7 @@ public void EWM_Spawn_Spawn(int iAdmin, int iUserID, int iIndexConfig, bool bStr
 		{
 			class_ItemConfig ItemTest;
 			g_ItemConfig.GetArray(iIndexConfig, ItemTest, sizeof(ItemTest));
-			
+
 			// Check for point_template existence
 			if(strcmp(ItemTest.Spawner, "")!=0)
 			{
@@ -53,22 +53,22 @@ public void EWM_Spawn_Spawn(int iAdmin, int iUserID, int iIndexConfig, bool bStr
 						}
 					// Spawn the maker, and then use the maker to spawn the item
 					float fWOrigin[3];
-					
+
 					GetClientAbsOrigin(iTarget, fWOrigin);
-					
+
 					fWOrigin[2] += 20.0;
-					
+
 					int iMaker = CreateEntityByName("env_entity_maker");
-					
+
 					DispatchKeyValue(iMaker, "EntityTemplate", ItemTest.Spawner);
 					DispatchKeyValue(iMaker, "spawnflags", "0");
-					
+
 					DispatchSpawn(iMaker);
 					TeleportEntity(iMaker, fWOrigin, NULL_VECTOR, NULL_VECTOR);
-					
+
 					AcceptEntityInput(iMaker, "ForceSpawn");
 					AcceptEntityInput(iMaker, "Kill");
-					
+
 					#if defined EW_MODULE_FORWARDS
 					Call_StartForward(g_hOnAdminSpawnItem);
 					Call_PushCell(iAdmin);
@@ -99,30 +99,30 @@ public Action EWM_Spawn_Command_Spawn(int iClient, int iArgs)
 
 		int iValue = -1;
 		char sStrip[20];
-		
+
 		bool bStrip = false;
-		
+
 		if(GetCmdArgs() >= 3)
 		{
 			GetCmdArg(3, sStrip, sizeof(sStrip));
-			
+
 			if(StringToIntEx(sStrip, iValue) == 0)
 			{
 				CReplyToCommand(iClient, "%s%t %s%t: sm_espawnitem <receiver> <itemname> [<strip 0/1>]", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Usage");
 				return Plugin_Handled;
 			}
-			
+
 			if(iValue == 1) bStrip = true;
 		}
-		
+
 		int iTarget = -1;
 		char sTarget[64], sItemName[32];
-		
+
 		GetCmdArg(1, sTarget, sizeof(sTarget));
 		GetCmdArg(2, sItemName, sizeof(sItemName));
-		
+
 		if((iTarget = FindTarget(iClient, sTarget, true, false)) == -1) return Plugin_Handled;
-		
+
 		#if defined EW_MODULE_EBAN
 		if(g_EbanClients[iTarget].Banned)
 		{
@@ -130,7 +130,7 @@ public Action EWM_Spawn_Command_Spawn(int iClient, int iArgs)
 			return Plugin_Handled;
 		}
 		#endif
-		
+
 		int iWeaponCount = 0,
 		iItemIndex = -1;
 		for(int i = 0; i<g_ItemConfig.Length; i++)

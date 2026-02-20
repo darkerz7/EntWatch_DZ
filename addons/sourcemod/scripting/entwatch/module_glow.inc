@@ -9,7 +9,7 @@ ConVar	g_hCvar_Glow,
 // Module Local settings
 bool	g_bGlow = true,
 		g_bGlow_Spawn = true;
-		
+
 bool g_bMapRunning = false;
 bool g_bThinkPostHooked[2048] = { false, ... };
 
@@ -38,7 +38,7 @@ public void Cvar_GLOW_Changed(ConVar convar, const char[] oldValue, const char[]
 		g_bGlow = GetConVarBool(convar);
 	else if(convar==g_hCvar_Glow_Spawn)
 		g_bGlow_Spawn = GetConVarBool(convar);
-	
+
 	if(!g_bGlow && g_bConfigLoaded)
 		for(int i = 0; i<g_ItemList.Length; i++)
 		{

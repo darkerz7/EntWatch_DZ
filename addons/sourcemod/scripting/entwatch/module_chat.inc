@@ -45,7 +45,7 @@ stock void EWM_Chat_Use(class_ItemList ItemTest, int iClient, int iAbility)
 {
 	char sPlayerInfo[128];
 	FormatPlayerInfo(iClient, sPlayerInfo, sizeof(sPlayerInfo));
-	
+
 	for(int iPly = 1; iPly <= MaxClients; iPly++)
 		if(IsClientConnected(iPly) && IsClientInGame(iPly))
 			if(!g_bTeamOnly || (g_bTeamOnly && GetClientTeam(iPly) == ItemTest.Team || !IsPlayerAlive(iPly) || (g_iChatASMode == 0 && g_bIsAdmin[iPly])))
@@ -61,7 +61,7 @@ stock void EWM_Chat_PickUp(class_ItemList ItemTest, int iClient)
 {
 	char sPlayerInfo[128];
 	FormatPlayerInfo(iClient, sPlayerInfo, sizeof(sPlayerInfo));
-	
+
 	for(int iPly = 1; iPly <= MaxClients; iPly++)
 		if(IsClientConnected(iPly) && IsClientInGame(iPly))
 			if(!g_bTeamOnly || (g_bTeamOnly && GetClientTeam(iPly) == ItemTest.Team || !IsPlayerAlive(iPly) || (g_iChatASMode < 2 && g_bIsAdmin[iPly])))
@@ -73,7 +73,7 @@ stock void EWM_Chat_Drop(class_ItemList ItemTest, int iClient)
 {
 	char sPlayerInfo[128];
 	FormatPlayerInfo(iClient, sPlayerInfo, sizeof(sPlayerInfo));
-	
+
 	for(int iPly = 1; iPly <= MaxClients; iPly++)
 		if(IsClientConnected(iPly) && IsClientInGame(iPly))
 			if(!g_bTeamOnly || (g_bTeamOnly && GetClientTeam(iPly) == ItemTest.Team || !IsPlayerAlive(iPly) || (g_iChatASMode < 2 && g_bIsAdmin[iPly])))
@@ -85,7 +85,7 @@ stock void EWM_Chat_Disconnect(class_ItemList ItemTest, int iClient)
 {
 	char sPlayerInfo[128];
 	FormatPlayerInfo(iClient, sPlayerInfo, sizeof(sPlayerInfo));
-	
+
 	for(int iPly = 1; iPly <= MaxClients; iPly++)
 		if(IsClientConnected(iPly) && IsClientInGame(iPly))
 			if (!g_bTeamOnly || (g_bTeamOnly && GetClientTeam(iPly) == ItemTest.Team || !IsPlayerAlive(iPly) || (g_iChatASMode < 2 && g_bIsAdmin[iPly])))
@@ -97,7 +97,7 @@ stock void EWM_Chat_Disconnect_Drop(class_ItemList ItemTest, int iClient)
 {
 	char sPlayerInfo[128];
 	FormatPlayerInfo(iClient, sPlayerInfo, sizeof(sPlayerInfo));
-	
+
 	for(int iPly = 1; iPly <= MaxClients; iPly++)
 		if(IsClientConnected(iPly) && IsClientInGame(iPly))
 			if (!g_bTeamOnly || (g_bTeamOnly && GetClientTeam(iPly) == ItemTest.Team || !IsPlayerAlive(iPly) || (g_iChatASMode < 2 && g_bIsAdmin[iPly])))
@@ -109,7 +109,7 @@ stock void EWM_Chat_PlayerDeath(class_ItemList ItemTest, int iClient)
 {
 	char sPlayerInfo[128];
 	FormatPlayerInfo(iClient, sPlayerInfo, sizeof(sPlayerInfo));
-	
+
 	for(int iPly = 1; iPly <= MaxClients; iPly++)
 		if(IsClientConnected(iPly) && IsClientInGame(iPly))
 			if(!g_bTeamOnly || (g_bTeamOnly && GetClientTeam(iPly) == ItemTest.Team || !IsPlayerAlive(iPly) || (g_iChatASMode < 2 && g_bIsAdmin[iPly])))
@@ -121,7 +121,7 @@ stock void EWM_Chat_PlayerDeath_Drop(class_ItemList ItemTest, int iClient)
 {
 	char sPlayerInfo[128];
 	FormatPlayerInfo(iClient, sPlayerInfo, sizeof(sPlayerInfo));
-	
+
 	for(int iPly = 1; iPly <= MaxClients; iPly++)
 		if(IsClientConnected(iPly) && IsClientInGame(iPly))
 			if(!g_bTeamOnly || (g_bTeamOnly && GetClientTeam(iPly) == ItemTest.Team || !IsPlayerAlive(iPly) || (g_iChatASMode < 2 && g_bIsAdmin[iPly])))

@@ -154,7 +154,7 @@ void EWM_Menu_PM_EBanList(int iClient)
 	for (int i = 1; i <= MaxClients; i++)
 	{
 		if(!IsClientInGame(i) || IsFakeClient(i) || g_EbanClients[i].Banned) continue;
-		
+
 		bNotFound = false;
 		FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i", g_iUserIDs[i]);
 		FormatEx(sMenuTemp, sizeof(sMenuTemp), "%N |#%s", i, sIndexTemp);
@@ -179,7 +179,7 @@ void EWM_Menu_PM_EUnBanList(int iClient)
 	for (int i = 1; i <= MaxClients; i++)
 	{
 		if(!IsClientInGame(i) || IsFakeClient(i) || !g_EbanClients[i].Banned) continue;
-		
+
 		bNotFound = false;
 		FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i", g_iUserIDs[i]);
 		FormatEx(sMenuTemp, sizeof(sMenuTemp), "%N |#%s", i, sIndexTemp);
@@ -200,35 +200,35 @@ void EWM_Menu_PM_EBanDuration(int iClient, int iTarget)
 	FormatEx(sMenuTranslate, sizeof(sMenuTranslate), "%T %T %N", "EW_Tag", iClient, "EBan Duration for", iClient, iTarget);
 	hMenu.SetTitle(sMenuTranslate);
 	hMenu.ExitBackButton = true;
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i", -1, g_iUserIDs[iTarget]);
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Temporary", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i", 10, g_iUserIDs[iTarget]);
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "10 %T", "Minutes", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i", 60, g_iUserIDs[iTarget]);
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "1 %T", "Hour", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i", 1440, g_iUserIDs[iTarget]);
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "1 %T", "Day", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i", 10080, g_iUserIDs[iTarget]);
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "1 %T", "Week", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i", 40320, g_iUserIDs[iTarget]);
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "1 %T", "Month", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i", 0, g_iUserIDs[iTarget]);
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Permanently", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	hMenu.Display(iClient, MENU_TIME_FOREVER);
 }
 
@@ -241,39 +241,39 @@ void EWM_Menu_PM_EBanReason(int iClient, int iTarget, int iDuration)
 		else FormatEx(sMenuTranslate, sizeof(sMenuTranslate), "%T %T %N [%i %T]", "EW_Tag", iClient, "EBan Reason for", iClient, iTarget, iDuration, "Minutes", iClient);
 	hMenu.SetTitle(sMenuTranslate);
 	hMenu.ExitBackButton = true;
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Item misuse");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Item misuse", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Trolling on purpose");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Trolling on purpose", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Throwing item away");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Throwing item away", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Not using an item");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Not using an item", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Trimming team");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Trimming team", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Not listening to leader");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Not listening to leader", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Spamming an item");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Spamming an item", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%s", iDuration, g_iUserIDs[iTarget], "Other");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Other", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	hMenu.Display(iClient, MENU_TIME_FOREVER);
 }
 
@@ -307,17 +307,17 @@ void EWM_Menu_PM_EBanInfo(int iClient, int iTarget)
 			FormatEx(sItemIssued, sizeof(sItemIssued), "%T: %s", "Issued", iClient, sTimeStamp);
 		}
 		FormatEx(sItemReason, sizeof(sItemReason), "%T: %s\n", "Reason", iClient, g_EbanClients[iTarget].Reason);
-		
+
 		hMenu.AddItem("", sItemAdmin, ITEMDRAW_DISABLED);
 		hMenu.AddItem("", sItemDuration, ITEMDRAW_DISABLED);
 		hMenu.AddItem("", sItemIssued, ITEMDRAW_DISABLED);
 		hMenu.AddItem("", sItemExpires, ITEMDRAW_DISABLED);
 		hMenu.AddItem("", sItemReason, ITEMDRAW_DISABLED);
-		
+
 		FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i", g_iUserIDs[iTarget]);
 		FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "UnEBan a Player", iClient);
 		hMenu.AddItem(sIndexTemp, sMenuTemp);
-		
+
 		hMenu.Display(iClient, MENU_TIME_FOREVER);
 	} else
 	{
@@ -330,7 +330,7 @@ void EWM_Menu_PM_ItemInfo(int iClient, int iItemIndex)
 {
 	class_ItemList ItemTest;
 	g_ItemList.GetArray(iItemIndex, ItemTest, sizeof(ItemTest));
-	
+
 	Menu hMenu = CreateMenu(EWM_Menu_PM_ItemInfo_Handler);
 	char sMenuTranslate[128], sOwner[64];
 	FormatEx(sMenuTranslate, sizeof(sMenuTranslate), "%T %T: %s", "EW_Tag", iClient, "Item Info", iClient, ItemTest.Name);
@@ -365,7 +365,7 @@ void EWM_Menu_PM_ItemInfo(int iClient, int iItemIndex)
 	FormatEx(sItemBuffer_transfer, sizeof(sItemBuffer_transfer), "%T", "Transfer Item", iClient);
 	hMenu.AddItem(sItemTemp_transfer, sItemBuffer_transfer);
 	#endif
-	
+
 	hMenu.Display(iClient, MENU_TIME_FOREVER);
 }
 
@@ -374,13 +374,13 @@ void EWM_Menu_PM_ItemTransfer(int iClient, int iItemIndex)
 {
 	class_ItemList ItemTest;
 	g_ItemList.GetArray(iItemIndex, ItemTest, sizeof(ItemTest));
-	
+
 	if(!IsValidEdict(ItemTest.WeaponID))
 	{
 		CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Item not available");
 		return;
 	}
-	
+
 	Menu hMenu = CreateMenu(EWM_Menu_PM_ItemTransfer_Handler);
 	char sMenuTranslate[128], sMenuTemp[64], sIndexTemp[64];
 	FormatEx(sMenuTranslate, sizeof(sMenuTranslate), "%T %T %s:", "EW_Tag", iClient, "Receiver of the Item", iClient, ItemTest.Name);
@@ -395,7 +395,7 @@ void EWM_Menu_PM_ItemTransfer(int iClient, int iItemIndex)
 		#endif
 		if(ItemTest.OwnerID != INVALID_ENT_REFERENCE)
 			if(GetClientTeam(i) != GetClientTeam(ItemTest.OwnerID)) continue;
-		
+
 		bNotFound = false;
 		FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i", iItemIndex, g_iUserIDs[i]);
 		FormatEx(sMenuTemp, sizeof(sMenuTemp), "%N |#%i", i, g_iUserIDs[i]);
@@ -453,7 +453,7 @@ void EWM_Menu_PM_SpawnItemStrip(int iClient, int iIndexItem)
 	FormatEx(sIndexItem, sizeof(sIndexItem), "%d/%d", iIndexItem, 0);
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Not Strip Weapon", iClient);
 	hMenu.AddItem(sIndexItem, sMenuTemp);
-	
+
 	hMenu.Display(iClient, MENU_TIME_FOREVER);
 }
 
@@ -472,7 +472,7 @@ void EWM_Menu_PM_SpawnItemTarget(int iClient, int iItemIndex, int iStrip)
 		#if defined EW_MODULE_EBAN
 		if(g_EbanClients[i].Banned) continue;
 		#endif
-		
+
 		bNotFound = false;
 		FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%i/%i", iItemIndex, iStrip, g_iUserIDs[i]);
 		FormatEx(sMenuTemp, sizeof(sMenuTemp), "%N |#%i", i, g_iUserIDs[i]);
@@ -483,7 +483,7 @@ void EWM_Menu_PM_SpawnItemTarget(int iClient, int iItemIndex, int iStrip)
 		FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "No Receivers", iClient);
 		hMenu.AddItem("", sMenuTemp, ITEMDRAW_DISABLED);
 	}
-	
+
 	hMenu.Display(iClient, MENU_TIME_FOREVER);
 }
 #endif
