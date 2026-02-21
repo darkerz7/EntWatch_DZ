@@ -52,7 +52,7 @@ Action EWM_OfflineEban_Timer_Checker(Handle timer)
 		g_OfflineArray.GetArray(i, OfflinePlayerTest, sizeof(OfflinePlayerTest));
 		if(OfflinePlayerTest.TimeStamp != -1 && iCurrentTimeStamp > OfflinePlayerTest.TimeStamp) g_OfflineArray.Erase(i);
 	}
-	
+
 	return Plugin_Continue;
 }
 
@@ -96,7 +96,7 @@ public void EWM_OfflineEban_OnClientPostAdminCheck(int iClient)
 public void EWM_OfflineEban_OnClientDisconnect(int iClient)
 {
 	if(!IsValidClient(iClient) || !IsClientConnected(iClient) || IsClientSourceTV(iClient) || IsFakeClient(iClient)) return;
-	
+
 	char sClient_Name[32];
 	GetClientName(iClient, sClient_Name, sizeof(sClient_Name));
 	bool bNotFound = true;
@@ -131,7 +131,7 @@ public void EWM_OfflineEban_OnClientDisconnect(int iClient)
 public void EWM_OfflineEban_UpdateItemName(int iClient, const char[] sNameItem)
 {
 	if(IsFakeClient(iClient)) return;
-	
+
 	char sClient_Name[32];
 	GetClientName(iClient, sClient_Name, sizeof(sClient_Name));
 	bool bNotFound = true;
@@ -180,18 +180,18 @@ public void EWM_OfflineEban_BanClient(class_Offline_Eban cPlayer, int iAdmin, in
 			FormatEx(sAdmin_SteamID, sizeof(sAdmin_SteamID), "SERVER");
 		}
 		char sTQuery[1024], szAdmin_Name[32], szClient_Name[32], szReason[64];
-				
+
 		g_hEbanDB.Escape(sAdmin_Name, szAdmin_Name, sizeof(szAdmin_Name));//Admin Name to DB
 		g_hEbanDB.Escape(cPlayer.PlayerName, szClient_Name, sizeof(szClient_Name));//Client Name to DB
 		g_hEbanDB.Escape(sReason, szReason, sizeof(szReason));//Reason to DB
-		
+
 		// Only permanent or duration
 		int iBanDuration = iDuration;
 		if(iBanDuration<0) iBanDuration = 0;
 		if(iBanDuration==0)
 		{
 			int iTimeStampEBan = GetTime();
-			
+
 			FormatEx(sTQuery, sizeof(sTQuery), "INSERT INTO `EntWatch_Current_Eban` (`client_name`, `client_steamid`, `admin_name`, `admin_steamid`, `server`, `duration`, `timestamp_issued`, `reason`) VALUES ('%s', '%s', '%s', '%s', '%s', %d, %d, '%s')", szClient_Name, cPlayer.Player_SteamID, szAdmin_Name, sAdmin_SteamID, g_SchemeConfig.Server_Name, iBanDuration, iTimeStampEBan, szReason);
 			SQL_TQuery(g_hEbanDB, EWM_OfflineEban_SQLTCallBackBan, sTQuery,0);
 			//LogAction(iAdmin, -1, "\"%L\" offline restricted \"%s [%s]\" permanently. Reason: %s", iAdmin, cPlayer.PlayerName, cPlayer.Player_SteamID, sReason);
@@ -199,7 +199,7 @@ public void EWM_OfflineEban_BanClient(class_Offline_Eban cPlayer, int iAdmin, in
 		} else
 		{
 			int iTimeStampEBan = GetTime()+iBanDuration*60;
-			
+
 			FormatEx(sTQuery, sizeof(sTQuery), "INSERT INTO `EntWatch_Current_Eban` (`client_name`, `client_steamid`, `admin_name`, `admin_steamid`, `server`, `duration`, `timestamp_issued`, `reason`) VALUES ('%s', '%s', '%s', '%s', '%s', %d, %d, '%s')", szClient_Name, cPlayer.Player_SteamID, szAdmin_Name, sAdmin_SteamID, g_SchemeConfig.Server_Name, iBanDuration, iTimeStampEBan, szReason);
 			SQL_TQuery(g_hEbanDB, EWM_OfflineEban_SQLTCallBackBan, sTQuery,0);
 			//LogAction(iAdmin, -1, "\"%L\" offline restricted \"%s [%s]\" for %d minutes. Reason: %s", iAdmin, cPlayer.PlayerName, cPlayer.Player_SteamID, iBanDuration, sReason);
@@ -223,7 +223,7 @@ public void EWM_OfflineEban_BanClient(class_Offline_Eban cPlayer, int iAdmin, in
 void EWM_OfflineEban_SQLTCallBackBan(Handle hDatabase, Handle hResults, const char[] sError, any data)
 {
 	#if defined EW_MODULE_FORWARDS
-	if(sError[0]) 
+	if(sError[0])
 	{
 		Call_StartForward(g_hOnOfflineBanError);
 		Call_PushString(sError);
@@ -292,25 +292,25 @@ void EWM_OfflineEban_Duration(int iClient)
 	FormatEx(sMenuTranslate, sizeof(sMenuTranslate), "%T %T %s #%i (%s)", "EW_Tag", iClient, "EBan Duration for", iClient, g_aMenuBuffer[iClient].PlayerName, g_aMenuBuffer[iClient].UserID, g_aMenuBuffer[iClient].Player_SteamID);
 	hMenu.SetTitle(sMenuTranslate);
 	hMenu.ExitBackButton = true;
-	
+
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "10 %T", "Minutes", iClient);
 	hMenu.AddItem("10", sMenuTemp);
-	
+
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "1 %T", "Hour", iClient);
 	hMenu.AddItem("60", sMenuTemp);
-	
+
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "1 %T", "Day", iClient);
 	hMenu.AddItem("1440", sMenuTemp);
-	
+
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "1 %T", "Week", iClient);
 	hMenu.AddItem("10080", sMenuTemp);
-	
+
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "1 %T", "Month", iClient);
 	hMenu.AddItem("40320", sMenuTemp);
-	
+
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Permanently", iClient);
 	hMenu.AddItem("0", sMenuTemp);
-	
+
 	hMenu.Display(iClient, MENU_TIME_FOREVER);
 }
 
@@ -322,39 +322,39 @@ void EWM_OfflineEban_Reason(int iClient, int iDuration)
 		else FormatEx(sMenuTranslate, sizeof(sMenuTranslate), "%T %T %s #%i (%s) [%i %T]", "EW_Tag", iClient, "EBan Reason for", iClient, g_aMenuBuffer[iClient].PlayerName, g_aMenuBuffer[iClient].UserID, g_aMenuBuffer[iClient].Player_SteamID, iDuration, "Minutes", iClient);
 	hMenu.SetTitle(sMenuTranslate);
 	hMenu.ExitBackButton = true;
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%s", iDuration, "Item misuse");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Item misuse", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%s", iDuration, "Trolling on purpose");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Trolling on purpose", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%s", iDuration, "Throwing item away");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Throwing item away", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%s", iDuration, "Not using an item");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Not using an item", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%s", iDuration, "Trimming team");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Trimming team", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%s", iDuration, "Not listening to leader");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Not listening to leader", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%s", iDuration, "Spamming an item");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Spamming an item", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	FormatEx(sIndexTemp, sizeof(sIndexTemp), "%i/%s", iDuration, "Other");
 	FormatEx(sMenuTemp, sizeof(sMenuTemp), "%T", "Other", iClient);
 	hMenu.AddItem(sIndexTemp, sMenuTemp);
-	
+
 	hMenu.Display(iClient, MENU_TIME_FOREVER);
 }
 

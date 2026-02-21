@@ -47,18 +47,18 @@ class_ClientSettings_Hud g_CSettings_Hud[MAXPLAYERS+1];
 void SaveHudSettings(int client)
 {
 	// Only save if settings differ from defaults
-	if (g_CSettings_Hud[client].Display == true && 
-		g_CSettings_Hud[client].Name == true && 
-		g_CSettings_Hud[client].ItemsCount == g_iMaxItemsCount && 
+	if (g_CSettings_Hud[client].Display == true &&
+		g_CSettings_Hud[client].Name == true &&
+		g_CSettings_Hud[client].ItemsCount == g_iMaxItemsCount &&
 		g_CSettings_Hud[client].RotationTime == g_iDefaultRotationTime)
 	{
 		// Settings are at defaults, delete the cookie to save DB space
 		g_cCookie_HudSettings.Set(client, "");
 		return;
 	}
-	
+
 	char sCookieData[32];
-	FormatEx(sCookieData, sizeof(sCookieData), "%d|%d|%d|%d", 
+	FormatEx(sCookieData, sizeof(sCookieData), "%d|%d|%d|%d",
 		g_CSettings_Hud[client].Display ? 1 : 0,
 		g_CSettings_Hud[client].Name ? 1 : 0,
 		g_CSettings_Hud[client].ItemsCount,
@@ -70,7 +70,7 @@ void LoadHudSettings(int client)
 {
 	char sCookieData[32];
 	g_cCookie_HudSettings.Get(client, sCookieData, sizeof(sCookieData));
-	
+
 	if (strcmp(sCookieData, "") == 0)
 	{
 		// No cookie found, use default values (don't save them)
@@ -80,11 +80,11 @@ void LoadHudSettings(int client)
 		g_CSettings_Hud[client].RotationTime = g_iDefaultRotationTime;
 		return;
 	}
-	
+
 	// Parse the cookie data: "1|1|10|3" format
 	char sParts[4][8];
 	int iPartCount = ExplodeString(sCookieData, "|", sParts, sizeof(sParts), sizeof(sParts[]));
-	
+
 	if (iPartCount >= 4)
 	{
 		// Parse all values as integers
@@ -92,7 +92,7 @@ void LoadHudSettings(int client)
 		g_CSettings_Hud[client].Name = (StringToInt(sParts[1]) == 1);
 		g_CSettings_Hud[client].ItemsCount = StringToInt(sParts[2]);
 		g_CSettings_Hud[client].RotationTime = StringToInt(sParts[3]);
-		
+
 		// Validate ranges
 		if (g_CSettings_Hud[client].ItemsCount <= 0 || g_CSettings_Hud[client].ItemsCount > MAX_ShowHudItems)
 			g_CSettings_Hud[client].ItemsCount = g_iMaxItemsCount;
@@ -161,7 +161,7 @@ stock void EWM_Hud_OnPluginStart()
 	g_hCvar_ZM_pry				= CreateConVar("entwatch_zm_noitem_pry", "0", "Enable/Disable zm pry human Items if zms without items", _, true, 0.0, true, 1.0);
 	g_hCvar_MaxHudItemsCount	= CreateConVar("entwatch_hud_items_count", "10", "Max/Default Items Count in hud to display.", _, true, 1.0, true, 10.0);
 	g_hCvar_HudRotationDefault	= CreateConVar("entwatch_hud_rotation_time_default", "3", "Default Rotation time in seconds for hud.", _, true, 1.0, true, 5.0);
-	
+
 	g_bDispEnabled = GetConVarBool(g_hCvar_DisplayEnabled);
 	g_bDispCooldowns = GetConVarBool(g_hCvar_DisplayCooldowns);
 	g_bAdminsSee = GetConVarBool(g_hCvar_Admins_See);
@@ -182,7 +182,7 @@ stock void EWM_Hud_OnPluginStart()
 	SetCookieMenuItem(CookieHandler, 0, "EntWatch Settings");
 
 	g_cCookie_HudSettings = new Cookie("entwatch_hud_settings", "Combined settings (display|name|items|time)", CookieAccess_Private);
-	
+
 	CreateTimer(1.0, EWM_Hud_Timer_DisplayHUD, _, TIMER_REPEAT);
 }
 
@@ -240,10 +240,10 @@ stock void EWM_Hud_OnClientDisconnect(int iClient)
 {
 	g_iRotation[iClient][0][0] = 0;
 	g_iRotation[iClient][0][1] = 0;
-	
+
 	g_iRotation[iClient][1][0] = 0;
 	g_iRotation[iClient][1][1] = 0;
-	
+
 	g_iRotation[iClient][2][0] = 0;
 	g_iRotation[iClient][2][1] = 0;
 }
@@ -270,7 +270,7 @@ public void EWM_Hud_OnMapStart()
 	for(int j = 1; j <= MaxClients; j++)
 	{
 		if(!IsClientInGame(j) || IsClientSourceTV(j)) continue;
-		
+
 		for(int i = 0; i < 3; i++)
 		{
 			g_iRotation[j][i][0] = 0;
@@ -318,9 +318,9 @@ public Action EWM_Hud_Timer_DisplayHUD(Handle timer, int client)
 		if (ItemTest.Hud && ItemTest.OwnerID != INVALID_ENT_REFERENCE && IsValidEdict(ItemTest.WeaponID))
 		{
 			int iTeamOwner = GetClientTeam(ItemTest.OwnerID);
-			if (iTeamOwner == CS_TEAM_CT) 
+			if (iTeamOwner == CS_TEAM_CT)
 				g_iHItemsArray.Push(i);
-			else if (iTeamOwner == CS_TEAM_T) 
+			else if (iTeamOwner == CS_TEAM_T)
 				g_iZMItemsArray.Push(i);
 		}
 	}
@@ -469,7 +469,7 @@ void EWM_Hud_Construct_String(int iClient, char[] sResult, int iSizeResult, char
 							FormatItemWithUsesAndCoolodown(sBuf_woname[iIndex], ItemTest);
 						case 5:
 							FormatItemCooldownAfterUses(sBuf_woname[iIndex], ItemTest);
-						case 6, 7: 
+						case 6, 7:
 							FormatItemWithMathValue(sBuf_woname[iIndex], ItemTest);
 						default:
 							FormatEx(sBuf_woname[iIndex], MAX_SizeStringForItem, "%s[+]", ItemTest.ShortName);
@@ -658,7 +658,7 @@ public Action EWM_Hud_Command_ToggleHUD(int iClient, int iArgs)
 		SaveHudSettings(iClient);
 
 		sStatus = g_CSettings_Hud[iClient].Display ? "Enabled" : "Disabled";
-		sColor = g_CSettings_Hud[iClient].Display ? g_SchemeConfig.Color_Enabled : g_SchemeConfig.Color_Disabled;        
+		sColor = g_CSettings_Hud[iClient].Display ? g_SchemeConfig.Color_Enabled : g_SchemeConfig.Color_Disabled;
 		CPrintToChat(iClient, "%s%t %s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud", sColor, sStatus);
 	}
 	return Plugin_Handled;
@@ -682,66 +682,66 @@ public Action EWM_Hud_Command_ToggleHUDName(int iClient, int iArgs)
 public Action EWM_Hud_Command_HudItems(int iClient, int iArgs)
 {
 	if(!iClient) return Plugin_Handled;
-	
+
 	if((IsClientConnected(iClient) && IsClientInGame(iClient)))
 	{
 		if (!AreClientCookiesCached(iClient)) return Plugin_Handled;
-		
+
 		if (GetCmdArgs() < 1)
 		{
 			DisplayMenuItemsNumberHUD(iClient);
 			CReplyToCommand(iClient, "%s%t %s%t: sm_huditems <1-%d>", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Usage", MAX_ShowHudItems);
 			return Plugin_Handled;
 		}
-		
+
 		char sArg[32];
 		GetCmdArg(1, sArg, sizeof(sArg));
-		
+
 		int iCount;
 		if (!StringToIntEx(sArg, iCount) || iCount <= 0 || iCount > MAX_ShowHudItems)
 		{
 			CReplyToCommand(iClient, "%s%t %s%t <1-%d>", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Invalid Amount", MAX_ShowHudItems);
 			return Plugin_Handled;
 		}
-		
+
 		g_CSettings_Hud[iClient].ItemsCount = iCount;
 		SaveHudSettings(iClient);
 		CPrintToChat(iClient, "%s%t %s%t %s%t (%d)", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Items", g_SchemeConfig.Color_Enabled, "Saved", g_CSettings_Hud[iClient].RotationTime);
 	}
-	
+
 	return Plugin_Handled;
 }
 
 public Action EWM_Hud_Command_HudRotation(int iClient, int iArgs)
 {
 	if(!iClient) return Plugin_Handled;
-	
+
 	if((IsClientConnected(iClient) && IsClientInGame(iClient)))
 	{
 		if (!AreClientCookiesCached(iClient)) return Plugin_Handled;
-		
+
 		if (GetCmdArgs() < 1)
 		{
 			DisplayMenuRotationTimeHUD(iClient);
 			CReplyToCommand(iClient, "%s%t %s%t: sm_hudtime <1-%d>", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Usage", TIMEROTATIONHUD);
 			return Plugin_Handled;
 		}
-		
+
 		char sArg[32];
 		GetCmdArg(1, sArg, sizeof(sArg));
-		
+
 		int iTime;
 		if (!StringToIntEx(sArg, iTime) || iTime <= 0 || iTime > TIMEROTATIONHUD)
 		{
 			CReplyToCommand(iClient, "%s%t %s%t <1-%d>", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Invalid Amount", TIMEROTATIONHUD);
 			return Plugin_Handled;
 		}
-		
+
 		g_CSettings_Hud[iClient].RotationTime = iTime;
 		SaveHudSettings(iClient);
 		CPrintToChat(iClient, "%s%t %s%t %s%t (%d)", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Hud Rotation Time", g_SchemeConfig.Color_Enabled, "Saved", g_CSettings_Hud[iClient].RotationTime);
 	}
-	
+
 	return Plugin_Handled;
 }
 
@@ -768,7 +768,7 @@ public void DisplayCookieMenu(int iClient)
 	FormatEx(hudisplay, sizeof(hudisplay), "%T", "Status", iClient);
 	FormatEx(hudname, sizeof(hudname), "%T", "Hud Names", iClient);
 	FormatEx(huditems, sizeof(huditems), "%T", "Hud Item Number", iClient);
-	FormatEx(hudtime, sizeof(hudtime), "%T", "Hud Rotation Time", iClient); 
+	FormatEx(hudtime, sizeof(hudtime), "%T", "Hud Rotation Time", iClient);
 
 	menu.AddItem("display", hudisplay);
 	menu.AddItem("name", hudname);
@@ -904,9 +904,9 @@ public int DisplayMenuItemsNumberHUDMenuHandler(Menu menu, MenuAction action, in
 		case MenuAction_End:
 		{
 			delete menu;
-		}	
+		}
 	}
-	
+
 	return 0;
 }
 
@@ -953,8 +953,8 @@ public int DisplayMenuRotationTimeHUDMenuHandler(Menu menu, MenuAction action, i
 		case MenuAction_End:
 		{
 			delete menu;
-		}	
+		}
 	}
-	
+
 	return 0;
 }

@@ -42,7 +42,7 @@ ConVar	g_hCvar_System_Server,
 bool	g_bSystem_Server = true,
 		g_bItem_Server = true,
 		g_bAdmin_Server = true,
-		#if defined _discordWebhookAPI_included_		
+		#if defined _discordWebhookAPI_included_
 		g_bSystem_Discord = false,
 		g_bItem_Discord = false,
 		g_bAdmin_Discord = false,
@@ -68,7 +68,7 @@ char g_sCurrentMap[128];
 char g_sServer[64];
 char g_sSteamIDs[MAXPLAYERS+1][32];
 
-public Plugin myinfo = 
+public Plugin myinfo =
 {
 	name = "EntWatch Logs Manager",
 	author = "DarkerZ[RUS], .Rushaway",
@@ -82,7 +82,7 @@ public void OnPluginStart()
 	g_hCvar_System_Server			= CreateConVar("entwatch_system_server", "1", "Whether LM will write system logs to the server");
 	g_hCvar_Item_Server				= CreateConVar("entwatch_item_server", "1", "Whether LM will write items logs to the server");
 	g_hCvar_Admin_Server			= CreateConVar("entwatch_admin_server", "1", "Whether LM will write admins activites logs to the server");
-	
+
 	#if defined _discordWebhookAPI_included_
 	g_hCvar_Item_Discord			= CreateConVar("entwatch_item_discord", "0", "Whether LM will write items logs to the discord");
 	g_hCvar_Admin_Discord			= CreateConVar("entwatch_admin_discord", "0", "Whether LM will write admins activites logs to the discord");
@@ -103,38 +103,38 @@ public void OnPluginStart()
 	g_hCvar_System_ThreadName 		= CreateConVar("entwatch_system_threadname", "EntWatch System Logs", "System Logs: The Thread Name of your Discord forums. (If not empty, will create a new thread)", FCVAR_PROTECTED);
 	g_hCvar_System_ThreadID 		= CreateConVar("entwatch_system_threadid", "0", "System Logs: If thread_id is provided, the message will send in that thread.", FCVAR_PROTECTED);
 	#endif
-	
+
 	g_hCvar_System_Database			= CreateConVar("entwatch_system_database", "0", "Whether LM will write system logs to the database");
 	g_hCvar_Item_Database			= CreateConVar("entwatch_item_database", "0", "Whether LM will write items logs to the database");
 	g_hCvar_Admin_Database			= CreateConVar("entwatch_admin_database", "0", "Whether LM will write admins activites logs to the database");
-	
+
 	g_bSystem_Server = GetConVarBool(g_hCvar_System_Server);
 	g_bItem_Server = GetConVarBool(g_hCvar_Item_Server);
 	g_bAdmin_Server = GetConVarBool(g_hCvar_Admin_Server);
-	
+
 	#if defined _discordWebhookAPI_included_
 	g_bSystem_Discord = GetConVarBool(g_hCvar_System_Discord);
 	g_bItem_Discord = GetConVarBool(g_hCvar_Item_Discord);
 	g_bAdmin_Discord = GetConVarBool(g_hCvar_Admin_Discord);
 	#endif
-	
+
 	g_bSystem_Database = GetConVarBool(g_hCvar_System_Database);
 	g_bItem_Database = GetConVarBool(g_hCvar_Item_Database);
 	g_bAdmin_Database = GetConVarBool(g_hCvar_Admin_Database);
-	
+
 	if(g_bSystem_Database || g_bItem_Database || g_bAdmin_Database) Connect_to_DB();
-	
+
 	#if defined _discordWebhookAPI_included_
 	GetConVarString(g_hCvar_System_Webhook, g_sSystem_URL, sizeof(g_sSystem_URL));
 	GetConVarString(g_hCvar_Item_Webhook, g_sItem_URL, sizeof(g_sItem_URL));
 	GetConVarString(g_hCvar_Admin_Webhook, g_sAdmin_URL, sizeof(g_sAdmin_URL));
 	g_iRetry = GetConVarInt(g_hCvar_Webhook_Retry);
 	#endif
-	
+
 	HookConVarChange(g_hCvar_System_Server, Cvar_System_Changed);
 	HookConVarChange(g_hCvar_Item_Server, Cvar_Item_Changed);
 	HookConVarChange(g_hCvar_Admin_Server, Cvar_Admin_Changed);
-	
+
 	#if defined _discordWebhookAPI_included_
 	HookConVarChange(g_hCvar_System_Discord, Cvar_System_Changed);
 	HookConVarChange(g_hCvar_Item_Discord, Cvar_Item_Changed);
@@ -144,11 +144,11 @@ public void OnPluginStart()
 	HookConVarChange(g_hCvar_Admin_Webhook, Cvar_Admin_Changed);
 	HookConVarChange(g_hCvar_Webhook_Retry, Cvar_Changed);
 	#endif
-	
+
 	HookConVarChange(g_hCvar_System_Database, Cvar_System_Changed);
 	HookConVarChange(g_hCvar_Item_Database, Cvar_Item_Changed);
 	HookConVarChange(g_hCvar_Admin_Database, Cvar_Admin_Changed);
-	
+
 	AutoExecConfig(true, "EntWatch_LM_DZ");
 }
 
@@ -281,7 +281,7 @@ void DB_CreateTables()
 																								`other` varchar(32), \
 																								`reason` varchar(64), \
 																								`timestamp` INTEGER NOT NULL) CHARACTER SET %s COLLATE %s;", DB_ENTWATCH_CHARSET, DB_ENTWATCH_COLLATION);
-		T_CreateTables.AddQuery(sSQL_Query);																																												
+		T_CreateTables.AddQuery(sSQL_Query);
 		SQL_ExecuteTransaction(g_hDB, T_CreateTables, DB_SQLCreateTables_Success, DB_SQLCreateTables_Error, _, DBPrio_High);
 	} else
 	{
@@ -489,7 +489,7 @@ stock void Admin_Other_Handler(const char[] sMessage, int iAdmin, int iTarget, i
 		else FormatEx(sMessageToLog, sizeof(sMessageToLog), "%s - %s - %N [%s] %s %N [%s] %s %N [%s]", g_sCurrentMap, sTime, iAdmin, g_sSteamIDs[iAdmin], sMessage, iTarget, g_sSteamIDs[iTarget], sMessage2, iReceiver, g_sSteamIDs[iReceiver]);
 		if(StrContains(sMessageToLog, "\"") != -1) ReplaceString(sMessageToLog, sizeof(sMessageToLog), "\"", "");
 	}
-	if(g_bAdmin_Server) 
+	if(g_bAdmin_Server)
 		if(iTarget == -1) LogAction(iAdmin, iReceiver, "[EW-LM] %s", sMessageToLog);
 		else LogAction(iAdmin, iTarget, "[EW-LM] %s", sMessageToLog);
 	#if defined _discordWebhookAPI_included_
@@ -533,7 +533,7 @@ void SQLTCallBack(Handle hDatabase, Handle hResults, const char[] sError, any da
 stock void SendWebHook(const char[] sWebhookURL, const char[] sMessage, int type = 1)
 {
 	Webhook webhook = new Webhook(sMessage);
-	
+
 	char sThreadID[32], sThreadName[WEBHOOK_THREAD_NAME_MAX_SIZE];
 	bool IsThread = false;
 
@@ -606,7 +606,7 @@ public void OnWebHookExecuted(HTTPResponse response, DataPack pack)
 	pack.ReadString(sMessage, sizeof(sMessage));
 	pack.ReadString(sWebhookURL, sizeof(sWebhookURL));
 	delete pack;
-	
+
 	if ((!IsThreadReply && response.Status != HTTPStatus_OK) || (IsThreadReply && response.Status != HTTPStatus_NoContent))
 	{
 		if (s_iRetries < g_iRetry)

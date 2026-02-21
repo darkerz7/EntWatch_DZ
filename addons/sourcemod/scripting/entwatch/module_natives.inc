@@ -69,7 +69,7 @@ public int EWM_Natives_Native_BanClient(Handle hPlugin, int iArgC)
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid iClient");
 		return false;
 	}
-	
+
 	if(!IsValidClient(iAdmin) || !IsClientConnected(iAdmin)) iAdmin = 0;
 
 	EWM_Eban_BanClient(iClient, iAdmin, iDuration, sReason);
@@ -88,7 +88,7 @@ public int EWM_Natives_Native_UnbanClient(Handle hPlugin, int iArgC)
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid iClient");
 		return false;
 	}
-	
+
 	if(!IsValidClient(iAdmin) || !IsClientConnected(iAdmin)) iAdmin = 0;
 
 	EWM_Eban_UnBanClient(iClient, iAdmin, sReason);
@@ -99,7 +99,7 @@ public int EWM_Natives_Native_GetClientEbansNumber(Handle hPlugin, int iArgC)
 {
 	int iClient = GetNativeCell(1);
 	if(!IsValidClient(iClient)) return 0;
-	
+
 	return g_iClientEbansNumber[iClient];
 }
 #endif
@@ -131,10 +131,10 @@ public int EWM_Natives_Native_SetHudDisplay(Handle hPlugin, int iArgC)
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid client or client cookies are not yet loaded");
 		return false;
 	}
-	
+
 	int iNativeDisplay = GetNativeCell(2);
 	bool bNewDisplay = (iNativeDisplay != 0);
-	
+
 	if(g_CSettings_Hud[iClient].Display != bNewDisplay)
 	{
 		g_CSettings_Hud[iClient].Display = bNewDisplay;
@@ -152,10 +152,10 @@ public int EWM_Natives_Native_SetHudName(Handle hPlugin, int iArgC)
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid client or client cookies are not yet loaded");
 		return false;
 	}
-	
+
 	int iNativeName = GetNativeCell(2);
 	bool bNewName = (iNativeName != 0);
-	
+
 	if(g_CSettings_Hud[iClient].Name != bNewName)
 	{
 		g_CSettings_Hud[iClient].Name = bNewName;
@@ -168,7 +168,7 @@ public int EWM_Natives_Native_SetHudName(Handle hPlugin, int iArgC)
 public int EWM_Natives_Native_IsSpecialItem(Handle hPlugin, int iArgC)
 {
 	if (!g_bConfigLoaded) return false;
-	
+
 	int iEntity = GetNativeCell(1);
 	for(int i = 0; i<g_ItemList.Length; i++)
 	{

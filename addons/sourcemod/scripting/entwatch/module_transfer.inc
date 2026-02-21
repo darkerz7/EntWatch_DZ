@@ -15,13 +15,13 @@ public void EWM_Transfer_Client(int iClient, int iTarget, int iReceiver)
 		CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Differs team");
 		return;
 	}
-	
+
 	if (iTarget == iReceiver) // Sending and receiving same client
 	{
 		CPrintToChat(iClient, "%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Already owns");
 		return;
 	}
-	
+
 	// Transfer of all items
 	int iWeaponCount = 0;
 	for(int i = 0; i<g_ItemList.Length; i++)
@@ -209,13 +209,13 @@ public Action EWM_Transfer_Command_Transfer(int iClient, int iArgs)
 
 		int iTarget = -1,
 			iReceiver = -1;
-		
+
 		char sTarget[64], sReceiver[64];
 		GetCmdArg(1, sTarget, sizeof(sTarget));
 		GetCmdArg(2, sReceiver, sizeof(sReceiver));
-		
+
 		if ((iReceiver = FindTarget(iClient, sReceiver, true, false)) == -1) return Plugin_Handled;
-		
+
 		if(sTarget[0] == '$')
 		{
 			strcopy(sTarget, sizeof(sTarget), sTarget[1]);

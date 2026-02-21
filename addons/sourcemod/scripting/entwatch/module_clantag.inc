@@ -18,7 +18,7 @@ stock void EWM_Clantag_OnPluginStart()
 public void Event_PlayerConnectFull(Event hEvent, const char[] sName, bool bDontBroadcast)
 {
 	int iClient = GetClientOfUserId(GetEventInt(hEvent, "userid"));
-	
+
 	CS_GetClientClanTag(iClient, g_sClanTag[iClient], MAXSIZECLANTAG);
 }
 
@@ -72,7 +72,7 @@ public Action EWM_Clantag_Timer_UpdateClantag(Handle timer, int client)
 			{
 				UpdateTime();
 				char sClanName[MAXSIZECLANTAG];
-				
+
 				if(ItemTest.CheckDelay() > 0.0)
 				{
 					FormatEx(sClanName, MAXSIZECLANTAG, "%s[-%d]:", ItemTest.ShortName, ItemTest.RoundDelay());

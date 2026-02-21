@@ -66,7 +66,7 @@ int g_iClientEbansNumber[MAXPLAYERS+1] = {0,... };
 
 ArrayList g_TriggerArray;
 
-public Plugin myinfo = 
+public Plugin myinfo =
 {
 	name = "EntWatch",
 	author = "DarkerZ[RUS], AgentWesker, notkoen, sTc2201, maxime1907, Cmer, .Rushaway, Dolly",
@@ -74,14 +74,14 @@ public Plugin myinfo =
 	version = EW_VERSION,
 	url = "dark-skill.ru"
 };
- 
+
 public void OnPluginStart()
 {
 	if(g_ItemConfig == INVALID_HANDLE) g_ItemConfig = new ArrayList(512);
 	if(g_ItemList == INVALID_HANDLE) g_ItemList = new ArrayList(512);
-	
+
 	if(g_TriggerArray == INVALID_HANDLE) g_TriggerArray = new ArrayList(512);
-	
+
 	//CVARs
 	g_hCvar_TeamOnly		= CreateConVar("entwatch_mode_teamonly", "1", "Enable/Disable team only mode.", _, true, 0.0, true, 1.0);
 	g_hCvar_Delay_Use		= CreateConVar("entwatch_delay_use", "3.0", "Change delay before use", _, true, 0.0, true, 60.0);
@@ -90,7 +90,7 @@ public void OnPluginStart()
 	g_hCvar_GlobalBlock		= CreateConVar("entwatch_globalblock", "0", "Blocks the pickup of any items by players.", _, true, 0.0, true, 1.0);
 	g_hCvar_LowerMapName	= CreateConVar("entwatch_lower_mapname", "0", "Automatically lowercase map name. (usefull for linux srcds)", _, true, 0.0, true, 1.0);
 	g_hCvar_Directory		= CreateConVar("entwatch_directory", "0", "Directory for configs and schemes. [0 = cfgs/entwatch | 1 = addons/sourcemod/configs/entwatch]", _, true, 0.0, true, 1.0);
-	
+
 	//Commands
 	RegAdminCmd("sm_ew_reloadconfig", EW_Command_ReloadConfig, ADMFLAG_CONFIG);
 	RegAdminCmd("sm_setcooldown", EW_Command_Cooldown, ADMFLAG_BAN);
@@ -98,46 +98,46 @@ public void OnPluginStart()
 	RegAdminCmd("sm_setmaxuses", EW_Command_Setmaxuses, ADMFLAG_BAN);
 	RegAdminCmd("sm_addmaxuses", EW_Command_Addmaxuses, ADMFLAG_BAN);
 	RegAdminCmd("sm_ewsetmode", EW_Command_Setmode, ADMFLAG_BAN);
-	
+
 	RegAdminCmd("sm_setcooldown2", EW_Command_Cooldown2, ADMFLAG_BAN);
 	RegAdminCmd("sm_setuses2", EW_Command_Setcurrentuses, ADMFLAG_BAN);
 	RegAdminCmd("sm_setmaxuses2", EW_Command_Setmaxuses2, ADMFLAG_BAN);
 	RegAdminCmd("sm_addmaxuses2", EW_Command_Addmaxuses2, ADMFLAG_BAN);
 	RegAdminCmd("sm_ewsetmode2", EW_Command_Setmode2, ADMFLAG_BAN);
-	
+
 	RegAdminCmd("sm_ewsetname", EW_Command_Setname, ADMFLAG_BAN);
 	RegAdminCmd("sm_ewsetshortname", EW_Command_Setshortname, ADMFLAG_BAN);
-	
+
 	RegAdminCmd("sm_ewblock", EW_Command_BlockItem, ADMFLAG_BAN);
 	RegAdminCmd("sm_ewlockbutton", EW_Command_LockButton, ADMFLAG_BAN);
 	RegAdminCmd("sm_ewlockbutton2", EW_Command_LockButton2, ADMFLAG_BAN);
-	
+
 	//Hook CVARs
 	HookConVarChange(g_hCvar_TeamOnly, Cvar_Main_Changed);
 	HookConVarChange(g_hCvar_Delay_Use, Cvar_Main_Changed);
 	HookConVarChange(g_hCvar_BlockEPick, Cvar_Main_Changed);
 	HookConVarChange(g_hCvar_GlobalBlock, Cvar_Main_Changed);
-	
+
 	//Initialize values
 	g_bTeamOnly = GetConVarBool(g_hCvar_TeamOnly);
 	g_fDelayUse = GetConVarFloat(g_hCvar_Delay_Use);
 	g_bBlockEPick = GetConVarBool(g_hCvar_BlockEPick);
 	g_bGlobalBlock = GetConVarBool(g_hCvar_GlobalBlock);
-	
+
 	//Hook Events
 	HookEvent("player_disconnect", Event_ClientDisconnect, EventHookMode_Pre);
 	HookEvent("round_start", Event_RoundStart, EventHookMode_Pre);
 	HookEvent("round_end", Event_RoundEnd, EventHookMode_Pre);
 	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Pre);
 	HookEvent("player_team", Event_PlayerTeam, EventHookMode_Pre);
-	
+
 	//Hook Output Right-Click
 	HookEntityOutput("game_ui", "PressedAttack", Event_GameUI_LeftClick);
 	HookEntityOutput("game_ui", "PressedAttack2", Event_GameUI_RightClick);
-	
+
 	//Hook Output OutValue
 	HookEntityOutput("math_counter", "OutValue", Event_OutValue);
-	
+
 	#if defined EW_MODULE_PHYSBOX
 	EWM_Physbox_OnPluginStart();
 	#endif
@@ -206,11 +206,11 @@ public void OnPluginStart()
 			OnClientPostAdminCheck(i);
 		}
 	}
-	
+
 	LoadTranslations("EntWatch_DZ.phrases");
 	LoadTranslations("common.phrases");
 	LoadTranslations("clientprefs.phrases");
-	
+
 	AutoExecConfig(true, "EntWatch_DZ");
 }
 
@@ -305,7 +305,7 @@ public void OnMapEnd()
 public void Event_RoundStart(Event hEvent, const char[] sName, bool bDontBroadcast)
 {
 	if(g_bConfigLoaded) CPrintToChatAll("%s%t %s%t", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Welcome");
-	
+
 	#if defined EW_MODULE_CLANTAG
 	EWM_Clantag_Mass_Reset();
 	#endif
@@ -348,11 +348,11 @@ public void Event_RoundEnd(Event hEvent, const char[] sName, bool bDontBroadcast
 public Action Event_PlayerTeam(Event hEvent, const char[] sName, bool bDontBroadcast)
 {
 	int team = GetEventInt(hEvent, "team");
-	
+
 	if (team != 1) return Plugin_Continue;
-	
+
 	EWM_Drop_Forward(hEvent); //Re-use code for death and team changes
-	
+
 	return Plugin_Continue;
 }
 
@@ -375,15 +375,15 @@ stock void EWM_Drop_Forward(Handle hEvent)
 		{
 			ItemTest.OwnerID = INVALID_ENT_REFERENCE;
 			g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
-			
+
 			#if defined EW_MODULE_BLINK
 			EWM_Blink_BlinkWeapon(ItemTest);
 			#endif
-			
+
 			#if defined EW_MODULE_GLOW
 			EWM_Glow_GlowWeapon(ItemTest);
 			#endif
-			
+
 			#if defined EW_MODULE_FORWARDS
 			Call_StartForward(g_hOnPlayerDeathWithItem);
 			Call_PushString(ItemTest.Name);
@@ -393,7 +393,7 @@ stock void EWM_Drop_Forward(Handle hEvent)
 
 			if (!GetEntPropEnt(ItemTest.WeaponID, Prop_Data, "m_hOwnerEntity"))
 				return;
-			
+
 			int iWeaponSlot = GetWeaponSlot(ItemTest.WeaponID);
 			if(IsValidEdict(ItemTest.WeaponID) && iWeaponSlot != -1)
 			{
@@ -519,7 +519,7 @@ public void Event_ClientDisconnect(Handle event, const char[] name, bool dontBro
 		{
 			ItemTest.OwnerID = INVALID_ENT_REFERENCE;
 			g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
-			
+
 			#if defined EW_MODULE_FORWARDS
 			Call_StartForward(g_hOnPlayerDisconnectWithItem);
 			Call_PushString(ItemTest.Name);
@@ -570,7 +570,7 @@ public void Event_ClientDisconnect(Handle event, const char[] name, bool dontBro
 public void OnClientDisconnect(int iClient)
 {
 	g_bIsAdmin[iClient] = false;
-	
+
 	#if defined EW_MODULE_EBAN
 	EWM_Eban_OnClientDisconnect(iClient);
 	#endif
@@ -583,7 +583,7 @@ public void OnClientDisconnect(int iClient)
 	#if defined EW_MODULE_CLANTAG
 	EWM_Clantag_OnClientDisconnect(iClient);
 	#endif
-	
+
 	FormatEx(g_sSteamIDs[iClient], sizeof(g_sSteamIDs[]), "");
 	FormatEx(g_sSteamIDs_short[iClient], sizeof(g_sSteamIDs_short[]), "");
 	g_iUserIDs[iClient] = -1;
@@ -614,21 +614,21 @@ void CleanData()
 		CloseHandle(g_ItemList);
 	}
 	g_ItemList = new ArrayList(512);
-	
+
 	if(g_TriggerArray != null)
 	{
 		g_TriggerArray.Clear();
 		CloseHandle(g_TriggerArray);
 	}
 	g_TriggerArray = new ArrayList(512);
-	
+
 	if(g_ItemConfig != null)
 	{
 		g_ItemConfig.Clear();
 		CloseHandle(g_ItemConfig);
 	}
 	g_ItemConfig = new ArrayList(512);
-	
+
 	#if defined EW_MODULE_PHYSBOX
 	EWM_Physbox_CleanData();
 	#endif
@@ -683,7 +683,7 @@ stock void LoadConfig(bool bSecondLoad = false)
 		Call_Finish();
 		#endif
 	}
-	
+
 	KvRewind(hKeyValues);
 	if(KvGotoFirstSubKey(hKeyValues))
 	{
@@ -703,7 +703,7 @@ stock void LoadConfig(bool bSecondLoad = false)
 			NewItem.GlowColor[1]=255;
 			NewItem.GlowColor[2]=255;
 			NewItem.GlowColor[3]=200;
-			
+
 			#if defined EW_MODULE_GLOW || defined EW_MODULE_BLINK
 			if(strcmp(sBuffer_temp,"{green}",false)==0){NewItem.GlowColor[0]=0;NewItem.GlowColor[1]=255;NewItem.GlowColor[2]=0;}
 			else if(strcmp(sBuffer_temp,"{default}",false)==0){NewItem.GlowColor[0]=255;NewItem.GlowColor[1]=255;NewItem.GlowColor[2]=255;}
@@ -730,43 +730,43 @@ stock void LoadConfig(bool bSecondLoad = false)
 			else if(strcmp(sBuffer_temp,"{cyan}",false)==0){NewItem.GlowColor[0]=0;NewItem.GlowColor[1]=150;NewItem.GlowColor[2]=220;}
 			else if(strcmp(sBuffer_temp,"{gray}",false)==0){NewItem.GlowColor[0]=128;NewItem.GlowColor[1]=128;NewItem.GlowColor[2]=128;}
 			#endif
-			
+
 			KvGetString(hKeyValues, "buttonclass", sBuffer_temp, sizeof(sBuffer_temp), "");
 			FormatEx(NewItem.ButtonClass, sizeof(NewItem.ButtonClass), "%s", sBuffer_temp);
-			
+
 			KvGetString(hKeyValues, "filtername", sBuffer_temp, sizeof(sBuffer_temp), "");
 			FormatEx(NewItem.FilterName, sizeof(NewItem.FilterName), "%s", sBuffer_temp);
 
 			KvGetString(hKeyValues, "blockpickup", sBuffer_temp, sizeof(sBuffer_temp), "false");
 			NewItem.BlockPickup = strcmp(sBuffer_temp, "true", false) == 0;
-			
+
 			KvGetString(hKeyValues, "allowtransfer", sBuffer_temp, sizeof(sBuffer_temp), "false");
 			NewItem.AllowTransfer = strcmp(sBuffer_temp, "true", false) == 0;
-			
+
 			KvGetString(hKeyValues, "forcedrop", sBuffer_temp, sizeof(sBuffer_temp), "false");
 			NewItem.ForceDrop = strcmp(sBuffer_temp, "true", false) == 0;
-			
+
 			KvGetString(hKeyValues, "chat", sBuffer_temp, sizeof(sBuffer_temp), "true");
 			NewItem.Chat = strcmp(sBuffer_temp, "true", false) == 0;
-			
+
 			KvGetString(hKeyValues, "chat_uses", sBuffer_temp, sizeof(sBuffer_temp), "true");
 			NewItem.Chat_Uses = strcmp(sBuffer_temp, "true", false) == 0;
-			
+
 			KvGetString(hKeyValues, "hud", sBuffer_temp, sizeof(sBuffer_temp), "false");
 			NewItem.Hud = strcmp(sBuffer_temp, "true", false) == 0;
-			
+
 			KvGetString(hKeyValues, "hammerid", sBuffer_temp, sizeof(sBuffer_temp), "0");
 			NewItem.HammerID = StringToInt(sBuffer_temp);
-			
+
 			KvGetString(hKeyValues, "energyid", sBuffer_temp, sizeof(sBuffer_temp), "0");
 			NewItem.EnergyID = StringToInt(sBuffer_temp);
-			
+
 			KvGetString(hKeyValues, "mode", sBuffer_temp, sizeof(sBuffer_temp), "0");
 			NewItem.Mode = StringToInt(sBuffer_temp);
-			
+
 			KvGetString(hKeyValues, "maxuses", sBuffer_temp, sizeof(sBuffer_temp), "0");
 			NewItem.MaxUses = StringToInt(sBuffer_temp);
-			
+
 			KvGetString(hKeyValues, "cooldown", sBuffer_temp, sizeof(sBuffer_temp), "0");
 			NewItem.CoolDown = StringToInt(sBuffer_temp);
 
@@ -778,19 +778,19 @@ stock void LoadConfig(bool bSecondLoad = false)
 			{
 				NewItem.ButtonID = -5;
 			}
-			
+
 			KvGetString(hKeyValues, "trigger", sBuffer_temp, sizeof(sBuffer_temp), "0");
 			NewItem.Trigger = StringToInt(sBuffer_temp);
-			
+
 			KvGetString(hKeyValues, "pt_spawner", sBuffer_temp, sizeof(sBuffer_temp), "");
 			FormatEx(NewItem.Spawner, sizeof(NewItem.Spawner), "%s", sBuffer_temp);
 
 			KvGetString(hKeyValues, "physbox", sBuffer_temp, sizeof(sBuffer_temp), "false");
 			NewItem.PhysBox = strcmp(sBuffer_temp, "true", false) == 0;
-			
+
 			KvGetString(hKeyValues, "use_priority", sBuffer_temp, sizeof(sBuffer_temp), "true");
 			NewItem.UsePriority = strcmp(sBuffer_temp, "true", false) == 0;
-			
+
 			//Second Button
 			KvGetString(hKeyValues, "buttonclass2", sBuffer_temp, sizeof(sBuffer_temp), "");
 			FormatEx(NewItem.ButtonClass2, sizeof(NewItem.ButtonClass2), "%s", sBuffer_temp);
@@ -815,7 +815,7 @@ stock void LoadConfig(bool bSecondLoad = false)
 			{
 				NewItem.ButtonID2 = -5;
 			}
-			
+
 			g_ItemConfig.PushArray(NewItem, sizeof(NewItem));
 		} while (KvGotoNextKey(hKeyValues));
 		g_bConfigLoaded = true;
@@ -845,7 +845,7 @@ stock void LoadScheme()
 	g_SchemeConfig.Color_Warning	= "{orange}";
 	g_SchemeConfig.Color_Enabled	= "{green}";
 	g_SchemeConfig.Color_Disabled	= "{red}";
-	
+
 	KeyValues KvConfig = CreateKeyValues("EW_Scheme");
 	char	ConfigFullPath[PLATFORM_MAX_PATH],
 			ConfigFile[16];
@@ -855,7 +855,7 @@ stock void LoadScheme()
 		BuildPath(Path_SM, ConfigFullPath, sizeof(ConfigFullPath), "configs/entwatch/scheme/%s.cfg", ConfigFile);
 	else
 		FormatEx(ConfigFullPath, sizeof(ConfigFullPath), "cfg/sourcemod/entwatch/scheme/%s.cfg", ConfigFile);
-	
+
 	if(!FileToKeyValues(KvConfig, ConfigFullPath))
 	{
 		CloseHandle(KvConfig);
@@ -866,49 +866,49 @@ stock void LoadScheme()
 		#endif
 		return;
 	}
-	
+
 	char szBuffer[64];
 	KvConfig.Rewind();
-	
+
 	KvConfig.GetString("color_tag", szBuffer, sizeof(szBuffer));
 	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Tag, sizeof(g_SchemeConfig.Color_Tag), "%s", szBuffer);
-	
+
 	KvConfig.GetString("color_name", szBuffer, sizeof(szBuffer));
 	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Name, sizeof(g_SchemeConfig.Color_Name), "%s", szBuffer);
-	
+
 	KvConfig.GetString("color_steamid", szBuffer, sizeof(szBuffer));
 	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_SteamID, sizeof(g_SchemeConfig.Color_SteamID), "%s", szBuffer);
-	
+
 	KvConfig.GetString("color_use", szBuffer, sizeof(szBuffer));
 	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Use, sizeof(g_SchemeConfig.Color_Use), "%s", szBuffer);
-	
+
 	KvConfig.GetString("color_pickup", szBuffer, sizeof(szBuffer));
 	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Pickup, sizeof(g_SchemeConfig.Color_Pickup), "%s", szBuffer);
-	
+
 	KvConfig.GetString("color_drop", szBuffer, sizeof(szBuffer));
 	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Drop, sizeof(g_SchemeConfig.Color_Drop), "%s", szBuffer);
-	
+
 	KvConfig.GetString("color_disconnect", szBuffer, sizeof(szBuffer));
 	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Disconnect, sizeof(g_SchemeConfig.Color_Disconnect), "%s", szBuffer);
-	
+
 	KvConfig.GetString("color_death", szBuffer, sizeof(szBuffer));
 	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Death, sizeof(g_SchemeConfig.Color_Death), "%s", szBuffer);
-	
+
 	KvConfig.GetString("color_warning", szBuffer, sizeof(szBuffer));
 	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Warning, sizeof(g_SchemeConfig.Color_Warning), "%s", szBuffer);
-	
+
 	KvConfig.GetString("color_enabled", szBuffer, sizeof(szBuffer));
 	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Enabled, sizeof(g_SchemeConfig.Color_Enabled), "%s", szBuffer);
-	
+
 	KvConfig.GetString("color_disabled", szBuffer, sizeof(szBuffer));
 	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Color_Disabled, sizeof(g_SchemeConfig.Color_Disabled), "%s", szBuffer);
-	
+
 	#if defined EW_MODULE_EBAN || defined EW_MODULE_FORWARDS
 	KvConfig.GetString("server_name", szBuffer, sizeof(szBuffer));
 	if(strcmp(szBuffer, "", false) != 0) FormatEx(g_SchemeConfig.Server_Name, sizeof(g_SchemeConfig.Server_Name), "%s", szBuffer);
 		else FormatEx(g_SchemeConfig.Server_Name, sizeof(g_SchemeConfig.Server_Name), "Server");
 	#endif
-	
+
 	CloseHandle(KvConfig);
 	#if defined EW_MODULE_FORWARDS
 	Call_StartForward(g_hOnSchemeServerName);
@@ -935,13 +935,13 @@ public bool RegisterItem(class_ItemConfig ItemConfig, int iEntity, int iHammerID
 		NewItem.Chat_Uses = ItemConfig.Chat_Uses;
 		NewItem.Hud = ItemConfig.Hud;
 		NewItem.HammerID = ItemConfig.HammerID;
-		
+
 		if(ItemConfig.EnergyID==0) NewItem.EnergyID = INVALID_ENT_REFERENCE;
 			else NewItem.EnergyID = ItemConfig.EnergyID;
 		NewItem.MathID = INVALID_ENT_REFERENCE;
 		NewItem.MathValue = -1;
 		NewItem.MathValueMax = -1;
-		
+
 		NewItem.Mode = ItemConfig.Mode;
 		NewItem.MaxUses = ItemConfig.MaxUses;
 		NewItem.CoolDown = ItemConfig.CoolDown;
@@ -949,15 +949,15 @@ public bool RegisterItem(class_ItemConfig ItemConfig, int iEntity, int iHammerID
 		NewItem.GlowColor[1] = ItemConfig.GlowColor[1];
 		NewItem.GlowColor[2] = ItemConfig.GlowColor[2];
 		NewItem.GlowColor[3] = ItemConfig.GlowColor[3];
-		
+
 		NewItem.WeaponID = iEntity;
 		NewItem.ButtonsArray = new ArrayList();
-		
+
 		NewItem.OwnerID = INVALID_ENT_REFERENCE;
 		NewItem.CoolDownTime = -1.0;
 		if(ItemConfig.ButtonID==0) NewItem.ButtonID = INVALID_ENT_REFERENCE;
 			else NewItem.ButtonID = ItemConfig.ButtonID;
-		
+
 		//Second Button
 		FormatEx(NewItem.ButtonClass2,	sizeof(NewItem.ButtonClass2),	"%s",	ItemConfig.ButtonClass2);
 		if(ItemConfig.EnergyID2==0) NewItem.EnergyID2 = INVALID_ENT_REFERENCE;
@@ -965,31 +965,31 @@ public bool RegisterItem(class_ItemConfig ItemConfig, int iEntity, int iHammerID
 		NewItem.MathID2 = INVALID_ENT_REFERENCE;
 		NewItem.MathValue2 = -1;
 		NewItem.MathValueMax2 = -1;
-		
+
 		NewItem.Mode2 = ItemConfig.Mode2;
 		NewItem.MaxUses2 = ItemConfig.MaxUses2;
 		NewItem.CoolDown2 = ItemConfig.CoolDown2;
-		
+
 		if(ItemConfig.ButtonID2==0) NewItem.ButtonID2 = INVALID_ENT_REFERENCE;
 			else NewItem.ButtonID2 = ItemConfig.ButtonID2;
-		
+
 		UpdateTime();
 		NewItem.SetDelay(g_fDelayUse);
 		NewItem.GlowEnt = INVALID_ENT_REFERENCE;
-		
+
 		NewItem.PhysBox = ItemConfig.PhysBox;
 		NewItem.UsePriority = ItemConfig.UsePriority;
 		NewItem.Team = -1;
 		NewItem.LockButton = false;
 		NewItem.LockButton2 = false;
 		PrintToServer("[EW]Item Spawned: %s |%i", NewItem.ShortName, iEntity);
-		
+
 		g_ItemList.PushArray(NewItem, sizeof(NewItem));
-		
+
 		#if defined EW_MODULE_BLINK
 		EWM_Blink_BlinkWeapon(NewItem);
 		#endif
-		
+
 		#if defined EW_MODULE_GLOW
 		if(g_bGlow_Spawn)
 			for(int i = 0; i<g_ItemList.Length; i++)
@@ -1003,7 +1003,7 @@ public bool RegisterItem(class_ItemConfig ItemConfig, int iEntity, int iHammerID
 				}
 			}
 		#endif
-		
+
 		return true;
 	}
 	return false;
@@ -1144,7 +1144,7 @@ public void OnEntityDestroyed(int iEntity)
 public void OnItemSpawned(int iEntity)
 {
 	if(!g_bConfigLoaded || !IsValidEntity(iEntity)) return;
-	
+
 	int iHammerID = Entity_GetHammerID(iEntity);
 	if(iHammerID>0)
 	{
@@ -1192,7 +1192,7 @@ public void OnButtonSpawned(int iEntity) //Button with parent spawns after weapo
 		int spawnflags = GetEntProp(iEntity, Prop_Data, "m_spawnflags");
 		if (!(spawnflags & 256)) return; //The entity cannot be pressed so don't register it as a button
 	}
-	
+
 	for(int i = 0; i < g_ItemList.Length; i++)
 	{
 		class_ItemList ItemTest;
@@ -1214,7 +1214,7 @@ public void OnTriggerSpawned(int iEntity)
 public Action Timer_OnTriggerSpawned(Handle timer, int iEntity)
 {
 	if(!g_bConfigLoaded || !IsValidEntity(iEntity)) return Plugin_Stop;
-	
+
 	int iHammerID = Entity_GetHammerID(iEntity);
 	if(iHammerID>0)
 	{
@@ -1241,7 +1241,7 @@ public Action OnTrigger(int iEntity, int iClient)
 	#else
 	if (IsValidClient(iClient) && IsClientConnected(iClient) && g_bGlobalBlock) return Plugin_Handled;
 	#endif
-	
+
     return Plugin_Continue;
 }
 
@@ -1288,15 +1288,15 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 					// PrintToConsoleAll("[EntWatch] DEBUG: ButtonID - %i", ItemTest.ButtonID);
 					// PrintToConsoleAll("[EntWatch] DEBUG: iButton - %i", iButton);
 					// PrintToConsoleAll("[EntWatch] DEBUG: HammerID of iButton - %i", iHammerID);
-					
+
 					if(ItemTest.OwnerID != iActivator && ItemTest.OwnerID != iCaller) return Plugin_Handled;
 					else if(strcmp(ItemTest.FilterName,"") != 0) DispatchKeyValue(iActivator, "targetname", ItemTest.FilterName);
-					
+
 					UpdateTime();
 					if(ItemTest.CheckDelay() > 0.0) return Plugin_Handled;
-					
+
 					int iAbility = 0; //0 - once button, 1 - first button, 2 - second button
-					
+
 					if(ItemTest.ButtonID != INVALID_ENT_REFERENCE && ItemTest.ButtonID == iHammerID)
 					{
 						if(ItemTest.LockButton) return Plugin_Handled;
@@ -1314,7 +1314,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 					else return Plugin_Changed;
 
 					if(ItemTest.ButtonID2 == INVALID_ENT_REFERENCE) iAbility = 0;
-					
+
 					// Base delay on the wait time of the button (button is locked for this duration)
 					int waitTime = 0;
 					if (HasEntProp(iButton, Prop_Data, "m_flWait"))
@@ -1330,7 +1330,7 @@ public Action OnButtonUse(int iButton, int iActivator, int iCaller, UseType uTyp
 
 					switch (iMode)
 					{
-						case 2: 
+						case 2:
 							if(ItemTest.CheckCoolDown(bSecondAbility) <= 0)
 							{
 								Events_OnUseItem(ItemTest, iActivator, iAbility);
@@ -1456,7 +1456,7 @@ public Action Event_GameUI_RightClick(const char[] sOutput, int iCaller, int iAc
 public void OnWeaponDrop(int iClient, int iWeapon)
 {
 	if(!g_bConfigLoaded || !IsValidEdict(iWeapon)) return;
-	
+
 	for(int i = 0; i<g_ItemList.Length; i++)
 	{
 		class_ItemList ItemTest;
@@ -1465,15 +1465,15 @@ public void OnWeaponDrop(int iClient, int iWeapon)
 		{
 			ItemTest.OwnerID = INVALID_ENT_REFERENCE;
 			g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
-			
+
 			#if defined EW_MODULE_BLINK
 			EWM_Blink_BlinkWeapon(ItemTest);
 			#endif
-			
+
 			#if defined EW_MODULE_GLOW
 			EWM_Glow_GlowWeapon(ItemTest);
 			#endif
-			
+
 			#if defined EW_MODULE_FORWARDS
 			Call_StartForward(g_hOnDropItem);
 			Call_PushString(ItemTest.Name);
@@ -1483,11 +1483,11 @@ public void OnWeaponDrop(int iClient, int iWeapon)
 			#if defined EW_MODULE_CHAT
 			if(ItemTest.Chat) EWM_Chat_Drop(ItemTest, iClient);
 			#endif
-			
+
 			#if defined EW_MODULE_CLANTAG
 			EWM_Clantag_Reset(iClient);
 			#endif
-				
+
 			break;
 		}
 	}
@@ -1498,7 +1498,7 @@ public void OnWeaponDrop(int iClient, int iWeapon)
 //-------------------------------------------------------
 public Action OnWeaponCanUse(int iClient, int iWeapon)
 {
-	//if (IsFakeClient(iClient)) return Plugin_Handled;	
+	//if (IsFakeClient(iClient)) return Plugin_Handled;
 	if(!g_bConfigLoaded || !IsValidEdict(iWeapon)) return Plugin_Continue;
 
 	for(int i = 0; i<g_ItemList.Length; i++)
@@ -1536,17 +1536,17 @@ public void OnWeaponEquip(int iClient, int iWeapon)
 			UpdateTime();
 			ItemTest.SetDelay(g_fDelayUse);
 			ItemTest.Team = GetClientTeam(iClient);
-			
+
 			#if defined EW_MODULE_BLINK
 			EWM_Blink_DisableBlink(ItemTest);
 			#endif
-			
+
 			#if defined EW_MODULE_GLOW
 			EWM_Glow_DisableGlow(ItemTest);
 			#endif
-			
+
 			g_ItemList.SetArray(i, ItemTest, sizeof(ItemTest));
-			
+
 			#if defined EW_MODULE_FORWARDS
 			Call_StartForward(g_hOnPickUpItem);
 			Call_PushString(ItemTest.Name);
@@ -1556,11 +1556,11 @@ public void OnWeaponEquip(int iClient, int iWeapon)
 			#if defined EW_MODULE_CHAT
 			if(ItemTest.Chat) EWM_Chat_PickUp(ItemTest, iClient);
 			#endif
-			
+
 			#if defined EW_MODULE_OFFLINE_EBAN
 			EWM_OfflineEban_UpdateItemName(iClient, ItemTest.Name);
 			#endif
-			
+
 			break;
 		}
 	}
@@ -1600,7 +1600,7 @@ stock void OnGameUIUse(int iActivator, bool PressedAttack2 = false)
 	{
 		class_ItemList ItemTest;
 		g_ItemList.GetArray(i, ItemTest, sizeof(ItemTest));
-		
+
 		if(IsValidEdict(ItemTest.WeaponID) && ItemTest.OwnerID==iActivator)
 		{
 			int iAbility = -1;
@@ -1635,7 +1635,7 @@ stock void OnGameUIUse(int iActivator, bool PressedAttack2 = false)
 
 				switch (iMode)
 				{
-					case 2: 
+					case 2:
 						if(ItemTest.CheckCoolDown(bSecondAbility) <= 0)
 						{
 							Events_OnUseItem(ItemTest, iActivator, iAbility);
@@ -1696,11 +1696,11 @@ stock void OnGameUIUse(int iActivator, bool PressedAttack2 = false)
 
 // Handlers Commands
 public Action EW_Command_ReloadConfig(int iClient, int iArgs)
-{	
+{
 	#if defined EW_MODULE_CLANTAG
 	EWM_Clantag_Mass_Reset();
 	#endif
-	
+
 	CleanData();
 	LoadConfig();
 	LoadScheme();
@@ -1786,7 +1786,7 @@ public Action EW_Command_Setname(int iClient, int iArgs)
 
 	char Arguments[256], sArg[64], sNewName[32];
 	GetCmdArgString(Arguments, sizeof(Arguments));
-	
+
 	int len = BreakString(Arguments, sArg, sizeof(sArg));
 	if(len == -1)
 	{
@@ -1798,7 +1798,7 @@ public Action EW_Command_Setname(int iClient, int iArgs)
 	FormatEx(sNewName, sizeof(sNewName), Arguments[len]);
 	TrimString(sNewName);
 	StripQuotes(sNewName);
-	
+
 	for(int i = 0; i<g_ItemList.Length; i++)
 	{
 		class_ItemList ItemTest;
@@ -1830,7 +1830,7 @@ public Action EW_Command_Setshortname(int iClient, int iArgs)
 
 	char Arguments[256], sArg[64], sNewName[32];
 	GetCmdArgString(Arguments, sizeof(Arguments));
-	
+
 	int len = BreakString(Arguments, sArg, sizeof(sArg));
 	if(len == -1)
 	{
@@ -1842,7 +1842,7 @@ public Action EW_Command_Setshortname(int iClient, int iArgs)
 	FormatEx(sNewName, sizeof(sNewName), Arguments[len]);
 	TrimString(sNewName);
 	StripQuotes(sNewName);
-	
+
 	for(int i = 0; i<g_ItemList.Length; i++)
 	{
 		class_ItemList ItemTest;
@@ -1871,12 +1871,12 @@ public Action EW_Command_BlockItem(int iClient, int iArgs)
 		CReplyToCommand(iClient, "%s%t %s%t: sm_ewblock <hammerid> <0/1>", g_SchemeConfig.Color_Tag, "EW_Tag", g_SchemeConfig.Color_Warning, "Usage");
 		return Plugin_Handled;
 	}
-	
+
 	char sHammerID[32], sBlock[2];
-	
+
 	GetCmdArg(1, sHammerID, sizeof(sHammerID));
 	GetCmdArg(2, sBlock, sizeof(sBlock));
-	
+
 	int iHammerID = StringToInt(sHammerID);
 	bool bBlock = false;
 	int iBlock = StringToInt(sBlock);
@@ -1901,7 +1901,7 @@ public Action EW_Command_BlockItem(int iClient, int iArgs)
 			}
 		}
 	}
-	
+
 	for(int i = 0; i<g_ItemConfig.Length; i++) //Blocking Items in Config Array
 	{
 		class_ItemConfig ItemConfigTest;
@@ -1952,7 +1952,7 @@ stock void SetCooldown(int iClient, int iArgs, bool bSecond = false)
 
 	int iHammerID = StringToInt(sHammerID);
 	int iCooldown = StringToInt(sCooldown);
-	
+
 	if(iCooldown < 0) iCooldown = 0;
 
 	if(iArgs >= 3)
@@ -1962,7 +1962,7 @@ stock void SetCooldown(int iClient, int iArgs, bool bSecond = false)
 		int iForce = StringToInt(sForce);
 		if(iForce == 1) bForceApply = true;
 	}
-	
+
 	for(int i = 0; i<g_ItemList.Length; i++)
 	{
 		class_ItemList ItemTest;
@@ -2072,7 +2072,7 @@ stock void SetMaxUses(int iClient, int iArgs, bool bSecond = false)
 
 	int iHammerID = StringToInt(sHammerID);
 	int iMaxUses = StringToInt(sMaxUses);
-	
+
 	if(iMaxUses < 0) iMaxUses = 0;
 
 	for(int i = 0; i<g_ItemList.Length; i++)
@@ -2170,7 +2170,7 @@ stock void SetMode(int iClient, int iArgs, bool bSecond = false)
 	int iNewMode = StringToInt(sNewMode);
 	int iCooldown = StringToInt(sCooldown);
 	int iMaxUses = StringToInt(sMaxUses);
-	
+
 	if(iNewMode < 1 || iNewMode > 7) iNewMode = 1;
 	if(iCooldown < 0) iCooldown = 0;
 	if(iMaxUses < 0) iMaxUses = 0;
@@ -2180,7 +2180,7 @@ stock void SetMode(int iClient, int iArgs, bool bSecond = false)
 		class_ItemList ItemTest;
 		g_ItemList.GetArray(i, ItemTest, sizeof(ItemTest));
 		if (ItemTest.HammerID == iHammerID &&
-		((!bSecond && (ItemTest.MaxUses > ItemTest.Uses || bOver || iNewMode == 7 || iNewMode == 6 || iNewMode == 2 || iNewMode == 1)) || 
+		((!bSecond && (ItemTest.MaxUses > ItemTest.Uses || bOver || iNewMode == 7 || iNewMode == 6 || iNewMode == 2 || iNewMode == 1)) ||
 		(bSecond && (ItemTest.MaxUses2 > ItemTest.Uses2 || bOver || iNewMode == 7 || iNewMode == 6 || iNewMode == 2 || iNewMode == 1))))
 		{
 			if (!bSecond)

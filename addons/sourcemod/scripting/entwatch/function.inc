@@ -27,7 +27,7 @@ enum struct class_ItemConfig
 	char		Spawner[64];
 	bool		PhysBox;
 	bool		UsePriority;
-	
+
 	char		ButtonClass2[32];
 	int 		EnergyID2;
 	int			Mode2;
@@ -72,7 +72,7 @@ enum struct class_ItemList
 	int			Team;				// Integer:	Which team owns the item (-1 - No Team, 1 - Spec, 2 - T, 3 - CT)
 	bool		LockButton;			// Bool:	Item cannot be used
 	float		WaitTime;			// Float:	Timestamp when the button is rolled back
-	
+
 	// Parameters for the entity activating the second ability
 	char		ButtonClass2[32];
 	int 		EnergyID2;
@@ -87,7 +87,7 @@ enum struct class_ItemList
 	float		CoolDownTime2;
 	bool		LockButton2;
 	float		WaitTime2;
-	
+
 	//Purpose: Base cooldowns on GameTime rather than Timer
 	// bSecond - if true, then the second ability is used
 	void SetCoolDown(int time, bool bSecond = false)
@@ -224,10 +224,10 @@ void StringToLowerCase(char[] input)
 }
 
 // Checks the player for validity
-stock bool IsValidClient(int iClient) 
-{ 
-	if (iClient > 0 && iClient <= MaxClients && IsValidEdict(iClient) && IsClientInGame(iClient)) return true; 
-	return false; 
+stock bool IsValidClient(int iClient)
+{
+	if (iClient > 0 && iClient <= MaxClients && IsValidEdict(iClient) && IsClientInGame(iClient)) return true;
+	return false;
 }
 
 // Correct transfer of items to the player
@@ -255,7 +255,7 @@ stock int GetCounterValue(int counter) {
 
 	if(g_iOutValueOffset == -1)
 		g_iOutValueOffset = FindDataMapInfo(counter, "m_OutValue");
-	
+
 	return RoundFloat(GetEntDataFloat(counter, g_iOutValueOffset));
 }
 
@@ -272,7 +272,7 @@ stock int GetWeaponSlot(int eWeapon)
 	*/
 	char wClassName[64];
 	GetEntityClassname(eWeapon,wClassName,sizeof(wClassName));
-	
+
 	// Old function https://hlmod.net/threads/analogi-funkcij-na-bolee-bystrye.49613/
 	if((strcmp(wClassName,"weapon_elite",false)==0)||(strcmp(wClassName,"weapon_deagle",false)==0)||(strcmp(wClassName,"weapon_fiveseven",false)==0)||
 	(strcmp(wClassName,"weapon_glock",false)==0)|| (strcmp(wClassName,"weapon_p228",false)==0)||(strcmp(wClassName,"weapon_usp",false)==0))
