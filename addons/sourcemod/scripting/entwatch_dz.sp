@@ -407,7 +407,7 @@ stock void EWM_Drop_Forward(Handle hEvent)
 					if(ItemTest.Chat) EWM_Chat_PlayerDeath_Drop(ItemTest, iClient);
 					#endif
 
-					SDKHooks_DropWeapon(iClient, ItemTest.WeaponID);
+					SDKHooks_DropWeapon(iClient, ItemTest.WeaponID, _, {0.0, 0.0, 50.0}, .bypassHooks=false);
 				}
 				else
 				{
@@ -532,7 +532,7 @@ public void Event_ClientDisconnect(Handle event, const char[] name, bool dontBro
 			{
 				if(ItemTest.ForceDrop)
 				{
-					SDKHooks_DropWeapon(iClient, ItemTest.WeaponID);
+					SDKHooks_DropWeapon(iClient, ItemTest.WeaponID, _, {0.0, 0.0, 50.0}, .bypassHooks=false);
 					#if defined EW_MODULE_CHAT
 					if(ItemTest.Chat) EWM_Chat_Disconnect_Drop(ItemTest, iClient);
 					#endif
@@ -552,7 +552,7 @@ public void Event_ClientDisconnect(Handle event, const char[] name, bool dontBro
 						if(ItemTest.Chat) EWM_Chat_Disconnect_Drop(ItemTest, iClient);
 						#endif
 
-						SDKHooks_DropWeapon(iClient, ItemTest.WeaponID);
+						SDKHooks_DropWeapon(iClient, ItemTest.WeaponID, _, {0.0, 0.0, 50.0}, .bypassHooks=false);
 					}
 				}
 			}
@@ -1896,7 +1896,7 @@ public Action EW_Command_BlockItem(int iClient, int iArgs)
 			{
 				char sClassnameBuf[64];
 				GetEdictClassname(ItemTest.WeaponID, sClassnameBuf, sizeof(sClassnameBuf));
-				SDKHooks_DropWeapon(ItemTest.OwnerID, ItemTest.WeaponID);
+				SDKHooks_DropWeapon(ItemTest.OwnerID, ItemTest.WeaponID, _, {0.0, 0.0, 50.0}, .bypassHooks=false);
 				GivePlayerItem(ItemTest.OwnerID, sClassnameBuf);
 			}
 		}

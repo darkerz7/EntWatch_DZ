@@ -237,7 +237,7 @@ stock void FixedEquipPlayerWeapon(int iClient, int iWeapon)
 	if((wSlot>=0) && (wSlot<=2))
 	{
 		int TargetWInSlot = GetPlayerWeaponSlot(iClient, wSlot);
-		if(TargetWInSlot != -1) SDKHooks_DropWeapon(iClient, TargetWInSlot);
+		if(TargetWInSlot != -1) SDKHooks_DropWeapon(iClient, TargetWInSlot, _, {0.0, 0.0, 50.0}, .bypassHooks=false);
 		float iClientOrigin[3];
 		GetClientAbsOrigin(iClient,iClientOrigin);
 		TeleportEntity(iWeapon, iClientOrigin, NULL_VECTOR, NULL_VECTOR);

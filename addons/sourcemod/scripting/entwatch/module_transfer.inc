@@ -146,7 +146,7 @@ public void EWM_Transfer_Function(int iClient, int iItemIndex, int iReceiver, bo
 					{
 						char sClassnameBuf[64];
 						GetEdictClassname(ItemTest.WeaponID, sClassnameBuf, sizeof(sClassnameBuf));
-						SDKHooks_DropWeapon(iCurOwner, ItemTest.WeaponID);
+						SDKHooks_DropWeapon(iCurOwner, ItemTest.WeaponID, _, {0.0, 0.0, 50.0}, .bypassHooks=false);
 						GivePlayerItem(iCurOwner, sClassnameBuf);
 						/*if(ItemTest.Chat)
 						{
