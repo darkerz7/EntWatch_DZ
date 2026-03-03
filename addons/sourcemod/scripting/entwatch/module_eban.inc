@@ -459,7 +459,7 @@ stock void EWM_Eban_BanClient(int iClient, int iAdmin, int iDuration, char[] sRe
 						char sClassname[32];
 						if (GetEdictClassname(iWeapon, sClassname, sizeof(sClassname)) && strcmp(sClassname, "weapon_knife", false) != 0)
 						{
-							CS_DropWeapon(iClient, iWeapon, false, false);
+							SDKHooks_DropWeapon(iClient, iWeapon);
 							GivePlayerItem(iClient, sClassname);
 						}
 					}

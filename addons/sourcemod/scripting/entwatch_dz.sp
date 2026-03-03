@@ -1896,7 +1896,7 @@ public Action EW_Command_BlockItem(int iClient, int iArgs)
 			{
 				char sClassnameBuf[64];
 				GetEdictClassname(ItemTest.WeaponID, sClassnameBuf, sizeof(sClassnameBuf));
-				CS_DropWeapon(ItemTest.OwnerID, ItemTest.WeaponID, false);
+				SDKHooks_DropWeapon(ItemTest.OwnerID, ItemTest.WeaponID);
 				GivePlayerItem(ItemTest.OwnerID, sClassnameBuf);
 			}
 		}
