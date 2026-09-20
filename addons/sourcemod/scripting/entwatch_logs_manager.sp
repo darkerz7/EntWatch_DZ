@@ -73,7 +73,7 @@ public Plugin myinfo =
 	name = "EntWatch Logs Manager",
 	author = "DarkerZ[RUS], .Rushaway",
 	description = "Allows you to manage logs from the plugin EntWatch.",
-	version = "1.DZ.4",
+	version = "1.DZ.5",
 	url = "dark-skill.ru"
 };
 
@@ -430,10 +430,9 @@ stock void Item_Handler(const char[] sMessage, int iClient, const char[] sItemNa
 	#endif
 	if(g_bItem_Database && g_iDBStatus == 5 && g_sServer[0])
 	{
-		char sTQuery[1024], sClient_Name[32], szClient_Name[32];
+		char sTQuery[1024], sClient_Name[32];
 		GetClientName(iClient, sClient_Name, sizeof(sClient_Name));//Get Client Name
-		g_hDB.Escape(sClient_Name, szClient_Name, sizeof(szClient_Name));//Client Name to DB
-		FormatEx(sTQuery, sizeof(sTQuery), "INSERT INTO `EntWatch_LM` (`type`, `server`, `map`, `timestamp`, `client`, `client_steamid`, `message`, `other`) VALUES (1, '%s', '%s', %d, '%s', '%s', '%s', '%s')", g_sServer, g_sCurrentMap, GetTime(), szClient_Name, g_sSteamIDs[iClient], sMessage, sItemName);
+		g_hDB.Format(sTQuery, sizeof(sTQuery), "INSERT INTO `EntWatch_LM` (`type`, `server`, `map`, `timestamp`, `client`, `client_steamid`, `message`, `other`) VALUES (1, '%s', '%s', %d, '%s', '%s', '%s', '%s')", g_sServer, g_sCurrentMap, GetTime(), sClient_Name, g_sSteamIDs[iClient], sMessage, sItemName);
 		SQL_TQuery(g_hDB, SQLTCallBack, sTQuery, 0);
 	}
 }
@@ -465,10 +464,9 @@ stock void Admin_Eban_Handler(const char[] sMessage, int iAdmin, const char[] sC
 	#endif
 	if(g_bAdmin_Database && g_iDBStatus == 5 && g_sServer[0])
 	{
-		char sTQuery[1024], sAdmin_Name[32], szAdmin_Name[32];
+		char sTQuery[1024], sAdmin_Name[32];
 		GetClientName(iAdmin, sAdmin_Name, sizeof(sAdmin_Name));//Get Admin Name
-		g_hDB.Escape(sAdmin_Name, szAdmin_Name, sizeof(szAdmin_Name));//Admin Name to DB
-		FormatEx(sTQuery, sizeof(sTQuery), "INSERT INTO `EntWatch_LM` (`type`, `server`, `map`, `timestamp`, `admin`, `admin_steamid`, `client`, `client_steamid`, `message`, `other`, `reason` ) VALUES (2, '%s', '%s', %d, '%s', '%s', '%s', '%s', '%s', '%s', '%s')", g_sServer, g_sCurrentMap, GetTime(), szAdmin_Name, g_sSteamIDs[iAdmin], sClientName, sClientSteamID, sMessage, sActionTime, sReason);
+		g_hDB.Format(sTQuery, sizeof(sTQuery), "INSERT INTO `EntWatch_LM` (`type`, `server`, `map`, `timestamp`, `admin`, `admin_steamid`, `client`, `client_steamid`, `message`, `other`, `reason` ) VALUES (2, '%s', '%s', %d, '%s', '%s', '%s', '%s', '%s', '%s', '%s')", g_sServer, g_sCurrentMap, GetTime(), sAdmin_Name, g_sSteamIDs[iAdmin], sClientName, sClientSteamID, sMessage, sActionTime, sReason);
 		SQL_TQuery(g_hDB, SQLTCallBack, sTQuery, 0);
 	}
 }
@@ -504,22 +502,19 @@ stock void Admin_Other_Handler(const char[] sMessage, int iAdmin, int iTarget, i
 	#endif
 	if(g_bAdmin_Database && g_iDBStatus == 5 && g_sServer[0])
 	{
-		char sTQuery[1024], sAdmin_Name[32], szAdmin_Name[32], sTarget_Name[32], szTarget_Name[32], sReceiver_Name[32], szReceiver_Name[32], sTarget_SteamID[32], sReceiver_SteamID[32];
+		char sTQuery[1024], sAdmin_Name[32], sTarget_Name[32], sReceiver_Name[32], sTarget_SteamID[32], sReceiver_SteamID[32];
 		GetClientName(iAdmin, sAdmin_Name, sizeof(sAdmin_Name));//Get Admin Name
-		g_hDB.Escape(sAdmin_Name, szAdmin_Name, sizeof(szAdmin_Name));//Admin Name to DB
 		if(iTarget != -1)
 		{
 			GetClientName(iTarget, sTarget_Name, sizeof(sTarget_Name));//Get Target Name
-			g_hDB.Escape(sTarget_Name, szTarget_Name, sizeof(szTarget_Name));//Target Name to DB
 			FormatEx(sTarget_SteamID, sizeof(sTarget_SteamID), "%s", g_sSteamIDs[iTarget]);
 		}
 		if(iReceiver != -1)
 		{
 			GetClientName(iReceiver, sReceiver_Name, sizeof(sReceiver_Name));//Get Receiver Name
-			g_hDB.Escape(sReceiver_Name, szReceiver_Name, sizeof(szReceiver_Name));//Receiver Name to DB
 			FormatEx(sReceiver_SteamID, sizeof(sReceiver_SteamID), "%s", g_sSteamIDs[iReceiver]);
 		}
-		FormatEx(sTQuery, sizeof(sTQuery), "INSERT INTO `EntWatch_LM` (`type`, `server`, `map`, `timestamp`, `admin`, `admin_steamid`, `client`, `client_steamid`, `receiver`, `receiver_steamid`, `message`, `other`) VALUES (3, '%s', '%s', %d, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')", g_sServer, g_sCurrentMap, GetTime(), szAdmin_Name, g_sSteamIDs[iAdmin], szTarget_Name, sTarget_SteamID, szReceiver_Name, sReceiver_SteamID, sMessage, sItemName);
+		g_hDB.Format(sTQuery, sizeof(sTQuery), "INSERT INTO `EntWatch_LM` (`type`, `server`, `map`, `timestamp`, `admin`, `admin_steamid`, `client`, `client_steamid`, `receiver`, `receiver_steamid`, `message`, `other`) VALUES (3, '%s', '%s', %d, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')", g_sServer, g_sCurrentMap, GetTime(), sAdmin_Name, g_sSteamIDs[iAdmin], sTarget_Name, sTarget_SteamID, sReceiver_Name, sReceiver_SteamID, sMessage, sItemName);
 		SQL_TQuery(g_hDB, SQLTCallBack, sTQuery, 0);
 	}
 }
